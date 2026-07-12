@@ -1,0 +1,453 @@
+/* Base Styles */
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #1a1a1a;
+  font-family: Arial, sans-serif;
+  color: white;
+}
+
+/* Status Display */
+#status {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  color: white;
+  z-index: 1000;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+/* Start Screen */
+#start-screen {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: left;
+  color: white;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 600px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+#start-screen h1 {
+  margin: 0 0 20px 0;
+  color: #4caf50;
+}
+
+#start-screen ol {
+  margin-left: 20px;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+#start-button {
+  padding: 15px 30px;
+  font-size: 18px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s ease;
+  
+}
+
+#start-button:hover {
+  background-color: #45a049;
+}
+
+.video-preview {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 320px;
+  height: 240px;
+  border: 2px solid white;
+  border-radius: 8px;
+  z-index: 900;
+  transform: scaleX(-1);
+}
+
+/* Cursor Styles */
+#head-cursor {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  background-color: #00ff00;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.1s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  transform: translate(-50%, -50%);
+}
+
+/* Calibration UI */
+#calibration-ui {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Updated Calibration Target Styles */
+.calibration-point {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+  transition: all 0.3s ease-out;
+  pointer-events: none;
+  z-index: 1002;
+}
+
+#calibration-target {
+  background-color: red !important;
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10000 !important;
+}
+
+#previous-target {
+  background-color: rgb(255, 0, 0); /* Always solid/dark red */
+  animation: none;
+}
+
+/* Calibration Line Styles */
+#calibration-line {
+  position: absolute;
+  height: 2px;
+  background-color: #4caf50;
+  transform-origin: left center;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  transition: opacity 0.5s;
+  z-index: 1000;
+}
+
+#line-tip-circle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: #1a1a1a; /* Match background color */
+  border: 2px solid #4caf50;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1001;
+  opacity: 1;
+  transition: opacity 0.5s;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  animation: circlePulse 1s infinite;
+}
+
+#calibration-instructions {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  text-align: center;
+  padding: 15px 30px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 5px;
+  font-size: 18px;
+  z-index: 1001;
+}
+
+#progress {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #4caf50;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes circlePulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    border-color: #4caf50;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    border-color: rgba(76, 175, 80, 0.7);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    border-color: #4caf50;
+  }
+}
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .video-preview {
+    width: 240px;
+    height: 180px;
+  }
+
+  #start-screen {
+    width: 90%;
+    max-width: none;
+    padding: 20px;
+  }
+
+  #calibration-instructions {
+    width: 80%;
+    font-size: 16px;
+  }
+}
+
+/* Configuration Screen Styles */
+#config-screen {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: left;
+  color: white;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 600px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.config-section {
+  margin-bottom: 25px;
+}
+
+.config-section h3 {
+  color: #4caf50;
+  margin-bottom: 15px;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radio-group label:hover {
+  background-color: rgba(76, 175, 80, 0.2);
+}
+
+.radio-group input[type="radio"]:checked + label {
+  background-color: rgba(76, 175, 80, 0.3);
+  border-color: #4caf50;
+}
+
+/* Add these styles to your styles.css */
+
+/* Hide default radio buttons */
+.radio-group input[type="radio"] {
+  display: none;
+}
+
+/* Style for radio button labels */
+.radio-group label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  margin: 5px 0;
+}
+
+/* Hover state */
+.radio-group label:hover {
+  background-color: rgba(76, 175, 80, 0.2);
+}
+
+/* Selected state */
+.radio-group input[type="radio"]:checked + label {
+  background-color: rgba(76, 175, 80, 0.3);
+  border-color: #4caf50;
+}
+.upload-container {
+  margin-top: 15px;
+}
+
+#upload-button {
+  margin-right: 10px;
+}
+
+#file-name {
+  color: #888;
+  margin-left: 10px;
+}
+
+/* Active button states for tracking controls */
+.button-group button.active-button,
+.button-group button.active-filter {
+    background-color: #4CAF50 !important; /* green */
+    border: 2px solid #6EE873 !important;
+    color: white !important;
+    font-weight: bold;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+/* Smooth transitions for all buttons */
+.button-group button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Hover effects */
+.button-group button:hover:not(.active-button):not(.active-filter) {
+    background-color: #374151;
+    transform: scale(1.02);
+}
+
+#tracking-controls-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.tracking-controls {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  color: white;
+  min-width: 250px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.tracking-controls h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.control-group {
+  margin-bottom: 20px;
+}
+
+.control-group p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.button-group button {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #4a4a4a;
+  color: white;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.button-group button:hover {
+  background: #5a5a5a;
+}
+
+.button-group button.active {
+  background: #4CAF50;
+}
+
+.metrics {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 14px;
+}
+
+.metrics p {
+  margin: 4px 0;
+  color: #ccc;
+}
+
+.error {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(255, 0, 0, 0.2);
+  border-radius: 4px;
+  color: #ff4444;
+  font-size: 14px;
+}
+
+body {
+  width: 300px;
+  padding: 15px;
+  font-family: Arial, sans-serif;
+  background-color: #1a1a1a;
+  color: white;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+button {
+  padding: 12px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}

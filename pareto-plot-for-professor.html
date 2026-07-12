@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pareto Front Plot — Pilot 2 Participants</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+  h1 { font-size: 20px; color: #222; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 20px; }
+  .container { display: flex; gap: 20px; flex-wrap: wrap; }
+  .plot-box { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
+  canvas { display: block; }
+  .legend { margin-top: 12px; font-size: 13px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .legend-line { width: 28px; height: 3px; display: inline-block; border-radius: 2px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .info-box { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.1); max-width: 380px; font-size: 13px; line-height: 1.6; }
+  .info-box h3 { margin-top: 0; font-size: 15px; color: #333; }
+  .anchor-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .anchor-table th { background: #f0f4ff; padding: 5px 8px; text-align: left; font-size: 12px; border-bottom: 1px solid #ddd; }
+  .anchor-table td { padding: 4px 8px; font-size: 12px; border-bottom: 1px solid #eee; }
+  .warn { color: #c0392b; font-weight: 600; }
+  .note { background: #fff8e1; border-left: 3px solid #f39c12; padding: 8px 12px; margin-top: 12px; font-size: 12px; border-radius: 0 4px 4px 0; }
+  h2 { font-size: 15px; color: #333; margin: 0 0 12px 0; }
+</style>
+</head>
+<body>
+
+<h1>Pilot 2 — Jitter vs. Latency: Pareto Fronts &amp; Anchor Points</h1>
+<p class="subtitle">Professor's method: EXP sets L0 (at 12px jitter), L2 (at 600ms), L1 (midpoint). OE matched to same latency levels.</p>
+
+<div class="container">
+  <div class="plot-box">
+    <h2>Main Plot — Jesus (P21): Full Pareto Curves + Anchor Points</h2>
+    <canvas id="mainPlot" width="720" height="480"></canvas>
+    <div class="legend" id="mainLegend"></div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:20px;">
+    <div class="info-box">
+      <h3>Anchor Points — Jesus (P21, best calibration)</h3>
+      <table class="anchor-table">
+        <tr><th>Level</th><th>Latency</th><th>EXP Jitter</th><th>OE Jitter</th></tr>
+        <tr><td>L0 (Low)</td><td>168.8 ms</td><td>12.0 px</td><td>9.52 px</td></tr>
+        <tr><td>L1 (Mid)</td><td>384.4 ms</td><td>6.93 px</td><td>5.55 px</td></tr>
+        <tr><td>L2 (High)</td><td>600 ms</td><td>6.08 px</td><td>4.09 px</td></tr>
+      </table>
+      <p style="margin:8px 0 0 0; font-size:12px; color:#555;">Spread L0→L2: <strong>431 ms</strong> — 3 levels are well-separated ✓</p>
+      <p style="margin:4px 0 0 0; font-size:12px; color:#555;">At each level, OE has less jitter than EXP (1–2px less). The experiment asks: does that matter?</p>
+    </div>
+
+    <div class="info-box">
+      <h3>All Participants — Actual Pairs Used in Pilot 2</h3>
+      <table class="anchor-table">
+        <tr><th>Participant</th><th>Pair</th><th>EXP lat.</th><th>OE lat.</th><th>Jitter</th></tr>
+        <tr><td>Jesus</td><td>2 (Mid)</td><td>386 ms</td><td>269 ms</td><td>6.9 px</td></tr>
+        <tr><td>Amelie</td><td>2 (Mid)</td><td>397 ms</td><td>259 ms</td><td>9.8 px</td></tr>
+        <tr><td>Nowshad</td><td>2 (Mid)</td><td>343 ms</td><td>241 ms</td><td>7.3 px</td></tr>
+        <tr><td>Soha</td><td>2 (Mid)</td><td>397 ms</td><td>259 ms</td><td>9.8 px</td></tr>
+        <tr><td>Tareq</td><td>1 (High)</td><td>600 ms</td><td>80 ms</td><td>7.1 px</td></tr>
+        <tr><td>Tareq</td><td>2 (Mid)</td><td>359 ms</td><td>60 ms</td><td>7.9 px</td></tr>
+        <tr><td>Tareq</td><td>3 (Low)</td><td>118 ms</td><td>2 ms</td><td>11.3 px</td></tr>
+        <tr class="warn"><td>Valerie ⚠</td><td>1</td><td>25 ms</td><td>25 ms</td><td>2.1 px</td></tr>
+        <tr class="warn"><td>Valerie ⚠</td><td>2</td><td>22 ms</td><td>25 ms</td><td>7.0 px</td></tr>
+        <tr class="warn"><td>Valerie ⚠</td><td>3</td><td>18 ms</td><td>25 ms</td><td>11.8 px</td></tr>
+      </table>
+      <div class="note">
+        <strong>Valerie:</strong> calibration failed — all Pareto points clustered at ~25ms latency. The 3 "levels" differ only in jitter (latency always ~25ms). OE bug also caused runaway jitter values. Needs fix before main study.
+        <br><br>
+        <strong>Tareq:</strong> OE latency near 0–2ms for low pair — too responsive. Pair 3 TP=0.10 (unusable). This is the Pareto overlap bug; EXP-as-reference method should fix it.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="plot-box" style="margin-top:20px; max-width: 760px;">
+  <h2>All Participants — EXP Points Used in Experiment (Overlay)</h2>
+  <canvas id="allPlot" width="720" height="360"></canvas>
+  <div id="allLegend" class="legend"></div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const JESUS_EXP = [{"v":16.81,"l":0},{"v":16.71,"l":3.9},{"v":16.56,"l":5.1},{"v":16.41,"l":7},{"v":16.25,"l":9},{"v":16.07,"l":10.9},{"v":16,"l":11.7},{"v":15.9,"l":12.7},{"v":15.8,"l":15},{"v":15.65,"l":19.8},{"v":15.5,"l":24.3},{"v":15.39,"l":26},{"v":15.28,"l":125.6},{"v":15.1,"l":127.8},{"v":14.89,"l":130.2},{"v":14.67,"l":132.4},{"v":14.44,"l":134.3},{"v":9.71,"l":201.9},{"v":9.45,"l":231.5},{"v":9.19,"l":233.5},{"v":9.06,"l":234.5},{"v":8.93,"l":237.8},{"v":8.65,"l":271.1},{"v":8.39,"l":273.8},{"v":8.13,"l":294},{"v":8,"l":324.6},{"v":7.75,"l":328.7},{"v":7.49,"l":370.7},{"v":7.08,"l":377.4},{"v":6.95,"l":382.4},{"v":6.83,"l":417.9},{"v":6.7,"l":421.2},{"v":6.57,"l":498},{"v":6.3,"l":542.6},{"v":6.12,"l":590.5},{"v":6,"l":603.8},{"v":5.87,"l":609},{"v":5.51,"l":684.3},{"v":5.15,"l":741.9},{"v":4.92,"l":767.2},{"v":4.7,"l":814.4},{"v":4.48,"l":892.1},{"v":4.35,"l":907.7},{"v":3.93,"l":912.2},{"v":3.63,"l":928.1},{"v":3.37,"l":1008.5},{"v":2.92,"l":1044.1},{"v":0.9,"l":1052.9}];
+
+const JESUS_OE = [{"v":13.59,"l":48.4},{"v":13.19,"l":52},{"v":12.78,"l":55},{"v":10.5,"l":72.7},{"v":10.02,"l":98.9},{"v":9.58,"l":105},{"v":9.52,"l":168.9},{"v":9.09,"l":172.7},{"v":8.64,"l":175.9},{"v":8.23,"l":183.9},{"v":8.15,"l":228.5},{"v":7.71,"l":245.4},{"v":6.94,"l":259.4},{"v":6.59,"l":312.6},{"v":6.22,"l":351.4},{"v":5.82,"l":356.3},{"v":5.54,"l":384.8},{"v":5.18,"l":394.4},{"v":4.63,"l":438.9},{"v":4.38,"l":497.4},{"v":4.16,"l":518.2},{"v":4.03,"l":633.5},{"v":3.69,"l":699.6},{"v":3.43,"l":713.5},{"v":3.12,"l":766.9},{"v":2.72,"l":780.7},{"v":2.42,"l":802.7},{"v":2.17,"l":885.1},{"v":2.02,"l":893.6},{"v":1.8,"l":932.1},{"v":1.58,"l":949.3},{"v":1.5,"l":1000.4},{"v":0.12,"l":1052.9}];
+
+// Anchor points (professor's EXP-as-reference method)
+const JESUS_ANCHORS = [
+  { level:'L0', lat:168.8, exp_j:12.0, oe_j:9.52 },
+  { level:'L1', lat:384.4, exp_j:6.93, oe_j:5.55 },
+  { level:'L2', lat:600,   exp_j:6.08, oe_j:4.09 },
+];
+
+// Actual pairs used across all participants
+const ALL_PAIRS = {
+  'Jesus':   [{pair:2, lat_exp:386, lat_oe:269, j:6.9}],
+  'Amelie':  [{pair:2, lat_exp:397.3, lat_oe:259.4, j:9.77}],
+  'Nowshad': [{pair:2, lat_exp:342.5, lat_oe:240.5, j:7.26}],
+  'Soha':    [{pair:2, lat_exp:397.3, lat_oe:259.4, j:9.77}],
+  'Tareq':   [
+    {pair:1, lat_exp:600, lat_oe:80.2, j:7.12},
+    {pair:2, lat_exp:359.1, lat_oe:60.2, j:7.93},
+    {pair:3, lat_exp:118.2, lat_oe:2.3, j:11.32},
+  ],
+  'Valerie': [
+    {pair:1, lat_exp:25.3, lat_oe:25.4, j:2.11},
+    {pair:2, lat_exp:21.6, lat_oe:25.1, j:6.95},
+    {pair:3, lat_exp:17.8, lat_oe:24.8, j:11.8},
+  ],
+};
+
+const COLORS = {
+  'Jesus':   '#2c7be5',
+  'Amelie':  '#27ae60',
+  'Nowshad': '#8e44ad',
+  'Soha':    '#e67e22',
+  'Tareq':   '#16a085',
+  'Valerie': '#e74c3c',
+};
+
+// ─── PLOT UTILITIES ──────────────────────────────────────────────────────────
+
+function makePlot(canvasId, opts) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = {top: 20, right: 30, bottom: 50, left: 55};
+  const PW = W - PAD.left - PAD.right;
+  const PH = H - PAD.top - PAD.bottom;
+
+  const xMin = opts.xMin || 0, xMax = opts.xMax || 700;
+  const yMin = opts.yMin || 0, yMax = opts.yMax || 18;
+
+  function px(l) { return PAD.left + (l - xMin) / (xMax - xMin) * PW; }
+  function py(v) { return PAD.top + PH - (v - yMin) / (yMax - yMin) * PH; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let x = 0; x <= xMax; x += 100) {
+    ctx.beginPath(); ctx.moveTo(px(x), PAD.top); ctx.lineTo(px(x), PAD.top+PH); ctx.stroke();
+    ctx.fillStyle = '#999'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+    ctx.fillText(x, px(x), PAD.top + PH + 18);
+  }
+  for (let y = 0; y <= yMax; y += 2) {
+    ctx.beginPath(); ctx.moveTo(PAD.left, py(y)); ctx.lineTo(PAD.left+PW, py(y)); ctx.stroke();
+    ctx.fillStyle = '#999'; ctx.font = '11px Arial'; ctx.textAlign = 'right';
+    ctx.fillText(y, PAD.left - 8, py(y) + 4);
+  }
+
+  // Cap lines
+  ctx.strokeStyle = '#f39c12'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(PAD.left, py(12)); ctx.lineTo(PAD.left+PW, py(12)); ctx.stroke();
+  ctx.fillStyle = '#f39c12'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'left';
+  ctx.fillText('12px jitter cap', PAD.left + 4, py(12) - 4);
+
+  ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(px(600), PAD.top); ctx.lineTo(px(600), PAD.top+PH); ctx.stroke();
+  ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+  ctx.fillText('600ms', px(600), PAD.top + 12);
+  ctx.setLineDash([]);
+
+  // Axes
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.strokeRect(PAD.left, PAD.top, PW, PH);
+
+  // Axis labels
+  ctx.fillStyle = '#555'; ctx.font = '13px Arial';
+  ctx.textAlign = 'center'; ctx.fillText('Latency (ms)', PAD.left + PW/2, H - 6);
+  ctx.save(); ctx.translate(14, PAD.top + PH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Jitter (px)', 0, 0); ctx.restore();
+
+  if (opts.draw) opts.draw(ctx, px, py);
+}
+
+function drawLine(ctx, pts, color, width, dash) {
+  if (!pts || pts.length < 2) return;
+  ctx.strokeStyle = color; ctx.lineWidth = width || 2;
+  ctx.setLineDash(dash || []);
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    if (i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawDot(ctx, x, y, r, fill, stroke, strokeW) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = fill; ctx.fill();
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = strokeW || 2; ctx.stroke(); }
+}
+
+// ─── MAIN PLOT (Jesus) ───────────────────────────────────────────────────────
+
+makePlot('mainPlot', { xMin:0, xMax:700, yMin:0, yMax:18, draw(ctx, px, py) {
+
+  // EXP Pareto curve
+  drawLine(ctx, JESUS_EXP.map(p=>({x:px(p.l), y:py(p.v)})), '#2c7be5', 2.5);
+  // Label
+  ctx.fillStyle = '#2c7be5'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
+  ctx.fillText('EXP filter curve (Jesus)', px(650), py(6.5));
+
+  // OE Pareto curve
+  drawLine(ctx, JESUS_OE.map(p=>({x:px(p.l), y:py(p.v)})), '#e67e22', 2.5);
+  ctx.fillStyle = '#e67e22'; ctx.font = 'bold 12px Arial';
+  ctx.fillText('OE filter curve (Jesus)', px(430), py(5.2));
+
+  // Vertical lines at anchor latencies
+  const anchorColors = ['#16a085', '#8e44ad', '#c0392b'];
+  JESUS_ANCHORS.forEach((a, i) => {
+    const c = anchorColors[i];
+    ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(px(a.lat), py(0)); ctx.lineTo(px(a.lat), py(18)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // EXP dot
+    drawDot(ctx, px(a.lat), py(a.exp_j), 7, c, 'white', 1.5);
+    // OE dot
+    drawDot(ctx, px(a.lat), py(a.oe_j), 7, 'white', c, 2.5);
+
+    // Label
+    ctx.fillStyle = c; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+    const labelY = i === 1 ? py(14.5) : py(15.5);
+    ctx.fillText(a.level, px(a.lat), labelY);
+    ctx.font = '10px Arial'; ctx.fillStyle = '#555';
+    ctx.fillText(a.lat + 'ms', px(a.lat), labelY + 14);
+  });
+
+  // Arrow lines showing OE advantage at each level
+  JESUS_ANCHORS.forEach((a, i) => {
+    const c = anchorColors[i];
+    const x = px(a.lat) + 12;
+    ctx.strokeStyle = c; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, py(a.exp_j)); ctx.lineTo(x, py(a.oe_j)); ctx.stroke();
+    // arrowhead
+    ctx.beginPath(); ctx.moveTo(x, py(a.oe_j)); ctx.lineTo(x-3, py(a.oe_j)+5); ctx.lineTo(x+3, py(a.oe_j)+5); ctx.closePath();
+    ctx.fillStyle = c; ctx.fill();
+    // diff label
+    const diff = (a.exp_j - a.oe_j).toFixed(1);
+    ctx.fillStyle = c; ctx.font = '10px Arial'; ctx.textAlign = 'left';
+    ctx.fillText(`Δ${diff}px`, x + 4, py((a.exp_j + a.oe_j)/2) + 4);
+  });
+
+  // Legend dots for anchor
+  ctx.font = '11px Arial'; ctx.fillStyle = '#333'; ctx.textAlign = 'left';
+  drawDot(ctx, px(520), py(16.5), 6, '#555', 'white', 1.5);
+  ctx.fillText('EXP at anchor latency', px(530), py(16.5)+4);
+  drawDot(ctx, px(520), py(15.2), 6, 'white', '#555', 2);
+  ctx.fillText('OE at anchor latency', px(530), py(15.2)+4);
+}});
+
+// Legend
+document.getElementById('mainLegend').innerHTML = `
+  <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:8px; font-size:12px;">
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:24px;height:3px;background:#2c7be5;border-radius:2px;"></div> EXP Pareto front (Jesus)</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:24px;height:3px;background:#e67e22;border-radius:2px;"></div> OE Pareto front (Jesus)</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:24px;height:3px;background:#f39c12;border-radius:2px;border-top:2px dashed #f39c12;"></div> 12px jitter cap</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:24px;height:3px;background:#e74c3c;border-radius:2px;"></div> 600ms latency cap</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#16a085;"></div> L0 (Low latency, ~169ms)</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#8e44ad;"></div> L1 (Mid, ~384ms)</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#c0392b;"></div> L2 (High, 600ms)</div>
+  </div>
+`;
+
+// ─── ALL PARTICIPANTS PLOT ───────────────────────────────────────────────────
+
+makePlot('allPlot', { xMin:0, xMax:700, yMin:0, yMax:16, draw(ctx, px, py) {
+
+  const ORDER = ['Jesus','Amelie','Nowshad','Soha','Tareq','Valerie'];
+
+  ORDER.forEach(name => {
+    const pairs = ALL_PAIRS[name];
+    const col = COLORS[name];
+    const isValerie = name === 'Valerie';
+
+    pairs.forEach(pair => {
+      const expX = px(pair.lat_exp);
+      const oeX  = px(pair.lat_oe);
+      const y    = py(pair.j);
+
+      // Connect EXP and OE with a line
+      ctx.strokeStyle = col; ctx.lineWidth = isValerie ? 1 : 1.5; ctx.setLineDash(isValerie ? [3,3] : []);
+      ctx.beginPath(); ctx.moveTo(expX, y); ctx.lineTo(oeX, y); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // EXP dot (filled)
+      drawDot(ctx, expX, y, isValerie ? 5 : 7, col, 'white', 1.5);
+      // OE dot (outlined)
+      drawDot(ctx, oeX, y, isValerie ? 5 : 7, 'white', col, 2);
+
+      // Pair label
+      if (!isValerie) {
+        ctx.fillStyle = col; ctx.font = '10px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(`P${pair.pair}`, expX, y - 10);
+      }
+    });
+
+    // Participant name label near the first EXP point
+    const firstPair = pairs[0];
+    ctx.fillStyle = col; ctx.font = `bold 11px Arial`; ctx.textAlign = 'right';
+    const lx = Math.min(px(firstPair.lat_exp), px(firstPair.lat_oe));
+    ctx.fillText(name, lx - 4, py(firstPair.j) + 4);
+  });
+}});
+
+document.getElementById('allLegend').innerHTML = `
+  <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:12px;">
+    ${Object.entries(COLORS).map(([n,c]) => `<div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:${c};"></div>${n}</div>`).join('')}
+    <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:50%;background:#555;"></div> Filled = EXP, Open = OE</div>
+    <div style="display:flex;align-items:center;gap:5px; color:#e74c3c;"><strong>⚠ Valerie: all pairs at ~25ms (degenerate calibration)</strong></div>
+  </div>
+`;
+</script>
+</body>
+</html>

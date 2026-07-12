@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Euro / Exponential Equivalence Verification</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #58a6ff; text-align: center; margin-bottom: 5px; font-size: 28px; }
+        h2 { color: #58a6ff; margin: 30px 0 15px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+        h3 { color: #79c0ff; margin: 20px 0 10px; }
+        .subtitle { text-align: center; color: #8b949e; margin-bottom: 25px; font-size: 15px; }
+        
+        .upload-section {
+            display: flex; gap: 15px; margin-bottom: 25px;
+        }
+        .upload-area {
+            flex: 1; border: 2px dashed #30363d; border-radius: 8px;
+            padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .upload-area:hover { border-color: #58a6ff; background: #161b22; }
+        .upload-area.loaded { border-color: #3fb950; border-style: solid; background: #0d1117; }
+        .upload-area .icon { font-size: 32px; margin-bottom: 8px; }
+        .upload-area input { display: none; }
+        
+        .math-box {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 20px; margin: 15px 0; font-family: 'Courier New', monospace;
+            line-height: 1.8; font-size: 14px;
+        }
+        .math-box .eq { color: #79c0ff; }
+        .math-box .val { color: #3fb950; }
+        .math-box .note { color: #8b949e; font-style: italic; }
+        
+        .results-section { display: none; }
+        .results-section.show { display: block; }
+        
+        table {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+            margin: 15px 0; background: #161b22;
+        }
+        th { background: #21262d; color: #58a6ff; padding: 10px 8px; text-align: center; border: 1px solid #30363d; position: sticky; top: 0; }
+        td { padding: 8px; text-align: center; border: 1px solid #30363d; }
+        tr:hover { background: #1c2128; }
+        .match { color: #3fb950; font-weight: bold; }
+        .mismatch { color: #f85149; font-weight: bold; }
+        .close { color: #d29922; }
+        
+        canvas {
+            width: 100%; border: 1px solid #30363d; border-radius: 8px;
+            background: #161b22; margin: 15px 0;
+        }
+        
+        .card {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 20px; margin: 15px 0;
+        }
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 900px) { .card-grid { grid-template-columns: 1fr; } }
+        
+        .stat-box {
+            background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+            padding: 15px; text-align: center;
+        }
+        .stat-value { font-size: 28px; font-weight: bold; margin: 5px 0; }
+        .stat-label { color: #8b949e; font-size: 13px; }
+        .stat-value.green { color: #3fb950; }
+        .stat-value.red { color: #f85149; }
+        .stat-value.yellow { color: #d29922; }
+        .stat-value.blue { color: #58a6ff; }
+        
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+        
+        .table-scroll { max-height: 500px; overflow-y: auto; border: 1px solid #30363d; border-radius: 6px; }
+        
+        .tooltip {
+            position: absolute; background: rgba(0,0,0,0.9); color: white;
+            padding: 10px; border-radius: 6px; font-size: 12px; pointer-events: none;
+            display: none; z-index: 1000; border: 1px solid #30363d;
+        }
+        
+        .legend-item { display: inline-flex; align-items: center; margin-right: 20px; font-size: 13px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; display: inline-block; }
+        
+        .info-banner {
+            background: #1c2128; border-left: 4px solid #58a6ff; padding: 15px;
+            border-radius: 0 8px 8px 0; margin: 15px 0; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" style="
+      position: fixed; top: 15px; left: 15px; padding: 8px 18px;
+      background: rgba(0,0,0,0.8); color: #58a6ff; text-decoration: none;
+      border-radius: 5px; border: 1px solid #58a6ff; z-index: 3000;
+      font-size: 14px;
+    ">&larr; Back to Home</a>
+    <div class="container">
+        <h1>One Euro / Exponential Filter Equivalence Verification</h1>
+        <p class="subtitle">Professor's Check: When velocity = 0, One Euro with fc_min should equal Exponential with equivalent alpha</p>
+        
+        <div class="math-box">
+            <strong style="color: #d2a8ff;">Mathematical Basis (from One Euro Filter paper):</strong><br><br>
+            <span class="eq">Cutoff frequency:</span> fc = fc_min + beta * |derivative|<br>
+            <span class="note">When velocity = 0: derivative = 0, so fc = fc_min</span><br><br>
+            <span class="eq">Time constant:</span> tau = 1 / (2 * pi * fc)<br>
+            <span class="eq">Smoothing factor:</span> alpha = 1 / (1 + tau / Te)<br>
+            <span class="note">Where Te = 1/samplingRate = 1/60 s (sampling period)</span><br><br>
+            <span class="eq">Therefore when stationary:</span><br>
+            <span class="val">alpha = 1 / (1 + 1/(2*pi * fc_min * Te))</span><br>
+            <span class="val">alpha = 2*pi * fc_min * Te / (1 + 2*pi * fc_min * Te)</span><br><br>
+            <span class="eq">Inverse (alpha -> fc_min):</span><br>
+            <span class="val">fc_min = alpha / (2*pi * Te * (1 - alpha))</span>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadOneEuro" onclick="document.getElementById('fileOneEuro').click()">
+                <div class="icon">&#x1F534;</div>
+                <p><strong>One Euro CSV</strong></p>
+                <p style="color: #8b949e; font-size: 12px;">Rank, minCutoff, beta, dCutoff, meanVariance, meanLatency, ...</p>
+                <input type="file" id="fileOneEuro" accept=".csv">
+            </div>
+            <div class="upload-area" id="uploadExponential" onclick="document.getElementById('fileExponential').click()">
+                <div class="icon">&#x1F535;</div>
+                <p><strong>Exponential CSV</strong></p>
+                <p style="color: #8b949e; font-size: 12px;">Rank, alpha, meanVariance, meanLatency, ...</p>
+                <input type="file" id="fileExponential" accept=".csv">
+            </div>
+        </div>
+
+        <div id="results" class="results-section">
+            
+            <!-- Summary Stats -->
+            <h2>Summary</h2>
+            <div class="summary-grid" id="summaryStats"></div>
+            
+            <!-- Chart 1: Equivalence Scatter -->
+            <h2>Chart 1: Variance Equivalence Check (alpha match)</h2>
+            <div class="info-banner">
+                For each One Euro <code>minCutoff</code> (with smallest beta), we calculate the equivalent exponential <code>alpha</code>, 
+                find the closest tested exponential alpha, and compare the variances. If correct, points should lie on the diagonal (y = x).
+            </div>
+            <canvas id="scatterCanvas" width="800" height="600"></canvas>
+            <div style="text-align: center; margin: 10px 0;">
+                <span class="legend-item"><span class="legend-dot" style="background: #3fb950;"></span>Match (&lt;10% diff)</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #d29922;"></span>Close (10-25% diff)</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #f85149;"></span>Mismatch (&gt;25% diff)</span>
+                <span class="legend-item" style="color: #8b949e;">-- Dashed line = perfect match (y=x)</span>
+            </div>
+            
+            <!-- Chart 2: Red Flag Test -->
+            <h2>Chart 2: Red Flag Test - Does Variance Change When Only beta/dCutoff Change?</h2>
+            <div class="info-banner">
+                Professor's red flag: if minCutoff is fixed and data is truly stationary, changing beta and dCutoff 
+                should NOT change variance. Each color = one minCutoff value. Variance should be flat within each group.
+            </div>
+            <canvas id="redFlagCanvas" width="800" height="500"></canvas>
+            
+            <!-- Chart 3: Pareto Fronts with Equivalence Lines -->
+            <h2>Chart 3: Pareto Fronts with Equivalent Parameter Pairs</h2>
+            <div class="info-banner">
+                Both Pareto fronts overlaid. Dashed lines connect One Euro points to their equivalent exponential point (same alpha).
+                These pairs should have similar variance (x-axis) but One Euro should have lower latency (y-axis).
+            </div>
+            <canvas id="paretoCanvas" width="1200" height="700"></canvas>
+            
+            <!-- Table 1: Equivalence -->
+            <h2>Table 1: Full Equivalence Mapping</h2>
+            <div class="info-banner">
+                For each unique <code>minCutoff</code> in the One Euro data (with lowest beta = 0.00001), 
+                we calculate the equivalent <code>alpha</code> and compare variances.
+            </div>
+            <div class="table-scroll" id="equivalenceTableContainer"></div>
+            
+            <!-- Table 2: Red Flag Detail -->
+            <h2>Table 2: Red Flag Detail - Variance Spread per minCutoff</h2>
+            <div class="info-banner">
+                For each minCutoff, how much does variance vary across all beta/dCutoff combos? 
+                Low coefficient of variation (&lt;5%) = good, data is truly stationary.
+            </div>
+            <div class="table-scroll" id="redFlagTableContainer"></div>
+
+            <!-- Table 3: Alpha-to-minCutoff reference -->
+            <h2>Table 3: Quick Reference - alpha &harr; minCutoff Conversion (at 60 Hz)</h2>
+            <div class="table-scroll" id="conversionTableContainer"></div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const SAMPLING_RATE = 60; // Hz
+        const Te = 1 / SAMPLING_RATE;
+
+        let oneEuroData = null;
+        let exponentialData = null;
+
+        // ===== MATH FUNCTIONS =====
+        function alphaFromMinCutoff(fc_min, te = Te) {
+            const tau = 1 / (2 * Math.PI * fc_min);
+            return 1 / (1 + tau / te);
+        }
+
+        function minCutoffFromAlpha(alpha, te = Te) {
+            if (alpha >= 1) return Infinity;
+            if (alpha <= 0) return 0;
+            return alpha / (2 * Math.PI * te * (1 - alpha));
+        }
+
+        // ===== FILE HANDLING =====
+        document.getElementById('fileOneEuro').addEventListener('change', e => {
+            if (e.target.files[0]) loadCSV(e.target.files[0], 'oneeuro');
+        });
+        document.getElementById('fileExponential').addEventListener('change', e => {
+            if (e.target.files[0]) loadCSV(e.target.files[0], 'exponential');
+        });
+
+        function loadCSV(file, type) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const v = lines[i].split(',').map(s => s.trim());
+                    if (type === 'oneeuro' && v.length >= 6) {
+                        data.push({
+                            rank: parseInt(v[0]),
+                            minCutoff: parseFloat(v[1]),
+                            beta: parseFloat(v[2]),
+                            dCutoff: parseFloat(v[3]),
+                            meanVariance: parseFloat(v[4]),
+                            meanLatency: parseFloat(v[5]),
+                            validPositions: parseInt(v[6]) || 9
+                        });
+                    } else if (type === 'exponential' && v.length >= 4) {
+                        data.push({
+                            rank: parseInt(v[0]),
+                            alpha: parseFloat(v[1]),
+                            meanVariance: parseFloat(v[2]),
+                            meanLatency: parseFloat(v[3]),
+                            validPositions: parseInt(v[4]) || 9
+                        });
+                    }
+                }
+                if (type === 'oneeuro') {
+                    oneEuroData = data.filter(d => !isNaN(d.meanVariance) && !isNaN(d.meanLatency));
+                    document.getElementById('uploadOneEuro').classList.add('loaded');
+                    document.getElementById('uploadOneEuro').querySelector('.icon').textContent = '\u2705';
+                    document.getElementById('uploadOneEuro').querySelector('p').textContent = `One Euro: ${oneEuroData.length} rows loaded`;
+                } else {
+                    exponentialData = data.filter(d => !isNaN(d.meanVariance) && !isNaN(d.meanLatency));
+                    document.getElementById('uploadExponential').classList.add('loaded');
+                    document.getElementById('uploadExponential').querySelector('.icon').textContent = '\u2705';
+                    document.getElementById('uploadExponential').querySelector('p').textContent = `Exponential: ${exponentialData.length} rows loaded`;
+                }
+                if (oneEuroData && exponentialData) runAnalysis();
+            };
+            reader.readAsText(file);
+        }
+
+        // ===== FIND CLOSEST EXPONENTIAL BY ALPHA =====
+        function findClosestExponential(targetAlpha) {
+            let best = null, bestDiff = Infinity;
+            for (const d of exponentialData) {
+                const diff = Math.abs(d.alpha - targetAlpha);
+                if (diff < bestDiff) { bestDiff = diff; best = d; }
+            }
+            return { point: best, alphaDiff: bestDiff };
+        }
+
+        // ===== MAIN ANALYSIS =====
+        function runAnalysis() {
+            document.getElementById('results').classList.add('show');
+
+            // Get unique minCutoff values from One Euro data
+            const minCutoffs = [...new Set(oneEuroData.map(d => d.minCutoff))].sort((a, b) => a - b);
+            
+            // For each minCutoff, get the row with the SMALLEST beta (closest to zero velocity)
+            const equivalenceData = [];
+            for (const fc of minCutoffs) {
+                const rows = oneEuroData.filter(d => d.minCutoff === fc);
+                // Sort by beta (ascending), then dCutoff (ascending) to get "most stationary" behavior
+                rows.sort((a, b) => a.beta - b.beta || a.dCutoff - b.dCutoff);
+                const bestRow = rows[0]; // smallest beta, smallest dCutoff
+                
+                const equivAlpha = alphaFromMinCutoff(fc);
+                const closest = findClosestExponential(equivAlpha);
+                
+                if (closest.point) {
+                    const varDiff = Math.abs(bestRow.meanVariance - closest.point.meanVariance);
+                    const pctDiff = (varDiff / Math.max(bestRow.meanVariance, closest.point.meanVariance)) * 100;
+                    
+                    equivalenceData.push({
+                        minCutoff: fc,
+                        equivAlpha: equivAlpha,
+                        oneEuroVar: bestRow.meanVariance,
+                        oneEuroLat: bestRow.meanLatency,
+                        oneEuroBeta: bestRow.beta,
+                        oneEuroDCutoff: bestRow.dCutoff,
+                        expAlpha: closest.point.alpha,
+                        expVar: closest.point.meanVariance,
+                        expLat: closest.point.meanLatency,
+                        alphaDiff: closest.alphaDiff,
+                        varDiff: varDiff,
+                        pctDiff: pctDiff,
+                        latDiff: bestRow.meanLatency - closest.point.meanLatency
+                    });
+                }
+            }
+
+            // Red flag: for each minCutoff, compute variance spread across beta/dCutoff
+            const redFlagData = [];
+            for (const fc of minCutoffs) {
+                const rows = oneEuroData.filter(d => d.minCutoff === fc);
+                const vars = rows.map(d => d.meanVariance);
+                const mean = vars.reduce((a, b) => a + b, 0) / vars.length;
+                const std = Math.sqrt(vars.reduce((s, v) => s + (v - mean) ** 2, 0) / vars.length);
+                const cv = (std / mean) * 100;
+                const min = Math.min(...vars);
+                const max = Math.max(...vars);
+                
+                redFlagData.push({
+                    minCutoff: fc,
+                    equivAlpha: alphaFromMinCutoff(fc),
+                    count: rows.length,
+                    meanVar: mean,
+                    stdVar: std,
+                    cv: cv,
+                    minVar: min,
+                    maxVar: max,
+                    range: max - min,
+                    hasRedFlag: cv > 5
+                });
+            }
+
+            // Summary stats
+            const matchCount = equivalenceData.filter(d => d.pctDiff < 10).length;
+            const closeCount = equivalenceData.filter(d => d.pctDiff >= 10 && d.pctDiff < 25).length;
+            const mismatchCount = equivalenceData.filter(d => d.pctDiff >= 25).length;
+            const avgPctDiff = equivalenceData.reduce((s, d) => s + d.pctDiff, 0) / equivalenceData.length;
+            const redFlagCount = redFlagData.filter(d => d.hasRedFlag).length;
+
+            renderSummary(matchCount, closeCount, mismatchCount, avgPctDiff, redFlagCount, equivalenceData.length, redFlagData.length);
+            renderScatterChart(equivalenceData);
+            renderRedFlagChart(redFlagData);
+            renderParetoChart(equivalenceData);
+            renderEquivalenceTable(equivalenceData);
+            renderRedFlagTable(redFlagData);
+            renderConversionTable();
+        }
+
+        // ===== RENDER SUMMARY =====
+        function renderSummary(match, close, mismatch, avgPct, redFlags, totalEquiv, totalRF) {
+            document.getElementById('summaryStats').innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">Variance Matches (&lt;10% diff)</div>
+                    <div class="stat-value green">${match} / ${totalEquiv}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Close (10-25% diff)</div>
+                    <div class="stat-value yellow">${close} / ${totalEquiv}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Average % Difference</div>
+                    <div class="stat-value ${avgPct < 15 ? 'green' : avgPct < 30 ? 'yellow' : 'red'}">${avgPct.toFixed(1)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Red Flags (CV &gt; 5%)</div>
+                    <div class="stat-value ${redFlags === 0 ? 'green' : 'red'}">${redFlags} / ${totalRF}</div>
+                </div>
+            `;
+        }
+
+        // ===== CHART 1: SCATTER =====
+        function renderScatterChart(data) {
+            const canvas = document.getElementById('scatterCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const pad = { top: 50, right: 40, bottom: 70, left: 80 };
+            const gW = W - pad.left - pad.right;
+            const gH = H - pad.top - pad.bottom;
+
+            // Get range
+            const allVars = data.flatMap(d => [d.oneEuroVar, d.expVar]);
+            const maxV = Math.max(...allVars) * 1.1;
+            const minV = 0;
+
+            const sx = v => pad.left + (v - minV) / (maxV - minV) * gW;
+            const sy = v => H - pad.bottom - (v - minV) / (maxV - minV) * gH;
+
+            // Background
+            ctx.fillStyle = '#161b22';
+            ctx.fillRect(0, 0, W, H);
+
+            // Grid
+            ctx.strokeStyle = '#21262d';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const v = minV + i / 5 * (maxV - minV);
+                ctx.beginPath(); ctx.moveTo(sx(v), pad.top); ctx.lineTo(sx(v), H - pad.bottom); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(pad.left, sy(v)); ctx.lineTo(W - pad.right, sy(v)); ctx.stroke();
+                
+                ctx.fillStyle = '#8b949e'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
+                ctx.fillText(v.toFixed(1), sx(v), H - pad.bottom + 18);
+                ctx.textAlign = 'right';
+                ctx.fillText(v.toFixed(1), pad.left - 10, sy(v) + 4);
+            }
+
+            // Diagonal (perfect match line)
+            ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = '#484f58';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sx(minV), sy(minV));
+            ctx.lineTo(sx(maxV), sy(maxV));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Labels
+            ctx.fillStyle = '#c9d1d9'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('Exponential Variance (px) at equivalent alpha', W / 2, H - 20);
+            ctx.save();
+            ctx.translate(20, H / 2); ctx.rotate(-Math.PI / 2);
+            ctx.fillText('One Euro Variance (px) at minCutoff (beta~0)', 0, 0);
+            ctx.restore();
+
+            // Title
+            ctx.fillStyle = '#58a6ff'; ctx.font = 'bold 16px sans-serif';
+            ctx.fillText('Variance Equivalence: One Euro vs Exponential', W / 2, 30);
+
+            // Points
+            const points = [];
+            for (const d of data) {
+                const x = sx(d.expVar);
+                const y = sy(d.oneEuroVar);
+                
+                let color;
+                if (d.pctDiff < 10) color = '#3fb950';
+                else if (d.pctDiff < 25) color = '#d29922';
+                else color = '#f85149';
+
+                ctx.beginPath();
+                ctx.arc(x, y, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = '#0d1117';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                points.push({ x, y, d, color });
+            }
+
+            // Hover
+            canvas.onmousemove = e => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (W / rect.width);
+                const my = (e.clientY - rect.top) * (H / rect.height);
+                let found = null;
+                for (const p of points) {
+                    if (Math.hypot(mx - p.x, my - p.y) < 12) { found = p; break; }
+                }
+                const tip = document.getElementById('tooltip');
+                if (found) {
+                    const d = found.d;
+                    tip.style.display = 'block';
+                    tip.style.left = (e.clientX + 15) + 'px';
+                    tip.style.top = (e.clientY - 10) + 'px';
+                    tip.innerHTML = `
+                        <strong>minCutoff = ${d.minCutoff}</strong><br>
+                        Equiv alpha = ${d.equivAlpha.toFixed(6)}<br>
+                        Closest exp alpha = ${d.expAlpha.toFixed(6)}<br><br>
+                        <strong style="color:#ff6b6b">1-Euro Var: ${d.oneEuroVar.toFixed(2)} px</strong><br>
+                        <strong style="color:#58a6ff">Exp Var: ${d.expVar.toFixed(2)} px</strong><br>
+                        Difference: ${d.varDiff.toFixed(2)} px (${d.pctDiff.toFixed(1)}%)<br><br>
+                        1-Euro Latency: ${d.oneEuroLat.toFixed(0)} ms<br>
+                        Exp Latency: ${d.expLat.toFixed(0)} ms<br>
+                        Latency diff: ${d.latDiff.toFixed(0)} ms
+                    `;
+                } else {
+                    tip.style.display = 'none';
+                }
+            };
+            canvas.onmouseleave = () => { document.getElementById('tooltip').style.display = 'none'; };
+        }
+
+        // ===== CHART 2: RED FLAG =====
+        function renderRedFlagChart(data) {
+            const canvas = document.getElementById('redFlagCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const pad = { top: 50, right: 40, bottom: 70, left: 80 };
+            const gW = W - pad.left - pad.right;
+            const gH = H - pad.top - pad.bottom;
+
+            ctx.fillStyle = '#161b22';
+            ctx.fillRect(0, 0, W, H);
+
+            const maxCV = Math.max(...data.map(d => d.cv), 10) * 1.1;
+            const maxFC = data.length;
+
+            // Threshold line at 5%
+            const threshY = H - pad.bottom - (5 / maxCV) * gH;
+            ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = '#f85149';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(pad.left, threshY); ctx.lineTo(W - pad.right, threshY); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#f85149'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText('Red Flag Threshold (CV = 5%)', pad.left + 5, threshY - 5);
+
+            // Grid
+            ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = H - pad.bottom - (i / 5) * gH;
+                ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+                ctx.fillStyle = '#8b949e'; ctx.font = '12px monospace'; ctx.textAlign = 'right';
+                ctx.fillText((i / 5 * maxCV).toFixed(1) + '%', pad.left - 10, y + 4);
+            }
+
+            // Bars
+            const barW = Math.max(gW / data.length * 0.6, 2);
+            const gap = gW / data.length;
+            
+            data.forEach((d, i) => {
+                const x = pad.left + i * gap + gap / 2;
+                const barH = (d.cv / maxCV) * gH;
+                const y = H - pad.bottom - barH;
+                
+                ctx.fillStyle = d.hasRedFlag ? '#f8514980' : '#3fb95080';
+                ctx.fillRect(x - barW / 2, y, barW, barH);
+                ctx.strokeStyle = d.hasRedFlag ? '#f85149' : '#3fb950';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x - barW / 2, y, barW, barH);
+                
+                // X labels (show every Nth)
+                if (data.length <= 20 || i % Math.ceil(data.length / 15) === 0) {
+                    ctx.fillStyle = '#8b949e'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+                    ctx.save(); ctx.translate(x, H - pad.bottom + 12); ctx.rotate(-Math.PI / 4);
+                    ctx.fillText(d.minCutoff.toFixed(3), 0, 0);
+                    ctx.restore();
+                }
+            });
+
+            // Labels
+            ctx.fillStyle = '#c9d1d9'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('minCutoff values', W / 2, H - 10);
+            ctx.save(); ctx.translate(20, H / 2); ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Coefficient of Variation (%) of Variance', 0, 0);
+            ctx.restore();
+
+            ctx.fillStyle = '#58a6ff'; ctx.font = 'bold 16px sans-serif';
+            ctx.fillText('Red Flag Test: Does Variance Change When beta/dCutoff Change?', W / 2, 30);
+        }
+
+        // ===== CHART 3: PARETO =====
+        function renderParetoChart(equivData) {
+            const canvas = document.getElementById('paretoCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+
+            const pad = { top: 60, right: 50, bottom: 80, left: 90 };
+            const gW = W - pad.left - pad.right;
+            const gH = H - pad.top - pad.bottom;
+
+            ctx.fillStyle = '#161b22';
+            ctx.fillRect(0, 0, W, H);
+
+            // Compute Pareto fronts
+            const oePareto = computePareto(oneEuroData);
+            const exPareto = computePareto(exponentialData);
+
+            const allV = [...oePareto.map(d => d.meanVariance), ...exPareto.map(d => d.meanVariance)];
+            const allL = [...oePareto.map(d => d.meanLatency), ...exPareto.map(d => d.meanLatency)];
+            const minV = 0, maxV = Math.max(...allV) * 1.05;
+            const minL = Math.min(...allL) * 0.9, maxL = Math.max(...allL) * 1.05;
+
+            const sx = v => pad.left + (v - minV) / (maxV - minV) * gW;
+            const sy = l => H - pad.bottom - (l - minL) / (maxL - minL) * gH;
+
+            // Grid
+            ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
+            for (let i = 0; i <= 6; i++) {
+                const v = minV + i / 6 * (maxV - minV);
+                const l = minL + i / 6 * (maxL - minL);
+                ctx.beginPath(); ctx.moveTo(sx(v), pad.top); ctx.lineTo(sx(v), H - pad.bottom); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(pad.left, sy(l)); ctx.lineTo(W - pad.right, sy(l)); ctx.stroke();
+                
+                ctx.fillStyle = '#8b949e'; ctx.font = '12px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(v.toFixed(1), sx(v), H - pad.bottom + 18);
+                ctx.textAlign = 'right';
+                ctx.fillText(l.toFixed(0), pad.left - 10, sy(l) + 4);
+            }
+
+            // Draw equivalence connector lines FIRST (behind everything)
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1;
+            for (const d of equivData) {
+                ctx.strokeStyle = '#484f5860';
+                ctx.beginPath();
+                ctx.moveTo(sx(d.oneEuroVar), sy(d.oneEuroLat));
+                ctx.lineTo(sx(d.expVar), sy(d.expLat));
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // One Euro Pareto line + points
+            const oeSorted = oePareto.sort((a, b) => a.meanVariance - b.meanVariance);
+            ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            oeSorted.forEach((d, i) => {
+                const x = sx(d.meanVariance), y = sy(d.meanLatency);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            oeSorted.forEach(d => {
+                ctx.beginPath();
+                ctx.arc(sx(d.meanVariance), sy(d.meanLatency), 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ff6b6b'; ctx.fill();
+                ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 1.5; ctx.stroke();
+            });
+
+            // Exponential Pareto line + points
+            const exSorted = exPareto.sort((a, b) => a.meanVariance - b.meanVariance);
+            ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            exSorted.forEach((d, i) => {
+                const x = sx(d.meanVariance), y = sy(d.meanLatency);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            exSorted.forEach(d => {
+                ctx.beginPath();
+                ctx.arc(sx(d.meanVariance), sy(d.meanLatency), 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#58a6ff'; ctx.fill();
+                ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 1.5; ctx.stroke();
+            });
+
+            // Highlight equivalent pairs
+            for (const d of equivData) {
+                // Exponential equivalent point - diamond marker
+                const ex = sx(d.expVar), ey = sy(d.expLat);
+                ctx.fillStyle = '#d2a8ff';
+                ctx.beginPath();
+                ctx.moveTo(ex, ey - 6); ctx.lineTo(ex + 6, ey); ctx.lineTo(ex, ey + 6); ctx.lineTo(ex - 6, ey);
+                ctx.closePath(); ctx.fill();
+            }
+
+            // Labels
+            ctx.fillStyle = '#c9d1d9'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('Variance (px) \u2192 Lower is Better', W / 2, H - 25);
+            ctx.save(); ctx.translate(25, H / 2); ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Latency (ms) \u2192 Lower is Better', 0, 0);
+            ctx.restore();
+
+            ctx.fillStyle = '#58a6ff'; ctx.font = 'bold 18px sans-serif';
+            ctx.fillText('Pareto Fronts with Equivalent Parameter Pairs', W / 2, 35);
+
+            // Legend
+            const lx = W - 370, ly = pad.top + 10;
+            ctx.fillStyle = '#0d111790'; ctx.fillRect(lx - 10, ly - 10, 340, 100);
+            ctx.strokeStyle = '#30363d'; ctx.lineWidth = 1; ctx.strokeRect(lx - 10, ly - 10, 340, 100);
+            
+            ctx.font = '13px sans-serif'; ctx.textAlign = 'left';
+            // One Euro
+            ctx.beginPath(); ctx.arc(lx + 8, ly + 10, 5, 0, 2*Math.PI); ctx.fillStyle = '#ff6b6b'; ctx.fill();
+            ctx.fillStyle = '#c9d1d9'; ctx.fillText(`One Euro Pareto (${oePareto.length} pts)`, lx + 20, ly + 14);
+            // Exponential
+            ctx.beginPath(); ctx.arc(lx + 8, ly + 35, 5, 0, 2*Math.PI); ctx.fillStyle = '#58a6ff'; ctx.fill();
+            ctx.fillStyle = '#c9d1d9'; ctx.fillText(`Exponential Pareto (${exPareto.length} pts)`, lx + 20, ly + 39);
+            // Diamond
+            ctx.fillStyle = '#d2a8ff';
+            ctx.beginPath(); ctx.moveTo(lx+8, ly+54); ctx.lineTo(lx+14, ly+60); ctx.lineTo(lx+8, ly+66); ctx.lineTo(lx+2, ly+60); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#c9d1d9'; ctx.fillText('Equivalent exponential point (matched alpha)', lx + 20, ly + 64);
+            // Dashed
+            ctx.setLineDash([3,3]); ctx.strokeStyle = '#484f58'; ctx.beginPath(); ctx.moveTo(lx, ly+80); ctx.lineTo(lx+16, ly+80); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillText('Connector: 1E point \u2194 equivalent exp point', lx + 20, ly + 84);
+        }
+
+        function computePareto(data) {
+            const sorted = [...data].sort((a, b) => a.meanVariance - b.meanVariance);
+            const pareto = [];
+            for (const pt of sorted) {
+                let dominated = false;
+                for (const p of pareto) {
+                    if (p.meanVariance <= pt.meanVariance && p.meanLatency <= pt.meanLatency &&
+                        (p.meanVariance < pt.meanVariance || p.meanLatency < pt.meanLatency)) {
+                        dominated = true; break;
+                    }
+                }
+                if (!dominated) {
+                    // Remove any now-dominated points
+                    for (let i = pareto.length - 1; i >= 0; i--) {
+                        if (pt.meanVariance <= pareto[i].meanVariance && pt.meanLatency <= pareto[i].meanLatency &&
+                            (pt.meanVariance < pareto[i].meanVariance || pt.meanLatency < pareto[i].meanLatency)) {
+                            pareto.splice(i, 1);
+                        }
+                    }
+                    pareto.push(pt);
+                }
+            }
+            return pareto;
+        }
+
+        // ===== TABLE 1: EQUIVALENCE =====
+        function renderEquivalenceTable(data) {
+            let html = `<table>
+                <thead><tr>
+                    <th>minCutoff<br>(Hz)</th>
+                    <th>Calculated<br>Equiv. alpha</th>
+                    <th>Closest Tested<br>Exp. alpha</th>
+                    <th>alpha<br>Diff</th>
+                    <th>1-Euro Var<br>(px)</th>
+                    <th>Exp. Var<br>(px)</th>
+                    <th>Var Diff<br>(px)</th>
+                    <th>Var Diff<br>(%)</th>
+                    <th>1-Euro Lat<br>(ms)</th>
+                    <th>Exp. Lat<br>(ms)</th>
+                    <th>Lat Diff<br>(ms)</th>
+                    <th>Status</th>
+                </tr></thead><tbody>`;
+
+            for (const d of data) {
+                const cls = d.pctDiff < 10 ? 'match' : d.pctDiff < 25 ? 'close' : 'mismatch';
+                const icon = d.pctDiff < 10 ? '\u2705' : d.pctDiff < 25 ? '\u26A0\uFE0F' : '\u274C';
+                html += `<tr>
+                    <td>${d.minCutoff.toFixed(3)}</td>
+                    <td>${d.equivAlpha.toFixed(6)}</td>
+                    <td>${d.expAlpha.toFixed(6)}</td>
+                    <td>${d.alphaDiff.toFixed(6)}</td>
+                    <td style="color:#ff6b6b">${d.oneEuroVar.toFixed(2)}</td>
+                    <td style="color:#58a6ff">${d.expVar.toFixed(2)}</td>
+                    <td>${d.varDiff.toFixed(2)}</td>
+                    <td class="${cls}">${d.pctDiff.toFixed(1)}%</td>
+                    <td style="color:#ff6b6b">${d.oneEuroLat.toFixed(0)}</td>
+                    <td style="color:#58a6ff">${d.expLat.toFixed(0)}</td>
+                    <td>${d.latDiff.toFixed(0)}</td>
+                    <td>${icon}</td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('equivalenceTableContainer').innerHTML = html;
+        }
+
+        // ===== TABLE 2: RED FLAG =====
+        function renderRedFlagTable(data) {
+            let html = `<table>
+                <thead><tr>
+                    <th>minCutoff<br>(Hz)</th>
+                    <th>Equiv.<br>alpha</th>
+                    <th># Combos<br>Tested</th>
+                    <th>Mean Var<br>(px)</th>
+                    <th>Std Dev<br>(px)</th>
+                    <th>Min Var<br>(px)</th>
+                    <th>Max Var<br>(px)</th>
+                    <th>Range<br>(px)</th>
+                    <th>CV (%)</th>
+                    <th>Status</th>
+                </tr></thead><tbody>`;
+            
+            for (const d of data) {
+                const cls = d.hasRedFlag ? 'mismatch' : 'match';
+                const icon = d.hasRedFlag ? '\uD83D\uDEA9' : '\u2705';
+                html += `<tr>
+                    <td>${d.minCutoff.toFixed(3)}</td>
+                    <td>${d.equivAlpha.toFixed(6)}</td>
+                    <td>${d.count}</td>
+                    <td>${d.meanVar.toFixed(2)}</td>
+                    <td>${d.stdVar.toFixed(2)}</td>
+                    <td>${d.minVar.toFixed(2)}</td>
+                    <td>${d.maxVar.toFixed(2)}</td>
+                    <td>${d.range.toFixed(2)}</td>
+                    <td class="${cls}">${d.cv.toFixed(2)}%</td>
+                    <td>${icon}</td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('redFlagTableContainer').innerHTML = html;
+        }
+
+        // ===== TABLE 3: CONVERSION REFERENCE =====
+        function renderConversionTable() {
+            const alphas = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 0.95, 0.99];
+            const cutoffs = [0.001, 0.005, 0.01, 0.021, 0.041, 0.061, 0.081, 0.101, 0.201, 0.5, 1.0, 2.0, 5.0, 10.0];
+
+            let html = '<div style="display:flex;gap:20px;"><div style="flex:1;">';
+            html += `<h4 style="color:#58a6ff;margin:10px 0;">alpha &rarr; minCutoff</h4>
+                <table><thead><tr>
+                    <th>alpha</th><th>minCutoff (Hz)</th><th>tau (s)</th><th>Description</th>
+                </tr></thead><tbody>`;
+            for (const a of alphas) {
+                const fc = minCutoffFromAlpha(a);
+                const tau = 1 / (2 * Math.PI * fc);
+                let desc = '';
+                if (a < 0.01) desc = 'Very heavy smoothing';
+                else if (a < 0.05) desc = 'Heavy smoothing';
+                else if (a < 0.2) desc = 'Medium smoothing';
+                else if (a < 0.5) desc = 'Light smoothing';
+                else desc = 'Minimal smoothing';
+                html += `<tr><td>${a}</td><td>${fc.toFixed(4)}</td><td>${tau.toFixed(4)}</td><td style="color:#8b949e;font-size:12px">${desc}</td></tr>`;
+            }
+            html += '</tbody></table></div>';
+
+            html += '<div style="flex:1;">';
+            html += `<h4 style="color:#ff6b6b;margin:10px 0;">minCutoff &rarr; alpha</h4>
+                <table><thead><tr>
+                    <th>minCutoff (Hz)</th><th>alpha</th><th>1-alpha<br>(smoothing)</th><th>tau (s)</th>
+                </tr></thead><tbody>`;
+            for (const fc of cutoffs) {
+                const a = alphaFromMinCutoff(fc);
+                const tau = 1 / (2 * Math.PI * fc);
+                html += `<tr><td>${fc}</td><td>${a.toFixed(6)}</td><td>${(1-a).toFixed(6)}</td><td>${tau.toFixed(4)}</td></tr>`;
+            }
+            html += '</tbody></table></div></div>';
+
+            html += `<div class="math-box" style="margin-top:15px;">
+                <strong style="color:#d2a8ff;">Verification formula (at ${SAMPLING_RATE} Hz):</strong><br>
+                <span class="eq">Te</span> = 1/${SAMPLING_RATE} = <span class="val">${Te.toFixed(6)} s</span><br>
+                <span class="eq">alpha</span> = 1 / (1 + 1/(2*pi * fc_min * Te))<br>
+                <span class="eq">fc_min</span> = alpha / (2*pi * Te * (1 - alpha))<br><br>
+                <span class="note">Example: minCutoff = 0.021 Hz</span><br>
+                tau = 1/(2*pi*0.021) = <span class="val">${(1/(2*Math.PI*0.021)).toFixed(4)} s</span><br>
+                alpha = 1/(1 + ${(1/(2*Math.PI*0.021)).toFixed(4)} / ${Te.toFixed(6)}) = 1/(1 + ${(1/(2*Math.PI*0.021*Te)).toFixed(2)}) = <span class="val">${alphaFromMinCutoff(0.021).toFixed(6)}</span>
+            </div>`;
+
+            document.getElementById('conversionTableContainer').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

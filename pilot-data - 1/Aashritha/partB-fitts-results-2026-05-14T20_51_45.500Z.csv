@@ -1,0 +1,5 @@
+ParticipantID,Part,FilterOrder,VarianceOrder,PairNumber,PairVariance_px,PairVariance_pct,PairDescription,FilterType,FilterRank,FilterVariance_px,FilterLatency,TargetSize,Amplitude,NCompleted,NTotal,NTimedOutInProgress,NTimedOutNotAttempted,CompletionRate,MeanMT,Ae,We,IDe,TP,MeanReEntries
+P07,Part B,oneEuro,Low → Med → High,2,27.568884128082324,3.3498,"Medium SD (~27.6) - Interpolated",oneEuro,interp,27.5689,377.93,82.30000000000001,349.775,8,8,0,0,1.0000,7.0626,632.3619,51.3632,3.7346,0.5288,1.13
+P07,Part B,oneEuro,Low → Med → High,2,27.568884128082324,3.3498,"Medium SD (~27.6) - Interpolated",oneEuro,interp,27.5689,377.93,49.379999999999995,366.23499999999996,8,8,0,0,1.0000,8.4485,663.5847,34.4578,4.3404,0.5137,1.88
+P07,Part B,oneEuro,Low → Med → High,2,27.568884128082324,3.3498,"Medium SD (~27.6) - Interpolated",exponential,interp,27.5689,347.18,82.30000000000001,349.775,8,8,0,0,1.0000,6.4520,623.9486,96.1099,2.9054,0.4503,1.63
+P07,Part B,oneEuro,Low → Med → High,2,27.568884128082324,3.3498,"Medium SD (~27.6) - Interpolated",exponential,interp,27.5689,347.18,49.379999999999995,366.23499999999996,8,8,0,0,1.0000,7.3832,671.0515,43.2923,4.0444,0.5478,1.25

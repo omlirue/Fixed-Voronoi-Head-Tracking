@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Head Movement Cursor Control</title>
+
+    <!-- Add math.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+
+    <!-- Add PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <!-- MediaPipe FaceLandmarker (tasks-vision API) - same as Timothy's smooth head pose -->
+    <!-- Model loads lazily when needed, not on page load -->
+    <script type="module" src="js/face-landmarker-init.js"></script>
+    
+    <!-- Camera utils for fallback only -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+    <!-- React dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Three.js for 3D head visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Your styles -->
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="pareto-slider.css" />
+
+    <!-- Your scripts -->
+    <script src="js/state.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/math.js"></script>
+    <script src="js/head-pose.js"></script>
+    <script src="js/grid.js"></script>
+    <script src="js/initialization.js"></script>
+    <script src="js/dataCollection.js"></script>
+    <script src="js/calibration.js"></script>
+    <script src="js/oneEuroFilter.js"></script>
+    <script src="js/pareto-front-parameters.js"></script>
+    <script src="js/exponential-parameters.js"></script>
+    <script src="js/tracking.js"></script>
+    <script src="js/tracking-controls.js"></script>
+    <script src="js/rotation-live-control.js"></script>
+    <script src="js/threejs-head-visualization.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="js/fitts-experiment.js"></script>
+    <script src="js/mode-comparison-inline.js?v=20260120-v1"></script>
+    <script src="js/calibration-test-experiment.js"></script>
+    <script src="js/variance-filter-pilot-experiment.js?v=2"></script>
+    <script src="js/calibration-compare-pilot-experiment.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/filter-optimization.js"></script>
+    <script src="js/improved-timing-detection.js"></script>
+    <script src="js/parameter-optimization.js"></script>
+    <script src="js/filter-equivalence-verification.js"></script>
+    <script src="js/pareto-analysis-tool.js"></script>
+  </head>
+  <body>
+    <!-- Status Display -->
+    <!-- <div id="status">Initializing...</div> -->
+
+    <!-- New Configuration Screen -->
+    <div id="config-screen">
+      <div class="config-container">
+        <h1>Head Movement Configuration</h1>
+
+        <div class="config-section">
+          <h3>Line Animation</h3>
+          <div class="radio-group">
+
+            <input
+              type="radio"
+              id="anim-no-line"
+              name="animation"
+              value="without-line"
+              checked
+            />
+            <label for="anim-no-line">Without a growing line</label>
+            <input
+            type="radio"
+            id="anim-line"
+            name="animation"
+            value="with-line"
+          />
+          <label for="anim-line">With a growing line</label>
+          </div>
+        </div>
+
+        <!-- Rotation and rotation-only mode are always enabled -->
+
+        <div class="config-section">
+          <h3>Upload Previous Calibration</h3>
+          <div class="upload-container">
+            <input type="file" id="calibration-upload" accept=".csv" style="display: none;" />
+            <button id="upload-button" class="config-button">Choose Calibration File</button>
+            <span id="file-name">No file chosen</span>
+          </div>
+        </div>
+
+        <button id="config-button" class="start-button">Start Calibration</button>
+      </div>
+    </div>
+
+    <!-- Main Calibration UI -->
+    <div id="calibration-ui" class="hidden">
+      <div id="calibration-target"></div>
+      <div id="calibration-line"></div>
+      <div id="calibration-instructions">
+       Place your head on the red circle and press ENTER
+        <div id="progress">
+          Progress: <span id="current-point-text">1</span>/20
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Preview -->
+    <video id="video-input" class="video-preview" playsinline></video>
+
+    <!-- Three.js 3D Head Visualization -->
+    <div id="threejs-head-container" style="display: none;"></div>
+
+    <!-- DOM element for mounting tracking controls -->
+    <div id="tracking-controls-container"></div>
+
+    <!-- Experiment buttons moved to tracking controls -->
+
+    <!-- Add this script tag before the closing body tag -->
+    <script>
+      // Debug: Check what's loaded when DOM is ready
+      window.addEventListener('DOMContentLoaded', () => {
+        console.log('=== DOM Content Loaded ===');
+        console.log('Scripts loaded check:');
+        console.log('  - Papa (PapaParse):', typeof Papa);
+        console.log('  - window.state:', typeof window.state);
+        console.log('  - window.fittsExperiment:', typeof window.fittsExperiment);
+        console.log('  - window.modeComparisonExperiment:', typeof window.modeComparisonExperiment);
+        console.log('  - ModeComparisonExperiment class:', typeof ModeComparisonExperiment);
+        console.log('=========================');
+      });
+    </script>
+    <script>
+      document.getElementById('config-button').addEventListener('click', function() {
+        state.config = {
+          ...state.config,
+          coordinateSystem: "2d",
+          animationStyle: document.querySelector('input[name="animation"]:checked').value,
+          useRotation: true,
+          rotationOnlyMode: true
+        };
+        
+        console.log("Starting calibration with config:", state.config);
+        
+        document.getElementById('config-screen').classList.add('hidden');
+        startCalibration();
+      });
+
+      // Experiment buttons are now handled in tracking-controls.js
+    </script>
+
+    <!-- Rotation Features Plugin (Legacy scripts removed - native support active) -->
+    <!-- The live rotation control is handled by rotation-live-control.js -->
+  </body>
+</html>

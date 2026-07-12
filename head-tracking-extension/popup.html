@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Permission</title>
+    <style>
+        body { 
+            width: 300px; 
+            padding: 20px; 
+            text-align: center; 
+            font-family: Arial, sans-serif; 
+        }
+        video { 
+            width: 100%; 
+            max-height: 200px; 
+            margin-bottom: 10px; 
+        }
+        button { 
+            padding: 10px; 
+            margin: 5px; 
+        }
+    </style>
+</head>
+<body>
+    <h2>Camera Access</h2>
+    <video id="preview" autoplay playsinline></video>
+    <div>
+        <button id="allow">Allow Camera</button>
+        <button id="deny">Deny</button>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

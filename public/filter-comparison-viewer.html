@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Comparison Viewer - One Euro vs Exponential Smoothing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .upload-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            flex: 1;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area.oneeuro {
+            border-color: #ff6b6b;
+        }
+        .upload-area.exponential {
+            border-color: #4499ff;
+        }
+        .upload-area:hover {
+            background-color: #f9f9f9;
+        }
+        .upload-area.dragover {
+            background-color: #f0f8ff;
+            transform: scale(1.02);
+        }
+        .upload-area.loaded {
+            background-color: #e8f5e9;
+            border-style: solid;
+        }
+        .upload-area.loaded.oneeuro {
+            background-color: #ffe8e8;
+        }
+        .upload-area.loaded.exponential {
+            background-color: #e8f0ff;
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-value.oneeuro {
+            color: #ff6b6b;
+        }
+        .stat-value.exponential {
+            color: #4499ff;
+        }
+        .stat-value.winner {
+            color: #00aa00;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .instructions {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 100%;
+            width: 100%;
+            margin: 20px auto;
+            display: block;
+            background: white;
+        }
+        #results {
+            display: none;
+        }
+        #results.show {
+            display: block;
+        }
+        .comparison-tables {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .table-container {
+            flex: 1;
+        }
+        .table-container h3 {
+            margin-top: 0;
+        }
+        .table-container.oneeuro h3 {
+            color: #ff6b6b;
+        }
+        .table-container.exponential h3 {
+            color: #4499ff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        th, td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .table-scroll {
+            max-height: 3000px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .winner-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+            display: none;
+        }
+        .winner-banner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" style="
+      position: fixed; top: 15px; left: 15px; padding: 8px 18px;
+      background: rgba(0,0,0,0.8); color: #64c8ff; text-decoration: none;
+      border-radius: 5px; border: 1px solid #64c8ff; z-index: 3000;
+      font-size: 14px;
+    ">&larr; Back to Home</a>
+    <div class="container">
+        <h1>🔬 Filter Comparison Viewer</h1>
+        <p class="subtitle">Compare One Euro Filter vs Exponential Smoothing Performance</p>
+        
+        <div class="instructions">
+            <h3>How to Use:</h3>
+            <p style="background: #ffe8a3; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                ℹ️ <strong>Sample data loads automatically!</strong> You'll see demo graphs below. 
+                To use your own data, simply click the upload boxes to select your CSV files.
+            </p>
+            <ol>
+                <li>Export both Pareto front CSVs from your parameter optimization system</li>
+                <li>Upload the <strong style="color: #ff6b6b;">One Euro Filter CSV</strong> in the left box</li>
+                <li>Upload the <strong style="color: #4499ff;">Exponential Smoothing CSV</strong> in the right box</li>
+                <li>View <strong>three visualizations</strong>:
+                    <ul style="margin-top: 5px;">
+                        <li>📊 <strong>Individual Filter Graphs</strong> - See each filter's Pareto front separately with its own scale</li>
+                        <li>⚔️ <strong>Direct Comparison</strong> - Both filters overlaid on the same scale to compare performance</li>
+                    </ul>
+                </li>
+                <li><strong>Tip:</strong> Double-click either upload box to reload sample data</li>
+                <li><strong>Hover over points</strong> in any graph to see detailed parameter values</li>
+            </ol>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area oneeuro" id="uploadOneEuro">
+                <div class="upload-icon">🔴</div>
+                <p><strong>One Euro Filter CSV</strong></p>
+                <p>Drag and drop or click to select</p>
+                <p style="font-size: 11px; color: #999;">Expected: Rank, minCutoff, beta, dCutoff, meanVariance, meanLatency, validPositions</p>
+                <input type="file" class="file-input" id="fileOneEuro" accept=".csv" />
+            </div>
+
+            <div class="upload-area exponential" id="uploadExponential">
+                <div class="upload-icon">🔵</div>
+                <p><strong>Exponential Smoothing CSV</strong></p>
+                <p>Drag and drop or click to select</p>
+                <p style="font-size: 11px; color: #999;">Expected: Rank, alpha, meanVariance, meanLatency, validPositions</p>
+                <input type="file" class="file-input" id="fileExponential" accept=".csv" />
+            </div>
+        </div>
+
+        <div id="results">
+            <div class="stats" id="stats"></div>
+            
+            <h2 style="text-align: center; color: #333; margin-top: 30px; margin-bottom: 10px;">📊 Individual Filter Analysis</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">View each filter's Pareto front separately to understand their individual characteristics</p>
+            
+            <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                <div style="flex: 1;">
+                    <h3 style="text-align: center; color: #ff6b6b; margin-bottom: 10px;">🔴 One Euro Filter</h3>
+                    <canvas id="oneEuroCanvas" width="600" height="400" style="width: 100%;"></canvas>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="text-align: center; color: #4499ff; margin-bottom: 10px;">🔵 Exponential Smoothing</h3>
+                    <canvas id="exponentialCanvas" width="600" height="400" style="width: 100%;"></canvas>
+                </div>
+            </div>
+            
+            <h2 style="text-align: center; color: #333; margin-top: 40px; margin-bottom: 10px;">⚔️ Direct Comparison</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">Both filters overlaid on the same scale - showing all tested parameter combinations</p>
+    
+            <canvas id="comparisonCanvas" width="1200" height="700"></canvas>
+            
+            <div id="tooltip" style="
+                position: fixed;
+                background: rgba(0,0,0,0.85);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                pointer-events: none;
+                display: none;
+                z-index: 10000;
+                max-width: 280px;
+            "></div>
+            
+            <div class="comparison-tables">
+                <div class="table-container oneeuro">
+                    <h3>🔴 One Euro Filter - All Parameter Combinations</h3>
+                    <div class="table-scroll">
+                        <table id="oneEuroTable">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>minCutoff</th>
+                                    <th>beta</th>
+                                    <th>dCutoff</th>
+                                    <th>Variance (px)</th>
+                                    <th>Latency (ms)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="oneEuroTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="table-container exponential">
+                    <h3>🔵 Exponential Smoothing - All Alpha Values</h3>
+                    <div class="table-scroll">
+                        <table id="exponentialTable">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Alpha (α)</th>
+                                    <th>Variance (px)</th>
+                                    <th>Latency (ms)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exponentialTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Draw a monotone cubic spline, skipping outlier jumps at the
+         * start and end so the curve only covers the continuous region.
+         * Points (dots) are still drawn at their true positions by the caller.
+         */
+        /**
+         * Returns {start, end} — the index range of the continuous region.
+         * Outlier points outside this range should not be drawn.
+         */
+        function getContinuousRange(points) {
+            const n = points.length;
+            if (n < 4) return { start: 0, end: n - 1 };
+            
+            const gaps = [];
+            for (let i = 0; i < n - 1; i++) {
+                gaps.push(Math.abs(points[i + 1].y - points[i].y));
+            }
+            const sortedGaps = [...gaps].sort((a, b) => a - b);
+            const median = sortedGaps[Math.floor(sortedGaps.length / 2)];
+            const threshold = Math.max(median * 4, 1);
+            
+            let start = 0;
+            while (start < gaps.length - 2 && gaps[start] > threshold) start++;
+            let end = n - 1;
+            while (end > start + 1 && gaps[end - 1] > threshold) end--;
+            
+            return { start, end };
+        }
+
+        function drawMonotoneCurve(ctx, points) {
+            const n = points.length;
+            if (n < 2) return;
+            if (n === 2) {
+                ctx.moveTo(points[0].x, points[0].y);
+                ctx.lineTo(points[1].x, points[1].y);
+                return;
+            }
+            
+            const { start, end } = getContinuousRange(points);
+            const sub = points.slice(start, end + 1);
+            if (sub.length < 2) {
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < n; i++) ctx.lineTo(points[i].x, points[i].y);
+                return;
+            }
+            
+            const sn = sub.length;
+            const dx = [], dy = [], m = [];
+            for (let i = 0; i < sn - 1; i++) {
+                dx.push(sub[i + 1].x - sub[i].x);
+                dy.push(sub[i + 1].y - sub[i].y);
+                m.push(dx[i] === 0 ? 0 : dy[i] / dx[i]);
+            }
+            const tangents = new Array(sn);
+            tangents[0] = m[0];
+            tangents[sn - 1] = m[sn - 2];
+            for (let i = 1; i < sn - 1; i++) {
+                if (m[i - 1] * m[i] <= 0) {
+                    tangents[i] = 0;
+                } else {
+                    tangents[i] = (m[i - 1] + m[i]) / 2;
+                }
+            }
+            for (let i = 0; i < sn - 1; i++) {
+                if (Math.abs(m[i]) < 1e-10) {
+                    tangents[i] = 0;
+                    tangents[i + 1] = 0;
+                } else {
+                    const alpha = tangents[i] / m[i];
+                    const beta = tangents[i + 1] / m[i];
+                    const mag = Math.sqrt(alpha * alpha + beta * beta);
+                    if (mag > 3) {
+                        tangents[i] = 3 * alpha / mag * m[i];
+                        tangents[i + 1] = 3 * beta / mag * m[i];
+                    }
+                }
+            }
+            ctx.moveTo(sub[0].x, sub[0].y);
+            for (let i = 0; i < sn - 1; i++) {
+                const d = dx[i];
+                const cp1x = sub[i].x + d / 3;
+                const cp1y = sub[i].y + tangents[i] * d / 3;
+                const cp2x = sub[i + 1].x - d / 3;
+                const cp2y = sub[i + 1].y - tangents[i + 1] * d / 3;
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, sub[i + 1].x, sub[i + 1].y);
+            }
+        }
+
+        let oneEuroData = null;
+        let exponentialData = null;
+
+        // File upload handling for One Euro
+        const uploadOneEuro = document.getElementById('uploadOneEuro');
+        const fileOneEuro = document.getElementById('fileOneEuro');
+        
+        uploadOneEuro.addEventListener('click', () => fileOneEuro.click());
+        uploadOneEuro.addEventListener('dragover', (e) => handleDragOver(e, uploadOneEuro));
+        uploadOneEuro.addEventListener('dragleave', () => uploadOneEuro.classList.remove('dragover'));
+        uploadOneEuro.addEventListener('drop', (e) => handleDrop(e, uploadOneEuro, 'oneeuro'));
+        fileOneEuro.addEventListener('change', (e) => handleFileSelect(e, 'oneeuro'));
+
+        // File upload handling for Exponential
+        const uploadExponential = document.getElementById('uploadExponential');
+        const fileExponential = document.getElementById('fileExponential');
+        
+        uploadExponential.addEventListener('click', () => fileExponential.click());
+        uploadExponential.addEventListener('dragover', (e) => handleDragOver(e, uploadExponential));
+        uploadExponential.addEventListener('dragleave', () => uploadExponential.classList.remove('dragover'));
+        uploadExponential.addEventListener('drop', (e) => handleDrop(e, uploadExponential, 'exponential'));
+        fileExponential.addEventListener('change', (e) => handleFileSelect(e, 'exponential'));
+
+        function handleDragOver(e, element) {
+            e.preventDefault();
+            element.classList.add('dragover');
+        }
+
+        function handleDrop(e, element, type) {
+            e.preventDefault();
+            element.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0], type, element);
+            }
+        }
+
+        function handleFileSelect(e, type) {
+            const files = e.target.files;
+            const element = type === 'oneeuro' ? uploadOneEuro : uploadExponential;
+            if (files.length > 0) {
+                processFile(files[0], type, element);
+            }
+        }
+
+        function processFile(file, type, element) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                parseCSV(csv, type, element);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csv, type, element) {
+            const lines = csv.trim().split('\n').filter(line => line.trim().length > 0);
+            if (lines.length < 2) {
+                alert(`CSV file is empty or invalid for ${type}`);
+                return;
+            }
+            
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim());
+                
+                if (type === 'oneeuro') {
+                    // Expected: Rank, minCutoff, beta, dCutoff, meanVariance, meanLatency, validPositions
+                    // Be flexible with column count
+                    if (values.length >= 5) {
+                        const item = {
+                            rank: parseInt(values[0]) || i,
+                            minCutoff: parseFloat(values[1]),
+                            beta: parseFloat(values[2]),
+                            dCutoff: parseFloat(values[3]),
+                            meanVariance: parseFloat(values[4]),
+                            meanLatency: parseFloat(values[5]) || 0,
+                            validPositions: parseInt(values[6]) || 0
+                        };
+                        
+                        // Validate that we got valid numbers
+                        if (!isNaN(item.meanVariance) && !isNaN(item.meanLatency)) {
+                            data.push(item);
+                        }
+                    }
+                } else {
+                    // Expected: Rank, alpha, meanVariance, meanLatency, validPositions
+                    // Be flexible - might have more or fewer columns
+                    if (values.length >= 3) {
+                        const item = {
+                            rank: parseInt(values[0]) || i,
+                            alpha: parseFloat(values[1]),
+                            meanVariance: parseFloat(values[2]),
+                            meanLatency: parseFloat(values[3]) || 0,
+                            validPositions: parseInt(values[4]) || 0
+                        };
+                        
+                        // Validate that we got valid numbers
+                        if (!isNaN(item.alpha) && !isNaN(item.meanVariance) && !isNaN(item.meanLatency)) {
+                            data.push(item);
+                        }
+                    }
+                }
+            }
+
+            if (data.length === 0) {
+                alert(`No valid data found in CSV for ${type}.\n\nExpected format:\n${
+                    type === 'oneeuro' 
+                    ? 'Rank,minCutoff,beta,dCutoff,meanVariance,meanLatency,validPositions' 
+                    : 'Rank,alpha,meanVariance,meanLatency,validPositions'
+                }\n\nFound headers: ${headers.join(', ')}\n\nFirst data line: ${lines[1] || 'none'}`);
+                return;
+            }
+
+            console.log(`Loaded ${data.length} rows for ${type}`);
+
+            // Store data
+            if (type === 'oneeuro') {
+                oneEuroData = data;
+                element.classList.add('loaded');
+                element.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p><strong>One Euro Filter Loaded</strong></p>
+                    <p>${data.length} parameter combinations</p>
+                    <p style="font-size: 10px; color: #666;">Click to change file</p>
+                `;
+            } else {
+                exponentialData = data;
+                element.classList.add('loaded');
+                element.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <p><strong>Exponential Smoothing Loaded</strong></p>
+                    <p>${data.length} alpha values</p>
+                    <p style="font-size: 10px; color: #666;">Click to change file</p>
+                `;
+            }
+
+            // If both loaded, show comparison
+            if (oneEuroData && exponentialData) {
+                displayComparison();
+            }
+        }
+
+        function displayComparison() {
+            const results = document.getElementById('results');
+            results.style.display = 'block';
+            results.classList.add('show');
+            
+            // Calculate Pareto-optimal subsets, then remove outlier edges
+            function getVisiblePareto(data) {
+                const pareto = filterParetoOptimal(data);
+                const sorted = [...pareto].sort((a, b) => a.meanVariance - b.meanVariance);
+                const pts = sorted.map(d => ({ y: -d.meanLatency, data: d }));
+                const range = getContinuousRange(pts);
+                return sorted.slice(range.start, range.end + 1);
+            }
+            const oneEuroPareto = getVisiblePareto(oneEuroData);
+            const expPareto = getVisiblePareto(exponentialData);
+            
+            console.log('Displaying comparison with:', {
+                oneEuroTotal: oneEuroData.length,
+                oneEuroPareto: oneEuroPareto.length,
+                exponentialTotal: exponentialData.length,
+                exponentialPareto: expPareto.length
+            });
+            
+            // Calculate statistics from visible Pareto-optimal points
+            const oneEuroVariances = oneEuroPareto.map(d => d.meanVariance);
+            const oneEuroLatencies = oneEuroPareto.map(d => d.meanLatency);
+            const expVariances = expPareto.map(d => d.meanVariance);
+            const expLatencies = expPareto.map(d => d.meanLatency);
+            
+            const oneEuroBestVar = Math.min(...oneEuroVariances);
+            const oneEuroBestLat = Math.min(...oneEuroLatencies);
+            const expBestVar = Math.min(...expVariances);
+            const expBestLat = Math.min(...expLatencies);
+            
+            // Update stats - show Pareto-optimal counts
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                <div class="stat">
+                    <div class="stat-value oneeuro">${oneEuroPareto.length}</div>
+                    <div class="stat-label">One Euro Pareto-Optimal</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value exponential">${expPareto.length}</div>
+                    <div class="stat-label">Exponential Pareto-Optimal</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value ${oneEuroBestVar < expBestVar ? 'winner' : ''}">${oneEuroBestVar.toFixed(2)}px</div>
+                    <div class="stat-label">One Euro Best Variance</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value ${expBestVar < oneEuroBestVar ? 'winner' : ''}">${expBestVar.toFixed(2)}px</div>
+                    <div class="stat-label">Exp Best Variance</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value ${oneEuroBestLat < expBestLat ? 'winner' : ''}">${oneEuroBestLat.toFixed(0)}ms</div>
+                    <div class="stat-label">One Euro Best Latency</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value ${expBestLat < oneEuroBestLat ? 'winner' : ''}">${expBestLat.toFixed(0)}ms</div>
+                    <div class="stat-label">Exp Best Latency</div>
+                </div>
+            `;
+            
+            // Draw individual graphs
+            drawIndividualGraph('oneEuroCanvas', oneEuroData, '#ff6b6b', 'One Euro Filter');
+            drawIndividualGraph('exponentialCanvas', exponentialData, '#4499ff', 'Exponential Smoothing');
+            
+            // Draw comparison graph
+            drawComparisonGraph();
+            
+            // Populate tables
+            populateTables();
+        }
+
+        function adjustColor(color, amount) {
+            const hex = color.replace('#', '');
+            const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+            const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+            const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+
+        /**
+         * Filter data to only include Pareto-optimal (non-dominated) points.
+         * For minimization of both variance and latency, a point is dominated if there exists
+         * another point with both lower variance AND lower latency.
+         * 
+         * This ensures the Pareto front curve only connects truly optimal trade-off points.
+         * Removes exact duplicates (same variance AND latency) keeping first occurrence.
+         */
+        function filterParetoOptimal(data) {
+            // Pre-filter invalid points (matches parameter-optimization.js logic)
+            const validData = data.filter(d => {
+                // Basic validity
+                if (d.meanVariance === Infinity || isNaN(d.meanVariance)) return false;
+                if (d.meanLatency === Infinity || isNaN(d.meanLatency)) return false;
+                if (d.meanVariance < 0 || d.meanLatency < 0) return false;
+                if (d.validPositions !== undefined && d.validPositions < 1) return false;
+                
+                // One Euro specific checks (if properties exist)
+                if (d.beta !== undefined && d.dCutoff !== undefined) {
+                    if (d.beta <= 0 || d.dCutoff <= 0) return false;
+                }
+                
+                return true;
+            });
+
+            // Remove EXACT duplicates (same variance AND latency values)
+            // This handles cases like beta=0 where dCutoff doesn't matter
+            const seen = new Map();
+            const uniqueData = [];
+            for (const point of validData) {
+                // Round to 2 decimal places to catch floating point near-matches
+                const key = `${point.meanVariance.toFixed(2)}_${point.meanLatency.toFixed(2)}`;
+                if (!seen.has(key)) {
+                    seen.set(key, true);
+                    uniqueData.push(point);
+                }
+            }
+            console.log(`Removed exact duplicates: ${data.length} → ${uniqueData.length} unique variance/latency pairs`);
+            
+            // Standard Pareto filtering
+            const paretoSet = [];
+            
+            // Sort by variance first for efficiency
+            const sorted = [...uniqueData].sort((a, b) => a.meanVariance - b.meanVariance);
+            
+            for (const candidate of sorted) {
+                let isDominated = false;
+                
+                // Check if this point is dominated by any point in the Pareto set
+                for (const paretoPoint of paretoSet) {
+                    // A point is dominated if another point is better or equal in ALL objectives
+                    // and strictly better in at least one objective
+                    if (paretoPoint.meanVariance <= candidate.meanVariance && 
+                        paretoPoint.meanLatency <= candidate.meanLatency &&
+                        (paretoPoint.meanVariance < candidate.meanVariance || 
+                         paretoPoint.meanLatency < candidate.meanLatency)) {
+                        isDominated = true;
+                        break;
+                    }
+                }
+                
+                if (!isDominated) {
+                    // Remove any points from Pareto set that are dominated by the candidate
+                    const newParetoSet = paretoSet.filter(paretoPoint => {
+                        const candidateDominates = 
+                            candidate.meanVariance <= paretoPoint.meanVariance && 
+                            candidate.meanLatency <= paretoPoint.meanLatency &&
+                            (candidate.meanVariance < paretoPoint.meanVariance || 
+                             candidate.meanLatency < paretoPoint.meanLatency);
+                        return !candidateDominates;
+                    });
+                    
+                    paretoSet.length = 0;
+                    paretoSet.push(...newParetoSet, candidate);
+                }
+            }
+            
+            console.log(`Pareto filtering: ${uniqueData.length} unique → ${paretoSet.length} Pareto-optimal points`);
+            
+            // Sort by variance for consistent display
+            paretoSet.sort((a, b) => a.meanVariance - b.meanVariance);
+            
+            return paretoSet;
+        }
+
+        /**
+         * Draw individual Pareto front for a single filter
+         */
+        function drawIndividualGraph(canvasId, data, color, title) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Filter to Pareto-optimal points
+            const paretoData = filterParetoOptimal(data);
+            
+            // Use only the continuous (non-outlier) region for axis bounds
+            const sortedForRange = [...paretoData].sort((a, b) => a.meanVariance - b.meanVariance);
+            const ptsForRange = sortedForRange.map(d => ({ y: -d.meanLatency, data: d }));
+            const visRange = getContinuousRange(ptsForRange);
+            const visibleData = sortedForRange.slice(visRange.start, visRange.end + 1);
+            
+            const variances = visibleData.map(d => d.meanVariance);
+            const latencies = visibleData.map(d => d.meanLatency);
+            
+            const minVar = Math.min(...variances);
+            const maxVar = Math.max(...variances);
+            const minLat = Math.min(...latencies);
+            const maxLat = Math.max(...latencies);
+            
+            // Add padding to ranges; clamp minimums at 0 (no negative axes)
+            const varRange = maxVar - minVar || 1;
+            const latRange = maxLat - minLat || 1;
+            const paddedMinVar = Math.max(0, minVar - varRange * 0.05);
+            const paddedMaxVar = maxVar + varRange * 0.05;
+            const paddedMinLat = Math.max(0, minLat - latRange * 0.05);
+            const paddedMaxLat = maxLat + latRange * 0.05;
+            
+            // Padding
+            const padding = 60;
+            const graphWidth = width - 2 * padding;
+            const graphHeight = height - 2 * padding;
+            
+            // Linear scale for both axes
+            const scaleX = (variance) => padding + (variance - paddedMinVar) / (paddedMaxVar - paddedMinVar) * graphWidth;
+            const scaleY = (latency) => height - padding - (latency - paddedMinLat) / (paddedMaxLat - paddedMinLat) * graphHeight;
+            
+            // Draw background
+            ctx.fillStyle = '#f9f9f9';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 10; i++) {
+                const x = padding + (i / 10) * graphWidth;
+                const y = height - padding - (i / 10) * graphHeight;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, height - padding);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Variance (px) →', width / 2, height - 20);
+            
+            ctx.save();
+            ctx.translate(20, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Latency (ms) →', 0, 0);
+            ctx.restore();
+            
+            // Title
+            ctx.fillStyle = color;
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(title, width / 2, 25);
+            
+            // Sort points by variance
+            const sortedPoints = paretoData
+                .map(d => ({ x: scaleX(d.meanVariance), y: scaleY(d.meanLatency), data: d }))
+                .sort((a, b) => a.x - b.x);
+            
+            // Find continuous range and draw curve only through it
+            const { start: iStart, end: iEnd } = getContinuousRange(sortedPoints);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            drawMonotoneCurve(ctx, sortedPoints);
+            ctx.stroke();
+            
+            // Draw only the non-outlier points
+            ctx.fillStyle = color;
+            const visiblePoints = sortedPoints.slice(iStart, iEnd + 1);
+            const dotRadius = visiblePoints.length > 200 ? 3 : visiblePoints.length > 50 ? 4 : 5;
+            visiblePoints.forEach((point) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, dotRadius, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Draw scale labels
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            
+            for (let i = 0; i <= 5; i++) {
+                const x = padding + (i / 5) * graphWidth;
+                const value = paddedMinVar + (i / 5) * (paddedMaxVar - paddedMinVar);
+                ctx.fillText(value.toFixed(1), x, height - padding + 15);
+            }
+            
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const y = height - padding - (i / 5) * graphHeight;
+                const value = paddedMinLat + (i / 5) * (paddedMaxLat - paddedMinLat);
+                ctx.fillText(Math.round(value), padding - 10, y + 4);
+            }
+            
+            // Enhanced Info box with better styling
+            const infoX = width - 210;
+            const infoY = 50;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+            ctx.shadowBlur = 8;
+            ctx.fillRect(infoX - 12, infoY - 8, 200, 95);
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#bbb';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(infoX - 12, infoY - 8, 200, 95);
+            
+            // Header
+            ctx.fillStyle = color;
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Performance Summary', infoX, infoY + 8);
+            
+            // Stats with icons
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.fillText(`📊 Pareto-optimal: ${paretoData.length}`, infoX, infoY + 28);
+            ctx.fillText(`🔬 Total tested: ${data.length}`, infoX, infoY + 45);
+            
+            ctx.fillStyle = '#555';
+            ctx.font = '11px Arial';
+            ctx.fillText(`✓ Best variance: ${minVar.toFixed(2)}px`, infoX, infoY + 62);
+            ctx.fillText(`⚡ Best latency: ${minLat.toFixed(0)}ms`, infoX, infoY + 77);
+            
+            // Add hover functionality
+            canvas.onmousemove = (e) => handleIndividualMouseMove(e, canvas, sortedPoints, color, title);
+            canvas.onmouseleave = () => hideTooltip();
+        }
+        
+        function handleIndividualMouseMove(e, canvas, points, color, filterType) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            let closestPoint = null;
+            let minDistance = Infinity;
+            const hitRadius = 40 * Math.max(scaleX, scaleY);
+            
+            points.forEach(point => {
+                const distance = Math.hypot(mouseX - point.x, mouseY - point.y);
+                if (distance < minDistance && distance < hitRadius) {
+                    minDistance = distance;
+                    closestPoint = point;
+                }
+            });
+            
+            if (closestPoint) {
+                showIndividualTooltip(e, closestPoint.data, color, filterType);
+            } else {
+                hideTooltip();
+            }
+        }
+        
+        function showIndividualTooltip(e, data, color, filterType) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.clientX + 14) + 'px';
+            tooltip.style.top = (e.clientY - 14) + 'px';
+            
+            let html = `<strong style="color: ${color};">${filterType}</strong><br>`;
+            html += `<b>Variance:</b> ${data.meanVariance.toFixed(2)} px<br>`;
+            html += `<b>Latency:</b> ${data.meanLatency.toFixed(0)} ms<br>`;
+            if (filterType === 'One Euro Filter') {
+                html += `minCutoff: ${data.minCutoff}, beta: ${data.beta}, dCutoff: ${data.dCutoff}`;
+            } else {
+                html += `Alpha: ${data.alpha}`;
+            }
+            tooltip.innerHTML = html;
+        }
+
+        function drawComparisonGraph() {
+            const canvas = document.getElementById('comparisonCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // FILTER TO PARETO-OPTIMAL POINTS, then remove outlier edges
+            function getVisibleData(data) {
+                const pareto = filterParetoOptimal(data);
+                const sorted = [...pareto].sort((a, b) => a.meanVariance - b.meanVariance);
+                const pts = sorted.map(d => ({ y: -d.meanLatency, data: d }));
+                const range = getContinuousRange(pts);
+                return sorted.slice(range.start, range.end + 1);
+            }
+            const oneEuroPareto = getVisibleData(oneEuroData);
+            const exponentialPareto = getVisibleData(exponentialData);
+            
+            console.log(`Comparison graph: ${oneEuroPareto.length} One Euro visible points, ${exponentialPareto.length} Exponential visible points`);
+            
+            const allVariances = [
+                ...oneEuroPareto.map(d => d.meanVariance),
+                ...exponentialPareto.map(d => d.meanVariance)
+            ];
+            const allLatencies = [
+                ...oneEuroPareto.map(d => d.meanLatency),
+                ...exponentialPareto.map(d => d.meanLatency)
+            ];
+            
+            const minVar = Math.min(...allVariances);
+            const maxVar = Math.max(...allVariances);
+            const minLat = Math.min(...allLatencies);
+            const maxLat = Math.max(...allLatencies);
+            
+            // Add padding to ranges; clamp minimums at 0
+            const varRange = maxVar - minVar || 1;
+            const latRange = maxLat - minLat || 1;
+            const paddedMinVar = Math.max(0, minVar - varRange * 0.05);
+            const paddedMaxVar = maxVar + varRange * 0.05;
+            const paddedMinLat = Math.max(0, minLat - latRange * 0.05);
+            const paddedMaxLat = maxLat + latRange * 0.05;
+            
+            // Padding
+            const padding = 90;
+            const graphWidth = width - 2 * padding;
+            const graphHeight = height - 2 * padding;
+            
+            // Linear scale for both axes
+            const scaleX = (variance) => padding + (variance - paddedMinVar) / (paddedMaxVar - paddedMinVar) * graphWidth;
+            const scaleY = (latency) => height - padding - (latency - paddedMinLat) / (paddedMaxLat - paddedMinLat) * graphHeight;
+            
+            // Draw background
+            ctx.fillStyle = '#f9f9f9';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 10; i++) {
+                const x = padding + (i / 10) * graphWidth;
+                const y = height - padding - (i / 10) * graphHeight;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, height - padding);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = '#333';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Variance (px) → Lower is Better', width / 2, height - 30);
+            
+            ctx.save();
+            ctx.translate(30, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Latency (ms) → Lower is Better', 0, 0);
+            ctx.restore();
+            
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 22px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Filter Performance Comparison', width / 2, 40);
+            
+            // Draw One Euro Pareto front - PARETO-OPTIMAL POINTS ONLY
+            const sortedOneEuro = oneEuroPareto
+                .map(d => ({ x: scaleX(d.meanVariance), y: scaleY(d.meanLatency), data: d }))
+                .sort((a, b) => a.x - b.x);
+            
+            console.log(`Drawing ${sortedOneEuro.length} One Euro Pareto-optimal points`);
+            
+            // Draw smooth monotone curve for One Euro
+            const oeRange = getContinuousRange(sortedOneEuro);
+            if (sortedOneEuro.length > 1) {
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                drawMonotoneCurve(ctx, sortedOneEuro);
+                ctx.stroke();
+            }
+            
+            // Draw only non-outlier points
+            ctx.fillStyle = '#ff6b6b';
+            const visibleOE = sortedOneEuro.slice(oeRange.start, oeRange.end + 1);
+            const oeR = visibleOE.length > 200 ? 3 : visibleOE.length > 50 ? 4 : 5;
+            visibleOE.forEach((point) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, oeR, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Draw Exponential Pareto front - PARETO-OPTIMAL POINTS ONLY
+            const sortedExponential = exponentialPareto
+                .map(d => ({ x: scaleX(d.meanVariance), y: scaleY(d.meanLatency), data: d }))
+                .sort((a, b) => a.x - b.x);
+            
+            console.log(`Drawing ${sortedExponential.length} Exponential Pareto-optimal points`);
+            
+            // Draw smooth monotone curve for Exponential
+            const expRange = getContinuousRange(sortedExponential);
+            if (sortedExponential.length > 1) {
+                ctx.strokeStyle = '#4499ff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                drawMonotoneCurve(ctx, sortedExponential);
+                ctx.stroke();
+            }
+            
+            // Draw only non-outlier points
+            ctx.fillStyle = '#4499ff';
+            const visibleExp = sortedExponential.slice(expRange.start, expRange.end + 1);
+            const expR = visibleExp.length > 200 ? 3 : visibleExp.length > 50 ? 4 : 5;
+            visibleExp.forEach((point) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, expR, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Draw scale labels
+            ctx.fillStyle = '#666';
+            ctx.font = '13px Arial';
+            ctx.textAlign = 'center';
+            
+            for (let i = 0; i <= 5; i++) {
+                const x = padding + (i / 5) * graphWidth;
+                const value = paddedMinVar + (i / 5) * (paddedMaxVar - paddedMinVar);
+                ctx.fillText(value.toFixed(1), x, height - padding + 25);
+            }
+            
+            ctx.textAlign = 'right';
+            ctx.font = '14px Arial';
+            for (let i = 0; i <= 5; i++) {
+                const y = height - padding - (i / 5) * graphHeight;
+                const value = paddedMinLat + (i / 5) * (paddedMaxLat - paddedMinLat);
+                ctx.fillText(Math.round(value), padding - 25, y + 5);
+            }
+            
+            // Enhanced Legend with performance metrics
+            const legendX = width - 420;
+            const legendY = 90;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.97)';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(legendX - 15, legendY - 15, 410, 150);
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#bbb';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(legendX - 15, legendY - 15, 410, 150);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Legend:', legendX, legendY + 10);
+            
+            // One Euro Filter
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.arc(legendX + 10, legendY + 40, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText(`One Euro Filter (${oneEuroPareto.length} Pareto-optimal points)`, legendX + 30, legendY + 45);
+            
+            // One Euro stats
+            const oneEuroBest = oneEuroPareto.reduce((best, curr) => 
+                curr.meanLatency < best.meanLatency ? curr : best
+            );
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Best: ${oneEuroBest.meanVariance.toFixed(2)}px variance, ${Math.round(oneEuroBest.meanLatency)}ms latency`, 
+                legendX + 30, legendY + 63);
+            
+            // Exponential Smoothing
+            ctx.fillStyle = '#4499ff';
+            ctx.beginPath();
+            ctx.arc(legendX + 10, legendY + 90, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.fillText(`Exponential Smoothing (${exponentialPareto.length} Pareto-optimal points)`, legendX + 30, legendY + 95);
+            
+            // Exponential stats
+            const expBest = exponentialPareto.reduce((best, curr) => 
+                curr.meanLatency < best.meanLatency ? curr : best
+            );
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Best: ${expBest.meanVariance.toFixed(2)}px variance, ${Math.round(expBest.meanLatency)}ms latency`, 
+                legendX + 30, legendY + 113);
+            
+            // Add interpretation note
+            ctx.fillStyle = '#888';
+            ctx.font = 'italic 11px Arial';
+            ctx.fillText('← Points closer to bottom-left corner are better (lower variance & latency)', 
+                legendX, legendY + 135);
+            
+            // Add mouse hover
+            canvas.onmousemove = (e) => handleMouseMove(e, canvas, sortedOneEuro, sortedExponential);
+            canvas.onmouseleave = () => hideTooltip();
+        }
+
+        function handleMouseMove(e, canvas, oneEuroPoints, expPoints) {
+            const rect = canvas.getBoundingClientRect();
+            // Scale mouse coordinates to match canvas internal resolution
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            let closestPoint = null;
+            let minDistance = Infinity;
+            let filterType = '';
+            const hitRadius = 40 * Math.max(scaleX, scaleY);
+            
+            oneEuroPoints.forEach(point => {
+                const distance = Math.hypot(mouseX - point.x, mouseY - point.y);
+                if (distance < minDistance && distance < hitRadius) {
+                    minDistance = distance;
+                    closestPoint = point;
+                    filterType = 'oneeuro';
+                }
+            });
+            
+            expPoints.forEach(point => {
+                const distance = Math.hypot(mouseX - point.x, mouseY - point.y);
+                if (distance < minDistance && distance < hitRadius) {
+                    minDistance = distance;
+                    closestPoint = point;
+                    filterType = 'exponential';
+                }
+            });
+            
+            if (closestPoint) {
+                showTooltip(e, closestPoint.data, filterType);
+            } else {
+                hideTooltip();
+            }
+        }
+
+        function showTooltip(e, data, filterType) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.clientX + 14) + 'px';
+            tooltip.style.top = (e.clientY - 14) + 'px';
+            
+            const color = filterType === 'oneeuro' ? '#ff6b6b' : '#4499ff';
+            const name = filterType === 'oneeuro' ? 'One Euro Filter' : 'Exponential Smoothing';
+            let html = `<strong style="color: ${color};">${name}</strong><br>`;
+            html += `<b>Variance:</b> ${data.meanVariance.toFixed(2)} px<br>`;
+            html += `<b>Latency:</b> ${data.meanLatency.toFixed(0)} ms<br>`;
+            if (filterType === 'oneeuro') {
+                html += `minCutoff: ${data.minCutoff}, beta: ${data.beta}, dCutoff: ${data.dCutoff}`;
+            } else {
+                html += `Alpha: ${data.alpha}`;
+            }
+            tooltip.innerHTML = html;
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        function populateTables() {
+            // Filter to Pareto-optimal points, then remove outlier edges
+            function getVisible(data) {
+                const pareto = filterParetoOptimal(data);
+                const sorted = [...pareto].sort((a, b) => a.meanVariance - b.meanVariance);
+                const pts = sorted.map(d => ({ y: -d.meanLatency, data: d }));
+                const range = getContinuousRange(pts);
+                return sorted.slice(range.start, range.end + 1);
+            }
+            const visOneEuro = getVisible(oneEuroData);
+            const visExp = getVisible(exponentialData);
+            
+            const oneEuroHeader = document.querySelector('.table-container.oneeuro h3');
+            const expHeader = document.querySelector('.table-container.exponential h3');
+            if (oneEuroHeader) {
+                oneEuroHeader.textContent = `🔴 One Euro Filter - ${visOneEuro.length} Pareto-Optimal (of ${oneEuroData.length} tested)`;
+            }
+            if (expHeader) {
+                expHeader.textContent = `🔵 Exponential Smoothing - ${visExp.length} Pareto-Optimal (of ${exponentialData.length} tested)`;
+            }
+            
+            const oneEuroBody = document.getElementById('oneEuroTableBody');
+            oneEuroBody.innerHTML = '';
+            visOneEuro.forEach((d, i) => {
+                const row = oneEuroBody.insertRow();
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${d.minCutoff}</td>
+                    <td>${d.beta}</td>
+                    <td>${d.dCutoff}</td>
+                    <td>${d.meanVariance.toFixed(2)}</td>
+                    <td>${d.meanLatency.toFixed(0)}</td>
+                `;
+            });
+            
+            const expBody = document.getElementById('exponentialTableBody');
+            expBody.innerHTML = '';
+            visExp.forEach((d, i) => {
+                const row = expBody.insertRow();
+                row.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${d.alpha}</td>
+                    <td>${d.meanVariance.toFixed(2)}</td>
+                    <td>${d.meanLatency.toFixed(0)}</td>
+                `;
+            });
+            
+            console.log(`Tables populated: ${visOneEuro.length} One Euro, ${visExp.length} Exponential (outlier edges removed)`);
+        }
+
+        // Add sample data for demonstration - loads on double-click OR on page load
+        function loadSampleData() {
+            const sampleOneEuro = `Rank,minCutoff,beta,dCutoff,meanVariance,meanLatency,validPositions
+1,0.001,0.0001,0.0001,0.2011,1239.36,9
+2,0.001,0.0001,0.0009,0.4993,1238.39,9
+3,0.001,0.0001,0.0019,0.7532,1236.11,9
+10,0.001,0.0002,0.0009,1.2145,1089.45,9
+60,0.001,0.0004,0.0009,1.4413,872.69,9
+120,0.001,0.0007,0.0019,2.8934,654.23,9
+200,0.005,0.0008,0.0029,5.6712,523.45,9
+300,0.015,0.0009,0.0039,8.9234,412.78,9
+349,0.031,0.001,0.0049,13.5432,298.12,9`;
+
+            const sampleExponential = `Rank,alpha,meanVariance,meanLatency,validPositions
+1,0.70,2.3456,1890.12,9
+2,0.73,3.1234,1654.45,9
+3,0.76,4.2341,1423.23,9
+4,0.79,5.5432,1198.67,9
+5,0.82,7.1234,982.56,9
+6,0.85,9.2567,778.34,9
+7,0.88,12.5432,589.45,9
+8,0.91,17.3421,423.23,9
+9,0.94,24.8976,287.12,9
+10,0.97,35.6789,178.56,9`;
+            
+            parseCSV(sampleOneEuro, 'oneeuro', uploadOneEuro);
+            parseCSV(sampleExponential, 'exponential', uploadExponential);
+        }
+
+        // Double-click to load sample data
+        uploadOneEuro.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            loadSampleData();
+            alert('Sample data loaded! (Double-click detected)\n\nYou can now upload your own CSV files by clicking once.');
+        });
+
+        uploadExponential.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            loadSampleData();
+            alert('Sample data loaded! (Double-click detected)\n\nYou can now upload your own CSV files by clicking once.');
+        });
+
+        // Auto-load sample data on page load so user can see the graph immediately
+        window.addEventListener('load', () => {
+            console.log('Page loaded - loading sample data for demonstration');
+            loadSampleData();
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Head Tracking Camera Permission",
+  "version": "1.0",
+  "description": "Camera permission for head tracking",
+  "permissions": [
+    "activeTab"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "index.html",
+        "styles/*.css",
+        "content/*.js",
+        "libs/*.js",
+        "js/*.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles/styles.css"],
+      "run_at": "document_start"
+    }
+  ]
+}

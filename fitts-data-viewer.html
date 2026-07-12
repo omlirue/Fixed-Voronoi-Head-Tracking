@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitts' Law Data Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            padding: 40px;
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .upload-box {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            background: #eef0ff;
+            border-color: #764ba2;
+        }
+
+        .upload-box.dragover {
+            background: #e0e5ff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .file-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .file-type {
+            font-size: 0.85em;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .file-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .file-status.loaded {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .file-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .analyze-button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .analyze-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .results-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-unit {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .chart-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .comparison-table th {
+            background: #f8f9ff;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .winner {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 15px;
+        }
+
+        .export-button {
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            color: white;
+            background: #667eea;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .export-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.visible {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .significance {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .significance.sig {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .significance.not-sig {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Fitts' Law Data Viewer</h1>
+            <p>Upload your experiment CSV files to analyze results</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-box" id="uploadBox">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Click to upload or drag & drop CSV files</div>
+                <div class="upload-subtext">Upload raw data and/or results files from all participants</div>
+            </div>
+            <input type="file" id="fileInput" accept=".csv" multiple>
+            
+            <div class="file-list" id="fileList"></div>
+            
+            <button class="analyze-button" id="analyzeButton" disabled>
+                🔍 Analyze Data
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing data...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Analysis Results</h2>
+            
+            <div class="stats-grid" id="statsGrid"></div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Throughput Comparison by Filter</div>
+                <canvas id="throughputChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Movement Time Comparison</div>
+                <canvas id="movementTimeChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Performance by Participant</div>
+                <canvas id="participantChart"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Detailed Comparison</div>
+                <table class="comparison-table" id="comparisonTable"></table>
+            </div>
+
+            <div class="export-buttons">
+                <button class="export-button" onclick="exportResults()">📥 Export Summary (CSV)</button>
+                <button class="export-button" onclick="exportReport()">📄 Export Report (TXT)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFiles = [];
+        let rawData = [];
+        let resultsData = [];
+        let analysisResults = null;
+
+        // Setup upload handlers
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const analyzeButton = document.getElementById('analyzeButton');
+
+        uploadBox.addEventListener('click', () => fileInput.click());
+        
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+        
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+        
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        analyzeButton.addEventListener('click', analyzeData);
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.name.endsWith('.csv')) {
+                    uploadedFiles.push(file);
+                    displayFile(file);
+                    parseCSV(file);
+                }
+            });
+        }
+
+        function displayFile(file) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            const fileType = file.name.includes('raw-data') ? 'Raw Data' : 
+                           file.name.includes('results') ? 'Results' : 'Unknown';
+            
+            fileItem.innerHTML = `
+                <div>
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-type">(${fileType})</span>
+                </div>
+                <span class="file-status loaded">✓ Loaded</span>
+            `;
+            
+            fileList.appendChild(fileItem);
+            analyzeButton.disabled = false;
+        }
+
+        function parseCSV(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                const headers = lines[0].split(',').map(h => h.trim());
+                
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim()) {
+                        const values = parseCSVLine(lines[i]);
+                        const row = {};
+                        headers.forEach((header, index) => {
+                            row[header] = values[index];
+                        });
+                        data.push(row);
+                    }
+                }
+                
+                // Determine file type and store
+                if (file.name.includes('raw-data')) {
+                    rawData.push(...data);
+                } else if (file.name.includes('results')) {
+                    resultsData.push(...data);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let char of line) {
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            values.push(current.trim());
+            return values;
+        }
+
+        function analyzeData() {
+            document.getElementById('loading').classList.add('visible');
+            
+            setTimeout(() => {
+                try {
+                    performAnalysis();
+                    displayResults();
+                    document.getElementById('loading').classList.remove('visible');
+                    document.getElementById('resultsSection').classList.add('visible');
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    alert('Error analyzing data: ' + error.message);
+                    console.error(error);
+                    document.getElementById('loading').classList.remove('visible');
+                }
+            }, 500);
+        }
+
+        function performAnalysis() {
+            analysisResults = {
+                participants: new Set(),
+                filters: new Set(),
+                byFilter: {},
+                byParticipant: {},
+                overall: {}
+            };
+
+            // Use results data if available, otherwise calculate from raw
+            const dataToAnalyze = resultsData.length > 0 ? resultsData : rawData;
+            
+            // Extract participants and filters
+            dataToAnalyze.forEach(row => {
+                if (row.ParticipantID) analysisResults.participants.add(row.ParticipantID);
+                if (row.FilterType) analysisResults.filters.add(row.FilterType);
+            });
+
+            // Calculate statistics by filter
+            analysisResults.filters.forEach(filter => {
+                const filterData = dataToAnalyze.filter(row => row.FilterType === filter);
+                
+                const throughputs = filterData.map(row => parseFloat(row.TP || row.Throughput || 0)).filter(v => v > 0);
+                const movementTimes = filterData.map(row => parseFloat(row.MeanMT || row.MovementTime || 0)).filter(v => v > 0);
+                
+                analysisResults.byFilter[filter] = {
+                    throughput: {
+                        mean: mean(throughputs),
+                        std: std(throughputs),
+                        values: throughputs
+                    },
+                    movementTime: {
+                        mean: mean(movementTimes),
+                        std: std(movementTimes),
+                        values: movementTimes
+                    },
+                    n: filterData.length
+                };
+            });
+
+            // Calculate by participant
+            analysisResults.participants.forEach(participant => {
+                const participantData = dataToAnalyze.filter(row => row.ParticipantID === participant);
+                
+                const byFilter = {};
+                analysisResults.filters.forEach(filter => {
+                    const data = participantData.filter(row => row.FilterType === filter);
+                    const throughputs = data.map(row => parseFloat(row.TP || row.Throughput || 0)).filter(v => v > 0);
+                    
+                    byFilter[filter] = {
+                        throughput: mean(throughputs),
+                        n: data.length
+                    };
+                });
+                
+                analysisResults.byParticipant[participant] = byFilter;
+            });
+
+            // Overall statistics
+            const allThroughputs = dataToAnalyze.map(row => parseFloat(row.TP || row.Throughput || 0)).filter(v => v > 0);
+            const allMovementTimes = dataToAnalyze.map(row => parseFloat(row.MeanMT || row.MovementTime || 0)).filter(v => v > 0);
+            
+            analysisResults.overall = {
+                throughput: {
+                    mean: mean(allThroughputs),
+                    std: std(allThroughputs)
+                },
+                movementTime: {
+                    mean: mean(allMovementTimes),
+                    std: std(allMovementTimes)
+                },
+                totalTrials: dataToAnalyze.length,
+                participants: analysisResults.participants.size
+            };
+        }
+
+        function displayResults() {
+            // Display summary statistics
+            displayStats();
+            
+            // Create charts
+            createThroughputChart();
+            createMovementTimeChart();
+            createParticipantChart();
+            createComparisonTable();
+        }
+
+        function displayStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+            
+            // Overall stats
+            const overallCard = createStatCard(
+                'Total Participants',
+                analysisResults.overall.participants,
+                ''
+            );
+            statsGrid.appendChild(overallCard);
+            
+            const trialsCard = createStatCard(
+                'Total Trials',
+                analysisResults.overall.totalTrials,
+                ''
+            );
+            statsGrid.appendChild(trialsCard);
+            
+            const throughputCard = createStatCard(
+                'Mean Throughput',
+                analysisResults.overall.throughput.mean.toFixed(2),
+                'bits/s'
+            );
+            statsGrid.appendChild(throughputCard);
+            
+            const mtCard = createStatCard(
+                'Mean Movement Time',
+                analysisResults.overall.movementTime.mean.toFixed(2),
+                's'
+            );
+            statsGrid.appendChild(mtCard);
+        }
+
+        function createStatCard(label, value, unit) {
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+            card.innerHTML = `
+                <div class="stat-label">${label}</div>
+                <div class="stat-value">${value}</div>
+                <div class="stat-unit">${unit}</div>
+            `;
+            return card;
+        }
+
+        function createThroughputChart() {
+            const ctx = document.getElementById('throughputChart').getContext('2d');
+            
+            const filters = Array.from(analysisResults.filters);
+            const data = filters.map(filter => analysisResults.byFilter[filter].throughput.mean);
+            const errors = filters.map(filter => analysisResults.byFilter[filter].throughput.std);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: filters,
+                    datasets: [{
+                        label: 'Throughput (bits/s)',
+                        data: data,
+                        backgroundColor: ['rgba(102, 126, 234, 0.8)', 'rgba(118, 75, 162, 0.8)'],
+                        borderColor: ['rgb(102, 126, 234)', 'rgb(118, 75, 162)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Throughput (bits/s)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createMovementTimeChart() {
+            const ctx = document.getElementById('movementTimeChart').getContext('2d');
+            
+            const filters = Array.from(analysisResults.filters);
+            const data = filters.map(filter => analysisResults.byFilter[filter].movementTime.mean);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: filters,
+                    datasets: [{
+                        label: 'Movement Time (s)',
+                        data: data,
+                        backgroundColor: ['rgba(102, 126, 234, 0.8)', 'rgba(118, 75, 162, 0.8)'],
+                        borderColor: ['rgb(102, 126, 234)', 'rgb(118, 75, 162)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Movement Time (s)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createParticipantChart() {
+            const ctx = document.getElementById('participantChart').getContext('2d');
+            
+            const participants = Array.from(analysisResults.participants);
+            const filters = Array.from(analysisResults.filters);
+            
+            const datasets = filters.map((filter, index) => ({
+                label: filter,
+                data: participants.map(p => analysisResults.byParticipant[p][filter]?.throughput || 0),
+                backgroundColor: index === 0 ? 'rgba(102, 126, 234, 0.8)' : 'rgba(118, 75, 162, 0.8)',
+                borderColor: index === 0 ? 'rgb(102, 126, 234)' : 'rgb(118, 75, 162)',
+                borderWidth: 2
+            }));
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: participants,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Throughput (bits/s)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createComparisonTable() {
+            const table = document.getElementById('comparisonTable');
+            
+            let html = `
+                <thead>
+                    <tr>
+                        <th>Filter Type</th>
+                        <th>Mean Throughput (bits/s)</th>
+                        <th>Mean Movement Time (s)</th>
+                        <th>N</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            const filters = Array.from(analysisResults.filters);
+            const maxTP = Math.max(...filters.map(f => analysisResults.byFilter[f].throughput.mean));
+            const minMT = Math.min(...filters.map(f => analysisResults.byFilter[f].movementTime.mean));
+            
+            filters.forEach(filter => {
+                const stats = analysisResults.byFilter[filter];
+                const isWinnerTP = stats.throughput.mean === maxTP;
+                const isWinnerMT = stats.movementTime.mean === minMT;
+                
+                html += `
+                    <tr>
+                        <td><strong>${filter}</strong></td>
+                        <td ${isWinnerTP ? 'class="winner"' : ''}>
+                            ${stats.throughput.mean.toFixed(3)} ± ${stats.throughput.std.toFixed(3)}
+                            ${isWinnerTP ? '🏆' : ''}
+                        </td>
+                        <td ${isWinnerMT ? 'class="winner"' : ''}>
+                            ${stats.movementTime.mean.toFixed(3)} ± ${stats.movementTime.std.toFixed(3)}
+                            ${isWinnerMT ? '🏆' : ''}
+                        </td>
+                        <td>${stats.n}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function exportResults() {
+            let csv = 'Filter Type,Mean Throughput (bits/s),SD Throughput,Mean Movement Time (s),SD Movement Time,N\n';
+            
+            Array.from(analysisResults.filters).forEach(filter => {
+                const stats = analysisResults.byFilter[filter];
+                csv += `${filter},${stats.throughput.mean.toFixed(3)},${stats.throughput.std.toFixed(3)},`;
+                csv += `${stats.movementTime.mean.toFixed(3)},${stats.movementTime.std.toFixed(3)},${stats.n}\n`;
+            });
+            
+            downloadFile(csv, 'fitts-analysis-summary.csv', 'text/csv');
+        }
+
+        function exportReport() {
+            let report = '='.repeat(80) + '\n';
+            report += 'FITTS\' LAW EXPERIMENT ANALYSIS REPORT\n';
+            report += '='.repeat(80) + '\n\n';
+            
+            report += `Analysis Date: ${new Date().toLocaleString()}\n`;
+            report += `Number of Participants: ${analysisResults.overall.participants}\n`;
+            report += `Total Trials: ${analysisResults.overall.totalTrials}\n\n`;
+            
+            report += '-'.repeat(80) + '\n';
+            report += 'OVERALL PERFORMANCE\n';
+            report += '-'.repeat(80) + '\n';
+            report += `Mean Throughput: ${analysisResults.overall.throughput.mean.toFixed(3)} bits/s `;
+            report += `(SD=${analysisResults.overall.throughput.std.toFixed(3)})\n`;
+            report += `Mean Movement Time: ${analysisResults.overall.movementTime.mean.toFixed(3)}s `;
+            report += `(SD=${analysisResults.overall.movementTime.std.toFixed(3)})\n\n`;
+            
+            report += '-'.repeat(80) + '\n';
+            report += 'PERFORMANCE BY FILTER TYPE\n';
+            report += '-'.repeat(80) + '\n';
+            
+            Array.from(analysisResults.filters).forEach(filter => {
+                const stats = analysisResults.byFilter[filter];
+                report += `\n${filter}:\n`;
+                report += `  Throughput: ${stats.throughput.mean.toFixed(3)} bits/s (SD=${stats.throughput.std.toFixed(3)})\n`;
+                report += `  Movement Time: ${stats.movementTime.mean.toFixed(3)}s (SD=${stats.movementTime.std.toFixed(3)})\n`;
+                report += `  N: ${stats.n}\n`;
+            });
+            
+            report += '\n' + '='.repeat(80) + '\n';
+            report += 'END OF REPORT\n';
+            report += '='.repeat(80) + '\n';
+            
+            downloadFile(report, 'fitts-analysis-report.txt', 'text/plain');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Utility functions
+        function mean(arr) {
+            return arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+        }
+
+        function std(arr) {
+            if (arr.length === 0) return 0;
+            const avg = mean(arr);
+            const squareDiffs = arr.map(value => Math.pow(value - avg, 2));
+            return Math.sqrt(mean(squareDiffs));
+        }
+    </script>
+</body>
+</html>
+

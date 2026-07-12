@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Head Pose Estimation - Code Explanation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.7;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            color: #333;
+            background: #fff;
+        }
+        h1 {
+            text-align: center;
+            color: #1a1a2e;
+            border-bottom: 3px solid #4a90d9;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #2c3e50;
+            border-left: 4px solid #4a90d9;
+            padding-left: 15px;
+            margin-top: 40px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block .comment {
+            color: #6a9955;
+        }
+        .code-block .keyword {
+            color: #569cd6;
+        }
+        .code-block .string {
+            color: #ce9178;
+        }
+        .code-block .number {
+            color: #b5cea8;
+        }
+        .code-block .function {
+            color: #dcdcaa;
+        }
+        .explanation {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .explanation h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .intuition {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .intuition h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .diagram {
+            background: #e8f4f8;
+            border: 2px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        .important {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .toc {
+            background: #f0f0f0;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+        }
+        .toc h3 {
+            margin-top: 0;
+        }
+        .toc ul {
+            margin: 0;
+            padding-left: 25px;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+        .toc a {
+            color: #4a90d9;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #4a90d9;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .code-block {
+                background: #f5f5f5 !important;
+                color: #333 !important;
+                border: 1px solid #ccc;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Head Pose Estimation Module<br><small style="font-size: 0.5em; color: #666;">Complete Code Explanation</small></h1>
+
+<div class="toc">
+    <h3>Table of Contents</h3>
+    <ul>
+        <li><a href="#overview">1. Overview</a></li>
+        <li><a href="#section1">2. Module Header & Constants</a></li>
+        <li><a href="#section2">3. Main Entry Function: estimateHeadPose()</a></li>
+        <li><a href="#section3">4. SolvePnP Fallback Function</a></li>
+        <li><a href="#section4">5. Building Image Points (2D)</a></li>
+        <li><a href="#section5">6. Building Model Points (3D)</a></li>
+        <li><a href="#section6">7. Camera Intrinsics Matrix</a></li>
+        <li><a href="#section7">8. Solving the PnP Problem</a></li>
+        <li><a href="#section8">9. Extracting Euler Angles</a></li>
+        <li><a href="#section9">10. Angle Adjustments & Conventions</a></li>
+        <li><a href="#section10">11. Focal Length Estimation Helper</a></li>
+        <li><a href="#section11">12. Global Exports</a></li>
+        <li><a href="#summary">13. Summary & Flow Diagram</a></li>
+    </ul>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<h2 id="overview">1. Overview</h2>
+
+<div class="explanation">
+    <h4>What This Module Does</h4>
+    <p>This module estimates <strong>head pose</strong> (yaw, pitch, roll angles) from facial landmarks detected by MediaPipe. It determines how a person's head is oriented in 3D space based on a 2D camera image.</p>
+    
+    <p>The module has two methods:</p>
+    <ol>
+        <li><strong>Primary Method</strong>: Uses MediaPipe's pre-computed transformation matrix (smooth and preferred)</li>
+        <li><strong>Fallback Method</strong>: Uses OpenCV's solvePnP algorithm when the matrix isn't available</li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Understanding Head Pose Angles</h4>
+    <ul>
+        <li><strong>Yaw</strong>: Turning head left/right (like shaking your head "no")</li>
+        <li><strong>Pitch</strong>: Tilting head up/down (like nodding "yes")</li>
+        <li><strong>Roll</strong>: Tilting head sideways (like touching your ear to your shoulder)</li>
+    </ul>
+</div>
+
+<!-- ==================== SECTION 1 ==================== -->
+<h2 id="section1" class="page-break">2. Module Header & Constants</h2>
+
+<h3>Lines 1-8: Documentation Header</h3>
+
+<div class="code-block"><span class="comment">/**
+ * Head Pose Estimation Module
+ * 
+ * PRIMARY: Uses MediaPipe's facialTransformationMatrixes (via FaceLandmarker API)
+ *          This is smooth like Timothy's code because MediaPipe has internal filtering
+ * 
+ * FALLBACK: Uses OpenCV.js solvePnP when matrix not available
+ */</span></div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>This is a JSDoc-style comment that documents the module's purpose. It explains the two methods available for estimating head pose and notes that MediaPipe's method is preferred because it includes internal smoothing/filtering.</p>
+</div>
+
+<h3>Lines 10-11: Landmark Indices</h3>
+
+<div class="code-block"><span class="comment">// Landmark indices (MediaPipe FaceMesh) - same as Timothy's</span>
+<span class="keyword">const</span> POSE_LANDMARK_INDICES = [<span class="number">1</span>, <span class="number">152</span>, <span class="number">33</span>, <span class="number">263</span>, <span class="number">61</span>, <span class="number">291</span>];</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>Defines an array of 6 indices that specify which of MediaPipe's 468 facial landmarks to use for pose estimation. These are stored as a constant since they never change.</p>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: Why These 6 Points?</h4>
+    <p>MediaPipe detects 468 points on the face, but we only need 6 key points that form a "skeleton" of the face:</p>
+    <table>
+        <tr><th>Index</th><th>Landmark</th><th>Purpose</th></tr>
+        <tr><td>1</td><td>Nose tip</td><td>Center reference point</td></tr>
+        <tr><td>152</td><td>Chin</td><td>Bottom of face (vertical reference)</td></tr>
+        <tr><td>33</td><td>Left eye outer corner</td><td>Horizontal reference (left)</td></tr>
+        <tr><td>263</td><td>Right eye outer corner</td><td>Horizontal reference (right)</td></tr>
+        <tr><td>61</td><td>Left mouth corner</td><td>Lower face reference</td></tr>
+        <tr><td>291</td><td>Right mouth corner</td><td>Lower face reference</td></tr>
+    </table>
+    <p>These 6 points are sufficient to determine the full 3D orientation of the head.</p>
+</div>
+
+<h3>Lines 13-15: Logging State Variables</h3>
+
+<div class="code-block"><span class="comment">// Logging state to avoid spamming console</span>
+<span class="keyword">let</span> _lastLogTime = <span class="number">0</span>;
+<span class="keyword">let</span> _loggedSource = <span class="keyword">null</span>;</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ul>
+        <li><code>_lastLogTime</code>: Stores the timestamp of the last log message</li>
+        <li><code>_loggedSource</code>: Stores which method ('matrix' or 'solvepnp') was last logged</li>
+    </ul>
+    <p>The underscore prefix is a convention indicating these are "private" module-level variables.</p>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: Why Track Logging?</h4>
+    <p>The pose estimation runs ~30-60 times per second (every video frame). Without throttling, the console would be flooded with thousands of messages. These variables limit logging to once every 5 seconds or when the method changes.</p>
+</div>
+
+<!-- ==================== SECTION 2 ==================== -->
+<h2 id="section2" class="page-break">3. Main Entry Function: estimateHeadPose()</h2>
+
+<h3>Lines 17-21: Function Declaration</h3>
+
+<div class="code-block"><span class="comment">/**
+ * Get head pose angles - prefers smooth matrix method when available
+ */</span>
+<span class="keyword">function</span> <span class="function">estimateHeadPose</span>(landmarks, width, height) {
+  <span class="keyword">const</span> now = Date.<span class="function">now</span>();</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ul>
+        <li><code>landmarks</code>: Array of 468 facial landmark objects from MediaPipe</li>
+        <li><code>width</code>: Video frame width in pixels</li>
+        <li><code>height</code>: Video frame height in pixels</li>
+        <li><code>now</code>: Current timestamp for logging throttle</li>
+    </ul>
+</div>
+
+<h3>Lines 23-48: Primary Method (Matrix)</h3>
+
+<div class="code-block">  <span class="comment">// PRIMARY: Use pre-computed matrix angles if available (smooth!)</span>
+  <span class="keyword">if</span> (window.state && window.state.lastMatrixAngles) {
+    <span class="keyword">const</span> angles = window.state.lastMatrixAngles;
+    
+    <span class="comment">// Log source change or every 5 seconds</span>
+    <span class="keyword">if</span> (_loggedSource !== <span class="string">'matrix'</span> || now - _lastLogTime > <span class="number">5000</span>) {
+      console.<span class="function">log</span>(<span class="string">'🎯 HEAD POSE SOURCE: Matrix (smooth FaceLandmarker API) ✅'</span>, {
+        yaw: angles.yaw.<span class="function">toFixed</span>(<span class="number">1</span>),
+        pitch: angles.pitch.<span class="function">toFixed</span>(<span class="number">1</span>),
+        roll: angles.roll.<span class="function">toFixed</span>(<span class="number">1</span>)
+      });
+      _loggedSource = <span class="string">'matrix'</span>;
+      _lastLogTime = now;
+    }
+    
+    <span class="keyword">return</span> {
+      rotation: <span class="keyword">null</span>,
+      translation: <span class="keyword">null</span>,
+      angles: {
+        yaw: angles.yaw,
+        pitch: angles.pitch,
+        roll: angles.roll
+      },
+      source: <span class="string">'matrix'</span>  <span class="comment">// For debugging</span>
+    };
+  }</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li>Check if <code>window.state.lastMatrixAngles</code> exists (set elsewhere by MediaPipe)</li>
+        <li>If available, use these pre-computed angles directly</li>
+        <li>Log the source (with throttling) for debugging</li>
+        <li>Return an object with the angles and source identifier</li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: Why Prefer the Matrix Method?</h4>
+    <p>MediaPipe's FaceLandmarker API can provide a <strong>transformation matrix</strong> that directly encodes how the face is oriented in 3D space. This matrix is computed internally by MediaPipe using sophisticated algorithms with built-in smoothing/filtering. Using it directly produces stable, jitter-free angles without additional processing.</p>
+</div>
+
+<h3>Lines 50-59: Fallback to SolvePnP</h3>
+
+<div class="code-block">  <span class="comment">// Log fallback</span>
+  <span class="keyword">if</span> (_loggedSource !== <span class="string">'solvepnp'</span> || now - _lastLogTime > <span class="number">5000</span>) {
+    console.<span class="function">log</span>(<span class="string">'⚠️ HEAD POSE SOURCE: SolvePnP fallback (matrix not available)'</span>);
+    _loggedSource = <span class="string">'solvepnp'</span>;
+    _lastLogTime = now;
+  }
+  
+  <span class="comment">// FALLBACK: Use OpenCV solvePnP</span>
+  <span class="keyword">return</span> <span class="function">estimateHeadPoseSolvePnP</span>(landmarks, width, height);
+}</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>If the matrix method isn't available, log a warning and call the fallback function <code>estimateHeadPoseSolvePnP()</code> which computes the pose manually using OpenCV.</p>
+</div>
+
+<!-- ==================== SECTION 3 ==================== -->
+<h2 id="section3" class="page-break">4. SolvePnP Fallback Function</h2>
+
+<h3>Lines 61-68: Function Declaration & Validation</h3>
+
+<div class="code-block"><span class="comment">/**
+ * Estimate head pose using OpenCV solvePnP
+ * EXACT implementation from Timothy's React code for smooth tracking
+ */</span>
+<span class="keyword">function</span> <span class="function">estimateHeadPoseSolvePnP</span>(landmarks, width, height) {
+  <span class="keyword">if</span> (!landmarks || landmarks.length < <span class="number">468</span>) {
+    <span class="keyword">return</span> <span class="keyword">null</span>;
+  }</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>The function first validates that we have a valid landmarks array with at least 468 points (the full MediaPipe face mesh). If not, return null since we can't compute the pose.</p>
+</div>
+
+<h3>Lines 70-74: OpenCV Availability Check</h3>
+
+<div class="code-block">  <span class="comment">// Check if OpenCV is available</span>
+  <span class="keyword">if</span> (<span class="keyword">typeof</span> cv === <span class="string">'undefined'</span> || !cv.solvePnP) {
+    console.<span class="function">warn</span>(<span class="string">'OpenCV.js not loaded, cannot estimate head pose'</span>);
+    <span class="keyword">return</span> <span class="keyword">null</span>;
+  }</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>OpenCV.js is a large library (~8MB) that loads asynchronously. This check ensures OpenCV is fully loaded and the <code>solvePnP</code> function is available before attempting to use it.</p>
+</div>
+
+<!-- ==================== SECTION 4 ==================== -->
+<h2 id="section4" class="page-break">5. Building Image Points (2D)</h2>
+
+<h3>Lines 76-83: Extracting 2D Landmark Positions</h3>
+
+<div class="code-block">  <span class="keyword">try</span> {
+    <span class="comment">// Build Nx2 image points (pixels) - EXACT same as Timothy's</span>
+    <span class="keyword">const</span> imagePointsData = [];
+    <span class="keyword">for</span> (<span class="keyword">const</span> i <span class="keyword">of</span> POSE_LANDMARK_INDICES) {
+      <span class="keyword">const</span> p = landmarks[i];
+      imagePointsData.<span class="function">push</span>(p.x * width, p.y * height);
+    }
+    <span class="keyword">const</span> imagePoints = cv.<span class="function">matFromArray</span>(<span class="number">6</span>, <span class="number">2</span>, cv.CV_64F, imagePointsData);</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li>Create an empty array <code>imagePointsData</code></li>
+        <li>Loop through the 6 landmark indices (1, 152, 33, 263, 61, 291)</li>
+        <li>For each landmark, get its position and convert from normalized (0-1) to pixel coordinates:
+            <ul>
+                <li><code>p.x * width</code> converts x from 0-1 range to 0-width pixels</li>
+                <li><code>p.y * height</code> converts y from 0-1 range to 0-height pixels</li>
+            </ul>
+        </li>
+        <li>Create an OpenCV matrix (6 rows × 2 columns) from the flat array using 64-bit floats</li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: What Are Image Points?</h4>
+    <p>Image points are the <strong>2D pixel coordinates</strong> where each facial landmark appears in the camera image. MediaPipe provides these as normalized values (0 to 1), so we multiply by the image dimensions to get actual pixel positions.</p>
+    <p>For example, if the nose tip is at normalized position (0.5, 0.4) in a 640×480 image, the pixel position would be (320, 192).</p>
+</div>
+
+<!-- ==================== SECTION 5 ==================== -->
+<h2 id="section5">6. Building Model Points (3D)</h2>
+
+<h3>Lines 85-94: 3D Face Model</h3>
+
+<div class="code-block">    <span class="comment">// Build Nx3 object points (generic head model) - EXACT same as Timothy's</span>
+    <span class="keyword">const</span> modelPointsData = [
+      <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">0.0</span>,           <span class="comment">// nose tip</span>
+      <span class="number">0.0</span>, <span class="number">-330.0</span>, <span class="number">-65.0</span>,      <span class="comment">// chin</span>
+      <span class="number">-225.0</span>, <span class="number">170.0</span>, <span class="number">-135.0</span>,   <span class="comment">// left eye corner</span>
+      <span class="number">225.0</span>, <span class="number">170.0</span>, <span class="number">-135.0</span>,    <span class="comment">// right eye corner</span>
+      <span class="number">-150.0</span>, <span class="number">-150.0</span>, <span class="number">-125.0</span>,  <span class="comment">// left mouth corner</span>
+      <span class="number">150.0</span>, <span class="number">-150.0</span>, <span class="number">-125.0</span>    <span class="comment">// right mouth corner</span>
+    ];
+    <span class="keyword">const</span> modelPoints = cv.<span class="function">matFromArray</span>(<span class="number">6</span>, <span class="number">3</span>, cv.CV_64F, modelPointsData);</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>Defines a standard 3D face model with coordinates in millimeters. Each point has (X, Y, Z) coordinates:</p>
+    <table>
+        <tr><th>Point</th><th>X (mm)</th><th>Y (mm)</th><th>Z (mm)</th><th>Meaning</th></tr>
+        <tr><td>Nose tip</td><td>0</td><td>0</td><td>0</td><td>Origin point</td></tr>
+        <tr><td>Chin</td><td>0</td><td>-330</td><td>-65</td><td>330mm below, 65mm back</td></tr>
+        <tr><td>Left eye</td><td>-225</td><td>170</td><td>-135</td><td>225mm left, 170mm up, 135mm back</td></tr>
+        <tr><td>Right eye</td><td>225</td><td>170</td><td>-135</td><td>225mm right, 170mm up, 135mm back</td></tr>
+        <tr><td>Left mouth</td><td>-150</td><td>-150</td><td>-125</td><td>150mm left, 150mm down, 125mm back</td></tr>
+        <tr><td>Right mouth</td><td>150</td><td>-150</td><td>-125</td><td>150mm right, 150mm down, 125mm back</td></tr>
+    </table>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: The Key Insight</h4>
+    <p>This is a <strong>generic 3D model of a human face</strong> — an "average" face. The nose tip is placed at the origin (0,0,0), and all other points are positioned relative to it.</p>
+    <p>Negative Z values mean "into the screen" (the face is facing the camera). The coordinate system is:</p>
+    <ul>
+        <li><strong>X</strong>: Positive = right, Negative = left</li>
+        <li><strong>Y</strong>: Positive = up, Negative = down</li>
+        <li><strong>Z</strong>: Positive = toward camera, Negative = away from camera</li>
+    </ul>
+    <p><strong>The fundamental idea:</strong> We know where these 6 points <em>should</em> be in 3D space (the model), and we can see where they <em>appear</em> in 2D (the image). By comparing these, we can figure out how the head must be rotated!</p>
+</div>
+
+<!-- ==================== SECTION 6 ==================== -->
+<h2 id="section6" class="page-break">7. Camera Intrinsics Matrix</h2>
+
+<h3>Lines 96-104: Building the Camera Matrix</h3>
+
+<div class="code-block">    <span class="comment">// Camera intrinsics (approx) - EXACT same as Timothy's</span>
+    <span class="keyword">const</span> fx = width, fy = width, cx = width / <span class="number">2</span>, cy = height / <span class="number">2</span>;
+    <span class="keyword">const</span> cameraMatrix = cv.<span class="function">matFromArray</span>(<span class="number">3</span>, <span class="number">3</span>, cv.CV_64F, [
+      fx, <span class="number">0</span>, cx,
+      <span class="number">0</span>, fy, cy,
+      <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>
+    ]);
+
+    <span class="keyword">const</span> distCoeffs = cv.Mat.<span class="function">zeros</span>(<span class="number">4</span>, <span class="number">1</span>, cv.CV_64F);</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ul>
+        <li><code>fx, fy</code>: Focal length (how "zoomed in" the camera is). Using image width as an approximation.</li>
+        <li><code>cx, cy</code>: Principal point (where the optical axis hits the image). Assumed to be image center.</li>
+        <li><code>distCoeffs</code>: Lens distortion coefficients, set to zero (assuming no distortion).</li>
+    </ul>
+    <p>The camera matrix has this structure:</p>
+    <pre>| fx  0  cx |
+| 0  fy  cy |
+| 0   0   1 |</pre>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: What is the Camera Matrix?</h4>
+    <p>The camera intrinsics matrix describes the internal properties of the camera — how it projects 3D points onto the 2D image sensor. Think of it as encoding:</p>
+    <ul>
+        <li><strong>Focal length (fx, fy)</strong>: How much the camera "zooms". Larger values = more zoomed in.</li>
+        <li><strong>Principal point (cx, cy)</strong>: Where the center of the lens projects onto the image (usually the image center).</li>
+    </ul>
+    <p>Since we don't know the actual webcam specifications, we use reasonable approximations. This works well enough because small errors in intrinsics mainly affect translation, not rotation angles.</p>
+</div>
+
+<h3>Lines 106-108: Initial Vectors</h3>
+
+<div class="code-block">    <span class="comment">// Fresh rvec/tvec each frame like Timothy's code</span>
+    <span class="keyword">const</span> rvec = cv.Mat.<span class="function">zeros</span>(<span class="number">3</span>, <span class="number">1</span>, cv.CV_64F);
+    <span class="keyword">const</span> tvec = cv.Mat.<span class="function">zeros</span>(<span class="number">3</span>, <span class="number">1</span>, cv.CV_64F);</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ul>
+        <li><code>rvec</code>: Rotation vector (3×1) — will be filled by solvePnP</li>
+        <li><code>tvec</code>: Translation vector (3×1) — will be filled by solvePnP</li>
+    </ul>
+    <p>Both are initialized to zeros and will be overwritten with the computed pose.</p>
+</div>
+
+<!-- ==================== SECTION 7 ==================== -->
+<h2 id="section7" class="page-break">8. Solving the PnP Problem</h2>
+
+<h3>Lines 110-114: The Core Algorithm</h3>
+
+<div class="code-block">    <span class="comment">// Use SOLVEPNP_ITERATIVE without extrinsic guess - exactly like Timothy</span>
+    <span class="keyword">const</span> ok = cv.<span class="function">solvePnP</span>(
+      modelPoints, imagePoints, cameraMatrix, distCoeffs,
+      rvec, tvec, <span class="keyword">false</span>, cv.SOLVEPNP_ITERATIVE
+    );</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>This is the core computer vision algorithm. Parameters:</p>
+    <ol>
+        <li><code>modelPoints</code>: 3D coordinates of face model (input)</li>
+        <li><code>imagePoints</code>: 2D pixel coordinates from image (input)</li>
+        <li><code>cameraMatrix</code>: Camera intrinsics (input)</li>
+        <li><code>distCoeffs</code>: Distortion coefficients (input)</li>
+        <li><code>rvec</code>: Rotation vector (output)</li>
+        <li><code>tvec</code>: Translation vector (output)</li>
+        <li><code>false</code>: Don't use previous values as initial guess</li>
+        <li><code>SOLVEPNP_ITERATIVE</code>: Use iterative Levenberg-Marquardt optimization</li>
+    </ol>
+    <p>Returns <code>true</code> if successful, <code>false</code> otherwise.</p>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: What is PnP?</h4>
+    <p><strong>PnP (Perspective-n-Point)</strong> is a classic computer vision problem:</p>
+    <blockquote>"Given n correspondences between 3D points and their 2D projections, plus camera parameters, find the pose (rotation + translation) of the object."</blockquote>
+    <p>The algorithm finds the rotation and translation that, when applied to the 3D model points and projected through the camera, best matches the observed 2D image points.</p>
+    <p>The <code>SOLVEPNP_ITERATIVE</code> method uses Levenberg-Marquardt optimization to refine the solution iteratively for higher accuracy.</p>
+</div>
+
+<h3>Lines 116-128: Converting Rotation Vector to Matrix</h3>
+
+<div class="code-block">    <span class="keyword">let</span> angles = <span class="keyword">null</span>;
+
+    <span class="keyword">if</span> (ok) {
+      <span class="keyword">const</span> R = cv.Mat.<span class="function">zeros</span>(<span class="number">3</span>, <span class="number">3</span>, cv.CV_64F);
+      cv.<span class="function">Rodrigues</span>(rvec, R); <span class="comment">// rvec->R</span>
+
+      <span class="comment">// Read rotation matrix - EXACT same as Timothy's</span>
+      <span class="keyword">const</span> d = R.data64F; <span class="comment">// Float64Array length 9</span>
+      <span class="keyword">const</span> Rjs = [
+        [d[<span class="number">0</span>], d[<span class="number">1</span>], d[<span class="number">2</span>]],
+        [d[<span class="number">3</span>], d[<span class="number">4</span>], d[<span class="number">5</span>]],
+        [d[<span class="number">6</span>], d[<span class="number">7</span>], d[<span class="number">8</span>]]
+      ];</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li>Create a 3×3 matrix <code>R</code> to hold the rotation matrix</li>
+        <li><code>cv.Rodrigues(rvec, R)</code>: Convert the 3×1 rotation vector to a 3×3 rotation matrix using the Rodrigues formula</li>
+        <li><code>R.data64F</code>: Access the underlying Float64Array (9 elements, row-major order)</li>
+        <li>Copy into a JavaScript 2D array <code>Rjs</code> for easier manipulation</li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: Rotation Vector vs. Rotation Matrix</h4>
+    <p>A <strong>rotation vector</strong> (rvec) is a compact 3-element representation where:</p>
+    <ul>
+        <li>The <strong>direction</strong> of the vector is the axis of rotation</li>
+        <li>The <strong>magnitude</strong> (length) is the angle of rotation in radians</li>
+    </ul>
+    <p>A <strong>rotation matrix</strong> is a 3×3 matrix that directly encodes how coordinate axes transform. The Rodrigues formula converts between these representations.</p>
+    <p>We need the matrix form to extract human-readable Euler angles (yaw, pitch, roll).</p>
+</div>
+
+<!-- ==================== SECTION 8 ==================== -->
+<h2 id="section8" class="page-break">9. Extracting Euler Angles</h2>
+
+<h3>Lines 130-146: Z-Y-X Euler Angle Decomposition</h3>
+
+<div class="code-block">      <span class="comment">// Z-Y-X Euler (yaw, pitch, roll) - EXACT same as Timothy's</span>
+      <span class="keyword">const</span> RAD2DEG = <span class="number">180</span> / Math.PI;
+      <span class="keyword">const</span> r20 = Rjs[<span class="number">2</span>][<span class="number">0</span>], r00 = Rjs[<span class="number">0</span>][<span class="number">0</span>], r10 = Rjs[<span class="number">1</span>][<span class="number">0</span>];
+      <span class="keyword">const</span> r21 = Rjs[<span class="number">2</span>][<span class="number">1</span>], r22 = Rjs[<span class="number">2</span>][<span class="number">2</span>];
+      <span class="keyword">const</span> r01 = Rjs[<span class="number">0</span>][<span class="number">1</span>], r11 = Rjs[<span class="number">1</span>][<span class="number">1</span>];
+
+      <span class="keyword">let</span> yaw = Math.<span class="function">asin</span>(Math.<span class="function">max</span>(<span class="number">-1</span>, Math.<span class="function">min</span>(<span class="number">1</span>, -r20)));
+      <span class="keyword">const</span> cosYaw = Math.<span class="function">cos</span>(yaw);
+      <span class="keyword">let</span> roll, pitch;
+
+      <span class="keyword">if</span> (Math.<span class="function">abs</span>(cosYaw) > <span class="number">1e-6</span>) {
+        roll = Math.<span class="function">atan2</span>(r10, r00);
+        pitch = Math.<span class="function">atan2</span>(r21, r22);
+      } <span class="keyword">else</span> {
+        roll = Math.<span class="function">atan2</span>(-r01, r11);
+        pitch = <span class="number">0</span>;
+      }</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li><code>RAD2DEG</code>: Conversion factor from radians to degrees</li>
+        <li>Extract specific elements from the rotation matrix needed for Euler decomposition</li>
+        <li><strong>Yaw</strong> = arcsin(-R[2][0]), clamped to [-1, 1] for numerical safety</li>
+        <li>Check if we're in gimbal lock (cosYaw ≈ 0):
+            <ul>
+                <li><strong>Normal case</strong>: Use standard formulas for roll and pitch</li>
+                <li><strong>Gimbal lock</strong>: Use alternate formulas to avoid division by zero</li>
+            </ul>
+        </li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: Why These Formulas?</h4>
+    <p>A rotation matrix R can be decomposed into three sequential rotations (Euler angles). For Z-Y-X convention (common in aerospace):</p>
+    <p>R = R_z(yaw) × R_y(pitch) × R_x(roll)</p>
+    <p>The formulas come from inverting this composition. The key relationships are:</p>
+    <ul>
+        <li><strong>yaw</strong> = arcsin(-R[2][0])</li>
+        <li><strong>roll</strong> = atan2(R[1][0], R[0][0])</li>
+        <li><strong>pitch</strong> = atan2(R[2][1], R[2][2])</li>
+    </ul>
+    <p><strong>Gimbal lock</strong> occurs when yaw = ±90°. At this point, roll and pitch axes align, and we lose one degree of freedom. The code handles this by using an alternate formula.</p>
+    <p>The <code>Math.max(-1, Math.min(1, ...))</code> clamping prevents errors from numerical precision issues (asin requires input in [-1, 1]).</p>
+</div>
+
+<!-- ==================== SECTION 9 ==================== -->
+<h2 id="section9" class="page-break">10. Angle Adjustments & Conventions</h2>
+
+<h3>Lines 148-169: Convention Adjustments</h3>
+
+<div class="code-block">      <span class="comment">// Timothy's pitch adjustment</span>
+      <span class="keyword">if</span> (pitch < <span class="number">0</span>) {
+        pitch = pitch * RAD2DEG + <span class="number">180</span>;
+      } <span class="keyword">else</span> {
+        pitch = pitch * RAD2DEG - <span class="number">180</span>;
+      }
+      yaw *= RAD2DEG;
+      roll *= RAD2DEG;
+
+      <span class="comment">// Timothy's roll wrap</span>
+      <span class="keyword">if</span> (roll < <span class="number">-90</span> && roll >= <span class="number">-180</span>) {
+        roll = <span class="number">180</span> + roll;
+      } <span class="keyword">else if</span> (roll > <span class="number">90</span> && roll < <span class="number">180</span>) {
+        roll = <span class="number">-180</span> + roll;
+      }
+
+      <span class="comment">// Timothy's final output</span>
+      angles = { 
+        yaw: yaw, 
+        pitch: pitch * <span class="number">-1</span>, 
+        roll: roll * <span class="number">-1</span> 
+      };
+
+      R.<span class="function">delete</span>();
+    }</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li><strong>Pitch adjustment</strong>: Add/subtract 180° to flip the coordinate convention:
+            <ul>
+                <li>Looking up = positive pitch</li>
+                <li>Looking down = negative pitch</li>
+            </ul>
+        </li>
+        <li><strong>Convert to degrees</strong>: Multiply yaw and roll by RAD2DEG</li>
+        <li><strong>Roll wrapping</strong>: Keep roll in a continuous range near 0° for typical head positions (avoids jumps at ±180°)</li>
+        <li><strong>Final sign flips</strong>: Multiply pitch and roll by -1 to match expected conventions</li>
+        <li><strong>Memory cleanup</strong>: Delete the rotation matrix to free WebAssembly memory</li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: Why All These Adjustments?</h4>
+    <p>Different applications use different conventions for what "positive" and "negative" angles mean. These adjustments ensure:</p>
+    <ul>
+        <li><strong>Yaw</strong>: Turning left = negative, turning right = positive</li>
+        <li><strong>Pitch</strong>: Looking up = positive, looking down = negative</li>
+        <li><strong>Roll</strong>: Tilting right = positive, tilting left = negative</li>
+    </ul>
+    <p>The roll wrapping prevents the angle from jumping discontinuously when the head tilts past certain thresholds (e.g., from +179° to -179°).</p>
+</div>
+
+<h3>Lines 174-195: Cleanup and Return</h3>
+
+<div class="code-block">    <span class="comment">// Clean up</span>
+    imagePoints.<span class="function">delete</span>();
+    modelPoints.<span class="function">delete</span>();
+    cameraMatrix.<span class="function">delete</span>();
+    distCoeffs.<span class="function">delete</span>();
+    rvec.<span class="function">delete</span>();
+    tvec.<span class="function">delete</span>();
+
+    <span class="keyword">if</span> (!angles) {
+      <span class="keyword">return</span> <span class="keyword">null</span>;
+    }
+
+    <span class="keyword">return</span> {
+      rotation: <span class="keyword">null</span>,
+      translation: <span class="keyword">null</span>,
+      angles: {
+        yaw: angles.yaw,
+        pitch: angles.pitch,
+        roll: angles.roll
+      },
+      source: <span class="string">'solvepnp'</span>  <span class="comment">// For debugging</span>
+    };
+
+  } <span class="keyword">catch</span> (error) {
+    console.<span class="function">error</span>(<span class="string">'Error in OpenCV solvePnP:'</span>, error);
+    <span class="keyword">return</span> <span class="keyword">null</span>;
+  }
+}</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li><strong>Memory cleanup</strong>: Every OpenCV matrix must be explicitly deleted to prevent memory leaks</li>
+        <li>Return null if angles weren't computed successfully</li>
+        <li>Return the angles object with source identifier for debugging</li>
+        <li>Catch any errors and return null gracefully</li>
+    </ol>
+</div>
+
+<div class="important">
+    <strong>Critical: Memory Management</strong>
+    <p>OpenCV.js uses WebAssembly with manual memory management. Unlike regular JavaScript where garbage collection handles cleanup automatically, every <code>cv.Mat</code> object MUST be explicitly deleted with <code>.delete()</code>. Forgetting this will cause memory leaks that can crash the browser!</p>
+</div>
+
+<!-- ==================== SECTION 10 ==================== -->
+<h2 id="section10" class="page-break">11. Focal Length Estimation Helper</h2>
+
+<h3>Lines 203-233: estimateFocalLengthFromFaceSize()</h3>
+
+<div class="code-block"><span class="comment">/**
+ * Estimate focal length from face size in the image
+ */</span>
+<span class="keyword">function</span> <span class="function">estimateFocalLengthFromFaceSize</span>(landmarks, imageWidth) {
+  <span class="keyword">if</span> (!landmarks || landmarks.length < <span class="number">468</span>) {
+    <span class="keyword">return</span> <span class="keyword">null</span>;
+  }
+  
+  <span class="keyword">try</span> {
+    <span class="keyword">const</span> leftEye = landmarks[<span class="number">33</span>];
+    <span class="keyword">const</span> rightEye = landmarks[<span class="number">263</span>];
+    
+    <span class="keyword">if</span> (!leftEye || !rightEye) {
+      <span class="keyword">return</span> <span class="keyword">null</span>;
+    }
+    
+    <span class="keyword">const</span> eyeDistancePixels = Math.<span class="function">abs</span>(rightEye.x - leftEye.x) * imageWidth;
+    <span class="keyword">const</span> AVERAGE_IPD_MM = <span class="number">63</span>;
+    <span class="keyword">const</span> TYPICAL_DISTANCE_MM = <span class="number">550</span>;
+    <span class="keyword">const</span> estimatedFocalLength = (eyeDistancePixels * TYPICAL_DISTANCE_MM) / AVERAGE_IPD_MM;
+    
+    <span class="keyword">if</span> (estimatedFocalLength < imageWidth * <span class="number">0.3</span> || estimatedFocalLength > imageWidth * <span class="number">2.0</span>) {
+      <span class="keyword">return</span> <span class="keyword">null</span>;
+    }
+    
+    <span class="keyword">return</span> estimatedFocalLength;
+  } <span class="keyword">catch</span> (error) {
+    console.<span class="function">error</span>(<span class="string">'Error estimating focal length:'</span>, error);
+    <span class="keyword">return</span> <span class="keyword">null</span>;
+  }
+}</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <ol>
+        <li>Get the left and right eye corner landmarks (indices 33 and 263)</li>
+        <li>Calculate the distance between eyes in pixels</li>
+        <li>Use known values:
+            <ul>
+                <li><code>AVERAGE_IPD_MM = 63</code>: Average human inter-pupillary distance (63mm)</li>
+                <li><code>TYPICAL_DISTANCE_MM = 550</code>: Typical sitting distance from screen (55cm)</li>
+            </ul>
+        </li>
+        <li>Apply the pinhole camera formula to estimate focal length</li>
+        <li>Sanity check: reject values outside reasonable range (0.3× to 2× image width)</li>
+    </ol>
+</div>
+
+<div class="intuition">
+    <h4>Intuition: The Pinhole Camera Model</h4>
+    <p>The relationship between real-world size, image size, distance, and focal length is:</p>
+    <p style="text-align: center; font-size: 1.2em;"><code>focal_length = (pixel_size × real_distance) / real_size</code></p>
+    <p>If we know:</p>
+    <ul>
+        <li>Human eyes are ~63mm apart (real_size)</li>
+        <li>User is ~550mm from camera (real_distance)</li>
+        <li>Eyes appear X pixels apart in image (pixel_size)</li>
+    </ul>
+    <p>We can estimate the camera's focal length. This is useful for applications needing more accurate camera parameters.</p>
+</div>
+
+<!-- ==================== SECTION 11 ==================== -->
+<h2 id="section11">12. Global Exports</h2>
+
+<h3>Lines 235-240: Making Functions Available</h3>
+
+<div class="code-block"><span class="comment">// Make functions globally available</span>
+window.estimateHeadPose = estimateHeadPose;
+window.estimateHeadPoseSolvePnP = estimateHeadPoseSolvePnP;
+window.estimateFocalLengthFromFaceSize = estimateFocalLengthFromFaceSize;
+
+console.<span class="function">log</span>(<span class="string">'✅ Head Pose Module: Matrix (smooth) → SolvePnP (fallback)'</span>);</div>
+
+<div class="explanation">
+    <h4>Code Explanation</h4>
+    <p>Since this code doesn't use ES6 modules (import/export), functions are attached to the global <code>window</code> object so other scripts can access them. The console.log confirms the module loaded successfully.</p>
+</div>
+
+<!-- ==================== SUMMARY ==================== -->
+<h2 id="summary" class="page-break">13. Summary & Flow Diagram</h2>
+
+<div class="diagram">
+Camera Image
+     │
+     ▼
+MediaPipe Face Detection
+     │
+     ▼
+468 Facial Landmarks
+     │
+     ▼
+Extract 6 Key Points
+(nose, chin, eyes, mouth corners)
+     │
+     ├──────────────────────────────────────┐
+     ▼                                      ▼
+Matrix Available?                    No Matrix Available
+     │                                      │
+     ▼                                      ▼
+Use MediaPipe's                      Use solvePnP:
+Pre-computed Angles        ┌─────────────────────────────┐
+(already smooth!)          │ 1. Build 2D image points    │
+     │                     │ 2. Define 3D face model     │
+     │                     │ 3. Set camera parameters    │
+     │                     │ 4. Solve PnP problem        │
+     │                     │ 5. Convert to Euler angles  │
+     │                     │ 6. Apply adjustments        │
+     │                     └─────────────────────────────┘
+     │                                      │
+     └──────────────────┬───────────────────┘
+                        ▼
+              { yaw, pitch, roll }
+                        │
+                        ▼
+           Control cursor / interface
+</div>
+
+<h3>Key Concepts Summary</h3>
+
+<table>
+    <tr>
+        <th>Concept</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td><strong>Yaw</strong></td>
+        <td>Head rotation left/right (like shaking "no")</td>
+    </tr>
+    <tr>
+        <td><strong>Pitch</strong></td>
+        <td>Head tilt up/down (like nodding "yes")</td>
+    </tr>
+    <tr>
+        <td><strong>Roll</strong></td>
+        <td>Head tilt sideways (ear to shoulder)</td>
+    </tr>
+    <tr>
+        <td><strong>PnP Problem</strong></td>
+        <td>Finding 3D pose from 2D-3D point correspondences</td>
+    </tr>
+    <tr>
+        <td><strong>Rotation Matrix</strong></td>
+        <td>3×3 matrix encoding how coordinate axes transform</td>
+    </tr>
+    <tr>
+        <td><strong>Euler Angles</strong></td>
+        <td>Three angles representing rotation (human-readable)</td>
+    </tr>
+    <tr>
+        <td><strong>Camera Intrinsics</strong></td>
+        <td>Internal camera parameters (focal length, principal point)</td>
+    </tr>
+</table>
+
+<div class="intuition">
+    <h4>The Core Insight</h4>
+    <p>Head pose estimation solves an <strong>inverse problem</strong>: given how a face <em>appears</em> in a 2D image, figure out how it's <em>oriented</em> in 3D space. By comparing the observed 2D positions of facial landmarks with a known 3D face model, we can mathematically determine the rotation (and translation) that produced that particular 2D view.</p>
+</div>
+
+<hr style="margin-top: 50px;">
+<p style="text-align: center; color: #666; font-size: 0.9em;">
+    Head Pose Estimation Module — Code Explanation Document<br>
+    Generated for educational purposes
+</p>
+
+</body>
+</html>

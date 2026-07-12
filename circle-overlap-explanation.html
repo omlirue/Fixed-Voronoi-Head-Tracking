@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Overlap Geometry Explained</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+        .diagram-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .diagram-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        canvas {
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            display: block;
+            margin: 20px auto;
+            background: white;
+        }
+        .explanation {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            line-height: 1.8;
+        }
+        .formula {
+            background: #3498db;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .highlight {
+            background: #f39c12;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .slider-container {
+            display: inline-block;
+            margin: 0 20px;
+        }
+        input[type="range"] {
+            width: 300px;
+            margin: 10px;
+        }
+        label {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .value-display {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .step-container {
+            background: #fff;
+            border-left: 4px solid #3498db;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .step-number {
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .warning {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Circle Overlap Geometry Explained</h1>
+    <div class="subtitle">Understanding the Math Behind Target Spacing in Fitts' Law Experiments</div>
+
+    <!-- Diagram 1: Basic Setup -->
+    <div class="diagram-container">
+        <div class="diagram-title">📐 Step 1: The Basic Setup (8 Targets in a Circle)</div>
+        <canvas id="canvas1" width="700" height="700"></canvas>
+        <div class="explanation">
+            <p><strong>What you're looking at:</strong></p>
+            <p>• <span class="highlight">8 targets</span> arranged in a circle around a center point (home circle)</p>
+            <p>• Each target is placed at equal angular intervals: <strong>0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°</strong></p>
+            <p>• <strong>A</strong> (Amplitude) = Distance from center to each target's center</p>
+            <p>• <strong>W</strong> (Width) = Diameter of each target circle</p>
+        </div>
+    </div>
+
+    <!-- Diagram 2: Angular Separation -->
+    <div class="diagram-container">
+        <div class="diagram-title">📏 Step 2: Angular Separation Between Adjacent Targets</div>
+        <canvas id="canvas2" width="700" height="700"></canvas>
+        <div class="formula">
+            Angular Separation = 360° ÷ 8 = 45°
+        </div>
+        <div class="explanation">
+            <p><strong>Key Point:</strong> The angle between any two adjacent targets is always <span class="highlight">45°</span></p>
+            <p>• Full circle = 360°</p>
+            <p>• Number of targets = 8</p>
+            <p>• Angle between adjacent targets = 360° ÷ 8 = 45°</p>
+        </div>
+    </div>
+
+    <!-- Diagram 3: Chord Length Explained -->
+    <div class="diagram-container">
+        <div class="diagram-title">📐 Step 3: Chord Length (Straight-Line Distance Between Target Centers)</div>
+        <canvas id="canvas3" width="700" height="700"></canvas>
+        <div class="explanation">
+            <div class="step-container">
+                <span class="step-number">1</span>
+                <strong>The Problem:</strong> We need the <span class="highlight">straight-line distance</span> between two adjacent target centers (the orange line), NOT the curved arc distance.
+            </div>
+            
+            <div class="step-container">
+                <span class="step-number">2</span>
+                <strong>The Formula:</strong> For two points on a circle separated by angle θ, the chord length is:
+                <div class="formula">
+                    Chord Length = 2 × R × sin(θ/2)
+                </div>
+                Where:
+                <ul>
+                    <li><strong>R</strong> = radius (in our case, Amplitude A)</li>
+                    <li><strong>θ</strong> = angle between points = 45°</li>
+                </ul>
+            </div>
+
+            <div class="step-container">
+                <span class="step-number">3</span>
+                <strong>Applying the Formula:</strong>
+                <div class="formula">
+                    Chord Length = 2 × A × sin(45°/2)<br>
+                    = 2 × A × sin(22.5°)<br>
+                    = 2 × A × 0.3827<br>
+                    = 0.765 × A
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagram 4: Gap Between Circles -->
+    <div class="diagram-container">
+        <div class="diagram-title">🎯 Step 4: Gap Between Target Circles (The Critical Part!)</div>
+        <canvas id="canvas4" width="700" height="700"></canvas>
+        <div class="explanation">
+            <p><strong>Understanding the Gap:</strong></p>
+            <div class="step-container">
+                <span class="step-number">1</span>
+                <strong>Chord Length:</strong> Distance between target <em>centers</em> = <span class="highlight">0.765 × A</span>
+            </div>
+            
+            <div class="step-container">
+                <span class="step-number">2</span>
+                <strong>Target Radius:</strong> Each target extends <span class="highlight">W/2</span> from its center
+            </div>
+            
+            <div class="step-container">
+                <span class="step-number">3</span>
+                <strong>Gap Calculation:</strong>
+                <div class="formula">
+                    Gap = Chord Length - 2 × (Target Radius)<br>
+                    Gap = 0.765 × A - 2 × (W/2)<br>
+                    Gap = 0.765 × A - W
+                </div>
+            </div>
+
+            <div class="step-container">
+                <span class="step-number">4</span>
+                <strong>No Overlap Condition:</strong>
+                <div class="formula">
+                    For no overlap: Gap ≥ 0<br>
+                    0.765 × A - W ≥ 0<br>
+                    0.765 × A ≥ W<br>
+                    A ≥ W ÷ 0.765<br>
+                    A ≥ 1.31 × W
+                </div>
+                <p style="margin-top: 15px;"><strong>Translation:</strong> The amplitude must be at least <span class="highlight">1.31 times the target width</span> to prevent overlap!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Diagram -->
+    <div class="diagram-container">
+        <div class="diagram-title">🎮 Step 5: Interactive Demonstration</div>
+        <div class="controls">
+            <div class="slider-container">
+                <label>Amplitude (A): <span class="value-display" id="ampValue">270px</span></label>
+                <input type="range" id="amplitudeSlider" min="100" max="400" value="270" step="10">
+            </div>
+            <div class="slider-container">
+                <label>Target Width (W): <span class="value-display" id="widthValue">100px</span></label>
+                <input type="range" id="widthSlider" min="50" max="250" value="100" step="10">
+            </div>
+        </div>
+        <div id="statusMessage"></div>
+        <canvas id="canvas5" width="700" height="700"></canvas>
+        <div class="explanation">
+            <p><strong>Try adjusting the sliders above to see:</strong></p>
+            <p>• <span style="color: #27ae60;">✓ Green targets</span> = No overlap (safe configuration)</p>
+            <p>• <span style="color: #e74c3c;">✗ Red targets</span> = Circles overlap (invalid configuration)</p>
+            <p>• Watch how the gap changes as you adjust amplitude and target width!</p>
+        </div>
+    </div>
+
+    <!-- Your Specific Numbers -->
+    <div class="diagram-container">
+        <div class="diagram-title">📊 Step 6: Your Experiment's Specific Calculations</div>
+        <div class="explanation">
+            <h3 style="color: #2c3e50; margin-top: 0;">For a 1920×1080 display:</h3>
+            
+            <div class="step-container">
+                <strong>Limiting Dimension:</strong> min(1920, 1080) = <span class="highlight">1080px</span>
+            </div>
+
+            <div class="step-container">
+                <strong>Largest Target (17%):</strong>
+                <div class="formula">
+                    W = 0.17 × 1080px = 183.6px
+                </div>
+            </div>
+
+            <div class="step-container">
+                <strong>Minimum Amplitude Needed:</strong>
+                <div class="formula">
+                    A ≥ W ÷ 0.765<br>
+                    A ≥ 183.6px ÷ 0.765<br>
+                    A ≥ 240px<br>
+                    A ≥ 240px ÷ 1080px = 22.2%
+                </div>
+            </div>
+
+            <div class="step-container">
+                <strong>Your Choice:</strong>
+                <div class="success">
+                    ✓ You selected 25% amplitude (270px on 1080p)<br>
+                    This provides a comfortable margin: 270px > 240px minimum<br>
+                    Safety margin: (270 - 240) ÷ 240 = 12.5% extra space
+                </div>
+            </div>
+
+            <h3 style="color: #2c3e50; margin-top: 30px;">Gap Verification:</h3>
+            <div class="formula">
+                Gap = 0.765 × A - W<br>
+                Gap = 0.765 × 270px - 183.6px<br>
+                Gap = 206.6px - 183.6px<br>
+                Gap = 23px ✓
+            </div>
+            <p style="text-align: center; margin-top: 10px;">
+                <strong>Result:</strong> Adjacent targets are separated by <span class="highlight">23 pixels</span> of clear space!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to draw everything
+        function drawDiagram(canvas, options) {
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw amplitude circle (dashed)
+            if (options.showAmplitudeCircle) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, options.amplitude, 0, Math.PI * 2);
+                ctx.strokeStyle = '#bdc3c7';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Draw center/home circle
+            if (options.showHomeCircle) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+                ctx.fillStyle = '#3498db';
+                ctx.fill();
+                ctx.strokeStyle = '#2980b9';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('HOME', centerX, centerY);
+            }
+            
+            // Calculate target positions
+            const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+            const positions = angles.map(deg => {
+                const rad = (deg - 90) * Math.PI / 180; // -90 to start at top
+                return {
+                    x: centerX + options.amplitude * Math.cos(rad),
+                    y: centerY + options.amplitude * Math.sin(rad),
+                    angle: deg
+                };
+            });
+            
+            // Draw angle arc (for diagram 2)
+            if (options.showAngleArc) {
+                const rad1 = (0 - 90) * Math.PI / 180;
+                const rad2 = (45 - 90) * Math.PI / 180;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, options.amplitude * 0.6, rad1, rad2);
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('45°', centerX + options.amplitude * 0.45, centerY - options.amplitude * 0.3);
+            }
+            
+            // Draw chord line (for diagram 3)
+            if (options.showChordLine) {
+                ctx.beginPath();
+                ctx.moveTo(positions[0].x, positions[0].y);
+                ctx.lineTo(positions[1].x, positions[1].y);
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                
+                // Calculate and display chord length
+                const chordLength = 0.765 * options.amplitude;
+                ctx.fillStyle = '#f39c12';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                const midX = (positions[0].x + positions[1].x) / 2;
+                const midY = (positions[0].y + positions[1].y) / 2;
+                ctx.fillText(`Chord = ${chordLength.toFixed(1)}px`, midX + 80, midY - 20);
+                ctx.fillText(`= 0.765 × A`, midX + 80, midY + 5);
+            }
+            
+            // Draw gap indicator (for diagram 4)
+            if (options.showGap) {
+                const dx = positions[1].x - positions[0].x;
+                const dy = positions[1].y - positions[0].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const nx = dx / dist;
+                const ny = dy / dist;
+                
+                const start1X = positions[0].x + nx * options.targetRadius;
+                const start1Y = positions[0].y + ny * options.targetRadius;
+                const start2X = positions[1].x - nx * options.targetRadius;
+                const start2Y = positions[1].y - ny * options.targetRadius;
+                
+                ctx.beginPath();
+                ctx.moveTo(start1X, start1Y);
+                ctx.lineTo(start2X, start2Y);
+                ctx.strokeStyle = '#27ae60';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+                
+                const gap = 0.765 * options.amplitude - 2 * options.targetRadius;
+                ctx.fillStyle = '#27ae60';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                const midX = (start1X + start2X) / 2;
+                const midY = (start1Y + start2Y) / 2;
+                ctx.fillText(`Gap = ${gap.toFixed(1)}px`, midX + 70, midY - 10);
+            }
+            
+            // Draw radius lines (for diagram 1)
+            if (options.showRadiusLines) {
+                positions.forEach(pos => {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.strokeStyle = '#95a5a6';
+                    ctx.setLineDash([3, 3]);
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+                
+                // Draw 'A' label
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('A', centerX + options.amplitude / 2, centerY - 80);
+            }
+            
+            // Draw target circles
+            const checkOverlap = options.checkOverlap || false;
+            let hasOverlap = false;
+            
+            positions.forEach((pos, i) => {
+                // Check for overlap with next target
+                if (checkOverlap && i < positions.length - 1) {
+                    const next = positions[i + 1];
+                    const dist = Math.sqrt((next.x - pos.x) ** 2 + (next.y - pos.y) ** 2);
+                    const minDist = 2 * options.targetRadius;
+                    if (dist < minDist) hasOverlap = true;
+                }
+                
+                // Also check last with first
+                if (checkOverlap && i === positions.length - 1) {
+                    const first = positions[0];
+                    const dist = Math.sqrt((first.x - pos.x) ** 2 + (first.y - pos.y) ** 2);
+                    const minDist = 2 * options.targetRadius;
+                    if (dist < minDist) hasOverlap = true;
+                }
+                
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, options.targetRadius, 0, Math.PI * 2);
+                
+                if (checkOverlap) {
+                    ctx.fillStyle = hasOverlap ? 'rgba(231, 76, 60, 0.3)' : 'rgba(39, 174, 96, 0.3)';
+                    ctx.strokeStyle = hasOverlap ? '#e74c3c' : '#27ae60';
+                } else {
+                    ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
+                    ctx.strokeStyle = '#3498db';
+                }
+                
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Draw angle labels
+                if (options.showAngleLabels) {
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${pos.angle}°`, pos.x, pos.y);
+                }
+                
+                // Draw target numbers
+                if (options.showTargetNumbers) {
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`T${i + 1}`, pos.x, pos.y);
+                }
+            });
+            
+            return hasOverlap;
+        }
+        
+        // Diagram 1: Basic Setup
+        drawDiagram(document.getElementById('canvas1'), {
+            amplitude: 250,
+            targetRadius: 50,
+            showHomeCircle: true,
+            showAmplitudeCircle: true,
+            showRadiusLines: true,
+            showAngleLabels: true
+        });
+        
+        // Diagram 2: Angular Separation
+        drawDiagram(document.getElementById('canvas2'), {
+            amplitude: 250,
+            targetRadius: 50,
+            showHomeCircle: true,
+            showAmplitudeCircle: true,
+            showAngleArc: true,
+            showTargetNumbers: true
+        });
+        
+        // Diagram 3: Chord Length
+        drawDiagram(document.getElementById('canvas3'), {
+            amplitude: 250,
+            targetRadius: 50,
+            showHomeCircle: true,
+            showAmplitudeCircle: true,
+            showChordLine: true,
+            showTargetNumbers: true
+        });
+        
+        // Diagram 4: Gap
+        drawDiagram(document.getElementById('canvas4'), {
+            amplitude: 270,
+            targetRadius: 91.8, // 183.6 / 2
+            showHomeCircle: true,
+            showAmplitudeCircle: true,
+            showGap: true,
+            showTargetNumbers: true
+        });
+        
+        // Diagram 5: Interactive
+        function updateInteractive() {
+            const amplitude = parseInt(document.getElementById('amplitudeSlider').value);
+            const width = parseInt(document.getElementById('widthSlider').value);
+            const targetRadius = width / 2;
+            
+            document.getElementById('ampValue').textContent = amplitude + 'px';
+            document.getElementById('widthValue').textContent = width + 'px';
+            
+            const hasOverlap = drawDiagram(document.getElementById('canvas5'), {
+                amplitude: amplitude,
+                targetRadius: targetRadius,
+                showHomeCircle: true,
+                showAmplitudeCircle: true,
+                checkOverlap: true,
+                showTargetNumbers: true
+            });
+            
+            const statusMsg = document.getElementById('statusMessage');
+            const gap = 0.765 * amplitude - width;
+            const minAmplitude = width / 0.765;
+            
+            if (hasOverlap) {
+                statusMsg.innerHTML = `<div class="warning">
+                    ✗ OVERLAP DETECTED!<br>
+                    Gap = ${gap.toFixed(1)}px (negative = overlap)<br>
+                    Minimum amplitude needed: ${minAmplitude.toFixed(1)}px<br>
+                    Current amplitude: ${amplitude}px
+                </div>`;
+            } else {
+                statusMsg.innerHTML = `<div class="success">
+                    ✓ NO OVERLAP - Valid Configuration!<br>
+                    Gap = ${gap.toFixed(1)}px<br>
+                    Minimum amplitude needed: ${minAmplitude.toFixed(1)}px<br>
+                    Current amplitude: ${amplitude}px (${((amplitude - minAmplitude) / minAmplitude * 100).toFixed(1)}% safety margin)
+                </div>`;
+            }
+        }
+        
+        document.getElementById('amplitudeSlider').addEventListener('input', updateInteractive);
+        document.getElementById('widthSlider').addEventListener('input', updateInteractive);
+        updateInteractive();
+    </script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,7 @@
+ParticipantID,Part,PairNumber,PairVariance,FilterType,FilterPhase,EasyToHit,LowEffort,CursorSlow,CursorAccurate,SpeedVsJitter,Comments,Timestamp
+P10,Part A,2,7.950621784106091,oneEuro,0,5,5,5,5,"","",1779842300288
+P10,Part A,2,7.950621784106091,exponential,1,5,5,1,5,"","",1779842418236
+P10,Part A,3,14.27397707358493,oneEuro,0,3,3,1,3,"","",1779842515782
+P10,Part A,3,14.27397707358493,exponential,1,3,4,3,3,"","",1779842597497
+P10,Part A,1,1.627266494627252,oneEuro,0,3,3,3,3,"","",1779842695927
+P10,Part A,1,1.627266494627252,exponential,1,3,3,4,5,"","",1779842793089

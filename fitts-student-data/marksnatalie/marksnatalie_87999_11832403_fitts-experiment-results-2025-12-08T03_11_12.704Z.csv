@@ -1,0 +1,37 @@
+PairNumber,PairVariance,PairDescription,FilterType,FilterRank,FilterVariance,FilterLatency,TargetSize,Amplitude,N,MeanMT,Ae,We,IDe,TP
+1,1,"Very Low Variance (~1.0) - Maximum Stability",exponential,1,1.0276,1092.43,96.30000000000001,240.75,8,5.5055,438.05,65.33,2.9458,0.5351
+1,1,"Very Low Variance (~1.0) - Maximum Stability",exponential,1,1.0276,1092.43,96.30000000000001,317.79,8,4.8023,589.79,95.53,2.8428,0.5920
+1,1,"Very Low Variance (~1.0) - Maximum Stability",exponential,1,1.0276,1092.43,130.005,240.75,8,3.6488,450.61,76.21,2.7892,0.7644
+1,1,"Very Low Variance (~1.0) - Maximum Stability",exponential,1,1.0276,1092.43,130.005,317.79,8,4.0614,581.55,119.22,2.5553,0.6292
+1,1,"Very Low Variance (~1.0) - Maximum Stability",exponential,1,1.0276,1092.43,163.71,240.75,8,2.9162,436.97,118.94,2.2246,0.7628
+1,1,"Very Low Variance (~1.0) - Maximum Stability",exponential,1,1.0276,1092.43,163.71,317.79,8,3.6313,568.91,118.42,2.5371,0.6987
+1,1,"Very Low Variance (~1.0) - Maximum Stability",oneEuro,1,1.0410,383.47,96.30000000000001,240.75,8,3.4722,438.92,62.02,3.0139,0.8680
+1,1,"Very Low Variance (~1.0) - Maximum Stability",oneEuro,1,1.0410,383.47,96.30000000000001,317.79,8,4.0900,556.80,97.65,2.7446,0.6710
+1,1,"Very Low Variance (~1.0) - Maximum Stability",oneEuro,1,1.0410,383.47,130.005,240.75,8,4.9729,443.65,110.41,2.3271,0.4680
+1,1,"Very Low Variance (~1.0) - Maximum Stability",oneEuro,1,1.0410,383.47,130.005,317.79,8,5.1659,562.12,104.24,2.6764,0.5181
+1,1,"Very Low Variance (~1.0) - Maximum Stability",oneEuro,1,1.0410,383.47,163.71,240.75,8,3.1482,426.15,135.64,2.0503,0.6512
+1,1,"Very Low Variance (~1.0) - Maximum Stability",oneEuro,1,1.0410,383.47,163.71,317.79,8,2.6524,576.44,125.15,2.4869,0.9376
+2,7,"Medium Variance (~7.0) - Balanced",exponential,9,7.0109,504.11,96.30000000000001,240.75,8,3.1910,445.43,95.04,2.5076,0.7858
+2,7,"Medium Variance (~7.0) - Balanced",exponential,9,7.0109,504.11,96.30000000000001,317.79,8,3.0889,587.10,49.05,3.6971,1.1969
+2,7,"Medium Variance (~7.0) - Balanced",exponential,9,7.0109,504.11,130.005,240.75,8,2.4792,450.34,66.14,2.9651,1.1960
+2,7,"Medium Variance (~7.0) - Balanced",exponential,9,7.0109,504.11,130.005,317.79,8,2.4752,584.59,105.06,2.7147,1.0967
+2,7,"Medium Variance (~7.0) - Balanced",exponential,9,7.0109,504.11,163.71,240.75,8,2.0419,417.36,131.57,2.0608,1.0093
+2,7,"Medium Variance (~7.0) - Balanced",exponential,9,7.0109,504.11,163.71,317.79,8,3.1073,544.47,64.70,3.2350,1.0411
+2,7,"Medium Variance (~7.0) - Balanced",oneEuro,27,6.7023,263.16,96.30000000000001,240.75,8,3.0860,418.99,39.42,3.5396,1.1470
+2,7,"Medium Variance (~7.0) - Balanced",oneEuro,27,6.7023,263.16,96.30000000000001,317.79,8,3.5956,570.62,121.01,2.5149,0.6994
+2,7,"Medium Variance (~7.0) - Balanced",oneEuro,27,6.7023,263.16,130.005,240.75,8,2.1126,434.03,77.85,2.7170,1.2861
+2,7,"Medium Variance (~7.0) - Balanced",oneEuro,27,6.7023,263.16,130.005,317.79,8,2.2936,558.17,124.98,2.4505,1.0684
+2,7,"Medium Variance (~7.0) - Balanced",oneEuro,27,6.7023,263.16,163.71,240.75,8,1.5795,429.73,154.18,1.9211,1.2163
+2,7,"Medium Variance (~7.0) - Balanced",oneEuro,27,6.7023,263.16,163.71,317.79,8,2.3270,559.62,125.97,2.4442,1.0504
+3,12.5,"Higher Variance (~12.5) - More Responsive",exponential,23,12.5275,290.57,96.30000000000001,240.75,8,3.1088,426.46,67.20,2.8770,0.9255
+3,12.5,"Higher Variance (~12.5) - More Responsive",exponential,23,12.5275,290.57,96.30000000000001,317.79,8,3.3796,568.46,115.53,2.5657,0.7592
+3,12.5,"Higher Variance (~12.5) - More Responsive",exponential,23,12.5275,290.57,130.005,240.75,8,2.8875,444.22,118.62,2.2464,0.7780
+3,12.5,"Higher Variance (~12.5) - More Responsive",exponential,23,12.5275,290.57,130.005,317.79,8,3.0220,583.11,104.57,2.7172,0.8991
+3,12.5,"Higher Variance (~12.5) - More Responsive",exponential,23,12.5275,290.57,163.71,240.75,8,1.8689,416.05,90.21,2.4884,1.3315
+3,12.5,"Higher Variance (~12.5) - More Responsive",exponential,23,12.5275,290.57,163.71,317.79,8,2.2356,539.02,116.46,2.4927,1.1150
+3,12.5,"Higher Variance (~12.5) - More Responsive",oneEuro,43,12.5063,255.62,96.30000000000001,240.75,8,3.4285,417.23,44.44,3.3769,0.9849
+3,12.5,"Higher Variance (~12.5) - More Responsive",oneEuro,43,12.5063,255.62,96.30000000000001,317.79,8,2.9059,560.77,64.14,3.2843,1.1302
+3,12.5,"Higher Variance (~12.5) - More Responsive",oneEuro,43,12.5063,255.62,130.005,240.75,8,2.8004,429.39,53.28,3.1794,1.1353
+3,12.5,"Higher Variance (~12.5) - More Responsive",oneEuro,43,12.5063,255.62,130.005,317.79,8,2.5609,591.84,122.15,2.5473,0.9947
+3,12.5,"Higher Variance (~12.5) - More Responsive",oneEuro,43,12.5063,255.62,163.71,240.75,8,2.5964,419.05,175.25,1.7618,0.6786
+3,12.5,"Higher Variance (~12.5) - More Responsive",oneEuro,43,12.5063,255.62,163.71,317.79,8,1.5353,574.03,164.65,2.1656,1.4106

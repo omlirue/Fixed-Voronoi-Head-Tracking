@@ -1,0 +1,87 @@
+================================================================================
+                    FITTS' LAW EXPERIMENT ANALYSIS REPORT
+================================================================================
+
+Analysis Date: Tue Dec 16 13:18:49 PST 2025
+Number of Participants: 12
+Raw Data Files: 8
+Results Files: 8
+
+================================================================================
+PARTICIPANT LIST
+================================================================================
+
+   1. bakeralexandra
+   2. bossaertgabrielle
+   3. carrererachel
+   4. jagathesanadvaith
+   5. jaingauri
+   6. lauthjulie
+   7. marksnatalie
+   8. mintzlazarus
+   9. saezmelanye
+   10. sanmiguelshermaine
+   11. searlekate
+   12. woodmanforest
+
+================================================================================
+RAW DATA ANALYSIS
+================================================================================
+
+Total Trials Across All Participants: 2304
+Average Trials per Participant: 192
+
+================================================================================
+FILTER TYPES DETECTED
+================================================================================
+
+   • exponential
+   • oneEuro
+
+================================================================================
+AGGREGATED RESULTS SUMMARY
+================================================================================
+
+Filter Comparison:
+
+   exponential:
+      Mean Throughput: 0.7467 bits/s (SD=0.2901)
+      Range: 0.1869 - 1.5508 bits/s
+      N: 144 conditions
+
+   oneEuro:
+      Mean Throughput: 0.8675 bits/s (SD=0.3301)
+      Range: 0.0746 - 1.8124 bits/s
+      N: 144 conditions
+
+================================================================================
+SAMPLE DATA PREVIEW
+================================================================================
+
+First 3 trials from searlekate_126951_11816967_fitts-experiment-raw-data-2025-12-05T20_53_27.780Z.csv:
+
+GlobalTrialNumber,PairNumber,PairVariance,PairDescription,FilterPhase,FilterType,FilterRank,FilterVariance,FilterLatency
+1,1,1,"Very Low Variance (~1.0) - Maximum Stability",0,exponential,1,1.0276,1092.43,0,0,63.300000000000004,158.25,0,0,3.
+2,1,1,"Very Low Variance (~1.0) - Maximum Stability",0,exponential,1,1.0276,1092.43,0,1,63.300000000000004,158.25,180,1,
+3,1,1,"Very Low Variance (~1.0) - Maximum Stability",0,exponential,1,1.0276,1092.43,0,2,63.300000000000004,158.25,45,2,6
+   ... (truncated)
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+To perform complete statistical analysis with graphs:
+
+1. Install Python dependencies:
+   pip3 install pandas numpy matplotlib seaborn scipy
+
+2. Run full analysis:
+   python3 analyze-fitts-data.py --data-dir ./fitts-student-data
+
+3. Or use web viewer:
+   Open fitts-data-viewer.html in your browser
+   Drag and drop CSV files from fitts-student-data/
+
+================================================================================
+END OF REPORT
+================================================================================

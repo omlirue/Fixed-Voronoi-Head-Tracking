@@ -1,0 +1,110 @@
+{
+  "participants": [
+    "P05",
+    "P07",
+    "P08",
+    "P10"
+  ],
+  "n_participants": 4,
+  "professor_treatment": "averaged 2 blocks per condition",
+  "filter_winner": {
+    "('P05', '1')": {
+      "oe": 0.7720750000000001,
+      "exp": 0.6943,
+      "delta": 0.07777500000000004,
+      "winner": "OneEuro"
+    },
+    "('P05', '2')": {
+      "oe": 0.921475,
+      "exp": 0.810775,
+      "delta": 0.11070000000000002,
+      "winner": "OneEuro"
+    },
+    "('P05', '3')": {
+      "oe": 0.8538000000000001,
+      "exp": 0.980425,
+      "delta": -0.12662499999999988,
+      "winner": "Exponential"
+    },
+    "('P07', '1')": {
+      "oe": 0.2348,
+      "exp": 0.2572,
+      "delta": -0.022399999999999975,
+      "winner": "Exponential"
+    },
+    "('P07', '2')": {
+      "oe": 0.4038,
+      "exp": 0.50595,
+      "delta": -0.10215000000000002,
+      "winner": "Exponential"
+    },
+    "('P07', '3')": {
+      "oe": 0.3196,
+      "exp": 0.8109500000000001,
+      "delta": -0.49135000000000006,
+      "winner": "Exponential"
+    },
+    "('P08', '1')": {
+      "oe": 0.1744,
+      "exp": 0.12145,
+      "delta": 0.05295,
+      "winner": "OneEuro"
+    },
+    "('P08', '2')": {
+      "oe": 0.30774999999999997,
+      "exp": 0.1893,
+      "delta": 0.11844999999999997,
+      "winner": "OneEuro"
+    },
+    "('P08', '3')": {
+      "oe": 0.30565,
+      "exp": 0.2052,
+      "delta": 0.10044999999999998,
+      "winner": "OneEuro"
+    },
+    "('P10', '1')": {
+      "oe": 0.91235,
+      "exp": 0.8004,
+      "delta": 0.11195,
+      "winner": "OneEuro"
+    },
+    "('P10', '2')": {
+      "oe": 1.3292,
+      "exp": 0.6936500000000001,
+      "delta": 0.6355499999999998,
+      "winner": "OneEuro"
+    },
+    "('P10', '3')": {
+      "oe": 0.9700500000000001,
+      "exp": 1.24945,
+      "delta": -0.27939999999999987,
+      "winner": "Exponential"
+    }
+  },
+  "mixed_model": {
+    "formula": "TP ~ filter_oe * log_latency + IDe",
+    "n_obs": 24,
+    "n_participants": 4,
+    "fixed_effects": {
+      "Intercept": -0.3376102959536755,
+      "filter_oe": -0.05781785109828449,
+      "log_latency": 0.008765165687049232,
+      "filter_oe:log_latency": 0.012318387001582375,
+      "IDe": 0.24528107017360104
+    },
+    "p_values": {
+      "Intercept": 0.4514779922834342,
+      "filter_oe": 0.7830641122765556,
+      "log_latency": 0.7730866624448576,
+      "filter_oe:log_latency": 0.7260874255871607,
+      "IDe": 0.0016733641853360784,
+      "Group Var": 0.2909085690613945
+    },
+    "between_participant_sd": 0.2912702046533259,
+    "residual_sd": 0.14451745051722156
+  },
+  "calibration_comparison": {
+    "mean_delta": -0.035953125,
+    "n_pairs": 8
+  }
+}

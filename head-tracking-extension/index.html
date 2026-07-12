@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Head Movement Cursor Control</title>
+
+    <!-- Fallback CDN Links -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+
+    <!-- MediaPipe dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+    <!-- React dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Local fallback scripts -->
+    <script src="libs/math.js"></script>
+    <script src="libs/papaparse.js"></script>
+
+    <!-- Your styles -->
+    <link rel="stylesheet" href="styles/styles.css" />
+    <link rel="stylesheet" href="styles/tracking-controls.css" />
+
+    <!-- Your scripts -->
+    <script src="content/state.js"></script>
+    <script src="content/database.js"></script>
+    <script src="content/script.js"></script>
+    <script src="content/calibration.js"></script>
+  </head>
+  <body>
+    <!-- Status Display -->
+    <div id="status">Initializing...</div>
+
+    <!-- New Configuration Screen -->
+    <div id="config-screen">
+      <div class="config-container">
+        <h1>Head Movement Configuration</h1>
+
+        <div class="config-section">
+          <h3>Coordinate System</h3>
+          <div class="radio-group">
+            <input
+              type="radio"
+              id="coord-2d"
+              name="coordinates"
+              value="2d"
+              checked
+            />
+            <label for="coord-2d">X, Y Coordinates</label>
+
+            <input type="radio" id="coord-3d" name="coordinates" value="3d" />
+            <label for="coord-3d">X, Y, Z Coordinates</label>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3>Line Animation</h3>
+          <div class="radio-group">
+
+            <input
+              type="radio"
+              id="anim-no-line"
+              name="animation"
+              value="without-line"
+            />
+            <label for="anim-no-line">Without a growing line</label>
+            <input
+            type="radio"
+            id="anim-line"
+            name="animation"
+            value="with-line"
+            checked
+          />
+          <label for="anim-line">With a growing line</label>
+
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3>Upload Previous Calibration</h3>
+          <div class="upload-container">
+            <input type="file" id="calibration-upload" accept=".csv" style="display: none;" />
+            <button id="upload-button" class="config-button">Choose Calibration File</button>
+            <span id="file-name">No file chosen</span>
+          </div>
+        </div>
+
+        <button id="config-button" class="start-button">Start Calibration</button>
+      </div>
+    </div>
+
+    <!-- Main Calibration UI -->
+    <div id="calibration-ui" class="hidden">
+      <div id="calibration-target"></div>
+      <div id="calibration-line"></div>
+      <div id="calibration-instructions">
+      Place your head on the Red circle and press ENTER
+        <div id="progress">
+          Progress: <span id="current-point-text">1</span>/20
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Preview -->
+    <video id="video-input" class="video-preview" playsinline></video>
+
+    <!-- DOM element for mounting tracking controls -->
+    <div id="tracking-controls-container"></div>
+
+    <script>
+      window.addEventListener('load', () => {
+        // Add fallback initialization
+        if (typeof initialize === 'undefined') {
+          window.initialize = async function() {
+            console.log('Fallback initialization');
+            // Basic initialization steps
+            if (window.state) {
+              window.state.isTracking = false;
+              window.state.isCalibrating = false;
+            }
+            return Promise.resolve();
+          };
+        }
+
+        // Fallback updateCursor if not defined
+        if (typeof window.updateCursor === 'undefined') {
+          window.updateCursor = function() {
+            console.log('HTML page fallback updateCursor');
+            // Basic cursor creation
+            let cursor = document.getElementById('head-cursor');
+            if (!cursor) {
+              cursor = document.createElement('div');
+              cursor.id = 'head-cursor';
+              cursor.style.position = 'fixed';
+              cursor.style.width = '10px';
+              cursor.style.height = '10px';
+              cursor.style.backgroundColor = 'red';
+              cursor.style.borderRadius = '50%';
+              cursor.style.zIndex = '9999';
+              document.body.appendChild(cursor);
+            }
+
+            // Center cursor
+            cursor.style.left = `${window.innerWidth / 2}px`;
+            cursor.style.top = `${window.innerHeight / 2}px`;
+          };
+        }
+
+        // Try to initialize
+        initialize()
+          .then(() => {
+            console.log('Initialization successful');
+            if (window.initApp) {
+              window.initApp();
+            }
+            
+            // Ensure cursor is updated
+            if (window.updateCursor) {
+              window.updateCursor();
+            }
+          })
+          .catch(error => {
+            console.error('Initialization error:', error);
+          });
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const configButton = document.getElementById('config-button');
+        if (configButton) {
+          configButton.addEventListener('click', () => {
+            console.log('Config button clicked');
+            
+            // Force display of calibration UI
+            const calibrationUI = document.getElementById('calibration-ui');
+            if (calibrationUI) {
+              calibrationUI.style.display = 'block';
+              calibrationUI.style.visibility = 'visible';
+              calibrationUI.classList.remove('hidden');
+            }
+
+            // Trigger calibration start
+            if (window.startCalibration) {
+              console.log('Calling startCalibration()');
+              window.startCalibration();
+            } else {
+              console.error('startCalibration function not found');
+            }
+          });
+        } else {
+          console.error('Config button not found');
+        }
+      });
+    </script>
+  </body>
+</html>

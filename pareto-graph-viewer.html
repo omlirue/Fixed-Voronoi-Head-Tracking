@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pareto Front Viewer - Filter Parameter Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+        #fileInput {
+            display: none;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 100%;
+            margin: 20px 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .instructions {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .sample-data {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Pareto Front Analysis - Filter Parameter Optimization</h1>
+        
+        <div class="instructions">
+            <h3>How to Use:</h3>
+            <ol>
+                <li>Export your Pareto front CSV from the parameter optimization system</li>
+                <li>Drag and drop the CSV file below, or click to select it</li>
+                <li>View the interactive graph showing the variance-latency trade-off</li>
+                <li>Hover over points to see exact parameter values and performance metrics</li>
+            </ol>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <p>📁 <strong>Drag and drop your Pareto front CSV file here</strong></p>
+            <p>or click to select file</p>
+            <input type="file" id="fileInput" accept=".csv" />
+        </div>
+
+        <div id="results" style="display: none;">
+            <div class="stats" id="stats"></div>
+    
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <canvas id="paretoCanvas" width="800" height="600"></canvas>
+                <div style="flex: 1;">
+                    <h4>Parameter Controls</h4>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="checkbox" id="showLabels" checked> 
+                            Show parameter labels on hover
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="checkbox" id="showTopRanks"> 
+                            Show top 10 ranks with labels
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="parameterFilter">Color by parameter:</label>
+                        <select id="parameterFilter" style="margin-left: 10px;">
+                            <option value="none">Uniform color</option>
+                            <option value="minCutoff">minCutoff</option>
+                            <option value="beta">beta</option>
+                            <option value="dCutoff">dCutoff</option>
+                        </select>
+                    </div>
+                    <div id="colorLegend" style="display: none; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        <h5>Color Scale:</h5>
+                        <div id="colorScale"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tooltip" style="
+                position: absolute;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                display: none;
+                z-index: 1000;
+            "></div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Parameter Details</h3>
+                <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px;">
+                    <table id="parameterTable" style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Rank</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">minCutoff</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">beta</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">dCutoff</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Variance (px)</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Latency (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parameterTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="sample-data">
+            <h4>Expected CSV Format:</h4>
+            <code>Rank,minCutoff,beta,dCutoff,meanVariance,meanLatency,validPositions</code><br>
+            <code>1,0.001,0.0001,0.0001,0.2011,1239.36,9</code><br>
+            <code>2,0.001,0.0001,0.0009,0.4993,1238.39,9</code><br>
+            <em>...and so on</em>
+        </div>
+    </div>
+
+    <script>
+        let paretoData = [];
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const results = document.getElementById('results');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                parseCSV(csv);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            const headers = lines[0].split(',');
+            
+            paretoData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                paretoData.push({
+                    rank: parseInt(values[0]),
+                    minCutoff: parseFloat(values[1]),
+                    beta: parseFloat(values[2]),
+                    dCutoff: parseFloat(values[3]),
+                    meanVariance: parseFloat(values[4]),
+                    meanLatency: parseFloat(values[5]),
+                    validPositions: parseInt(values[6])
+                });
+            }
+
+            displayResults();
+        }
+
+        function displayResults() {
+            results.style.display = 'block';
+            
+            // Update stats
+            const stats = document.getElementById('stats');
+            const variances = paretoData.map(d => d.meanVariance);
+            const latencies = paretoData.map(d => d.meanLatency);
+            
+            const minVar = Math.min(...variances);
+            const maxVar = Math.max(...variances);
+            const minLat = Math.min(...latencies);
+            const maxLat = Math.max(...latencies);
+
+            stats.innerHTML = `
+                <div class="stat">
+                    <div class="stat-value">${paretoData.length}</div>
+                    <div class="stat-label">Optimal Solutions</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${minVar.toFixed(2)}px</div>
+                    <div class="stat-label">Best Variance</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${minLat.toFixed(0)}ms</div>
+                    <div class="stat-label">Best Latency</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${(maxVar/minVar).toFixed(1)}x</div>
+                    <div class="stat-label">Variance Range</div>
+                </div>
+            `;
+
+            // Highlighting removed for general use
+
+            // Draw graph
+            drawParetoGraph();
+            
+            // Populate parameter table
+            populateParameterTable();
+            
+            // Add event listeners for controls
+            document.getElementById('showTopRanks').addEventListener('change', drawParetoGraph);
+            document.getElementById('parameterFilter').addEventListener('change', drawParetoGraph);
+        }
+
+        function drawParetoGraph() {
+            const canvas = document.getElementById('paretoCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Get control settings
+            const showTopRanks = document.getElementById('showTopRanks')?.checked || false;
+            const parameterFilter = document.getElementById('parameterFilter')?.value || 'none';
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Get data ranges
+            const variances = paretoData.map(d => d.meanVariance);
+            const latencies = paretoData.map(d => d.meanLatency);
+            
+            const minVar = Math.min(...variances);
+            const maxVar = Math.max(...variances);
+            const minLat = Math.min(...latencies);
+            const maxLat = Math.max(...latencies);
+            
+            // Add padding
+            const padding = 80;
+            const graphWidth = width - 2 * padding;
+            const graphHeight = height - 2 * padding;
+            
+            // Scale functions
+            const scaleX = (variance) => padding + (variance - minVar) / (maxVar - minVar) * graphWidth;
+            const scaleY = (latency) => height - padding - (latency - minLat) / (maxLat - minLat) * graphHeight;
+            
+            // Draw background
+            ctx.fillStyle = '#f9f9f9';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 10; i++) {
+                const x = padding + (i / 10) * graphWidth;
+                const y = height - padding - (i / 10) * graphHeight;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, height - padding);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(width - padding, y);
+                ctx.stroke();
+            }
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding); // X-axis
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(padding, padding); // Y-axis
+            ctx.stroke();
+            
+            // Draw axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Variance (px) → Lower is Better', width / 2, height - 20);
+            
+            ctx.save();
+            ctx.translate(25, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Latency (ms) → Lower is Better', 0, 0);
+            ctx.restore();
+            
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Pareto Front: Precision vs Responsiveness Trade-off', width / 2, 30);
+            
+            // Draw Pareto front line
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const sortedPoints = paretoData
+                .map(d => ({ x: scaleX(d.meanVariance), y: scaleY(d.meanLatency), data: d }))
+                .sort((a, b) => a.x - b.x);
+            
+            sortedPoints.forEach((point, i) => {
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+            
+            // Get parameter ranges for color mapping
+            let paramValues = [];
+            let minParam = 0, maxParam = 1;
+            
+            if (parameterFilter !== 'none') {
+                paramValues = paretoData.map(d => d[parameterFilter]);
+                minParam = Math.min(...paramValues);
+                maxParam = Math.max(...paramValues);
+                
+                // Show color legend
+                updateColorLegend(parameterFilter, minParam, maxParam);
+            } else {
+                hideColorLegend();
+            }
+            
+            // Draw points with color coding
+            sortedPoints.forEach((point, index) => {
+                if (parameterFilter !== 'none') {
+                    // Color by parameter value
+                    const paramValue = point.data[parameterFilter];
+                    const normalizedValue = (paramValue - minParam) / (maxParam - minParam);
+                    const color = getColorForValue(normalizedValue);
+                    ctx.fillStyle = color;
+                } else {
+                    ctx.fillStyle = '#ff6b6b';
+                }
+                
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Add border for better visibility
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+            
+            // Show top rank labels if enabled
+            if (showTopRanks) {
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                
+                sortedPoints.slice(0, 10).forEach((point) => {
+                    const data = point.data;
+                    ctx.fillText(`#${data.rank}`, point.x, point.y - 8);
+                    ctx.fillText(`β=${data.beta}`, point.x, point.y - 20);
+                    ctx.fillText(`d=${data.dCutoff}`, point.x, point.y - 32);
+                });
+            }
+            
+            // Add mouse event listeners for tooltips
+            canvas.removeEventListener('mousemove', canvas.mouseMoveHandler);
+            canvas.removeEventListener('mouseleave', canvas.mouseLeaveHandler);
+            
+            canvas.mouseMoveHandler = (e) => handleMouseMove(e, canvas, sortedPoints);
+            canvas.mouseLeaveHandler = () => hideTooltip();
+            
+            canvas.addEventListener('mousemove', canvas.mouseMoveHandler);
+            canvas.addEventListener('mouseleave', canvas.mouseLeaveHandler);
+            
+            // Draw scale labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            // X-axis labels
+            for (let i = 0; i <= 5; i++) {
+                const x = padding + (i / 5) * graphWidth;
+                const value = minVar + (i / 5) * (maxVar - minVar);
+                ctx.fillText(value.toFixed(1), x, height - padding + 20);
+            }
+            
+            // Y-axis labels
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const y = height - padding - (i / 5) * graphHeight;
+                const value = minLat + (i / 5) * (maxLat - minLat);
+                ctx.fillText(Math.round(value), padding - 15, y + 4);
+            }
+            
+            // Legend
+            const legendX = width - 300;
+            const legendY = 80;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(legendX - 10, legendY - 10, 280, 100);
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(legendX - 10, legendY - 10, 280, 100);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Legend:', legendX, legendY + 10);
+            
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.arc(legendX + 10, legendY + 30, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#333';
+            ctx.fillText(`${paretoData.length} Pareto Optimal Solutions`, legendX + 25, legendY + 35);
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '11px Arial';
+            ctx.fillText('← Better performance (lower-left corner)', legendX, legendY + 55);
+        }
+
+        function populateParameterTable() {
+            const tableBody = document.getElementById('parameterTableBody');
+            tableBody.innerHTML = '';
+            
+            paretoData.forEach(d => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${d.rank}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${d.minCutoff}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${d.beta}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${d.dCutoff}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${d.meanVariance.toFixed(2)}</td>
+                    <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${d.meanLatency.toFixed(0)}</td>
+                `;
+                
+                // Highlight row on hover
+                row.addEventListener('mouseenter', () => {
+                    row.style.backgroundColor = '#e3f2fd';
+                });
+                row.addEventListener('mouseleave', () => {
+                    row.style.backgroundColor = '';
+                });
+            });
+        }
+        
+        function handleMouseMove(e, canvas, sortedPoints) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Find closest point
+            let closestPoint = null;
+            let minDistance = Infinity;
+            
+            sortedPoints.forEach(point => {
+                const distance = Math.sqrt(
+                    Math.pow(mouseX - point.x, 2) + 
+                    Math.pow(mouseY - point.y, 2)
+                );
+                
+                if (distance < minDistance && distance < 15) { // 15px hover radius
+                    minDistance = distance;
+                    closestPoint = point;
+                }
+            });
+            
+            if (closestPoint) {
+                showTooltip(e, closestPoint.data);
+            } else {
+                hideTooltip();
+            }
+        }
+        
+        function showTooltip(e, data) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.clientX + 10) + 'px';
+            tooltip.style.top = (e.clientY - 10) + 'px';
+            
+            tooltip.innerHTML = `
+                <strong>Rank ${data.rank}</strong><br>
+                minCutoff: ${data.minCutoff}<br>
+                beta: ${data.beta}<br>
+                dCutoff: ${data.dCutoff}<br>
+                Variance: ${data.meanVariance.toFixed(2)}px<br>
+                Latency: ${data.meanLatency.toFixed(0)}ms
+            `;
+        }
+        
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.style.display = 'none';
+        }
+        
+        function getColorForValue(normalizedValue) {
+            // Create a color gradient from blue (low) to red (high)
+            const hue = (1 - normalizedValue) * 240; // Blue = 240°, Red = 0°
+            return `hsl(${hue}, 70%, 50%)`;
+        }
+        
+        function updateColorLegend(parameter, minVal, maxVal) {
+            const legend = document.getElementById('colorLegend');
+            const scale = document.getElementById('colorScale');
+            
+            legend.style.display = 'block';
+            
+            // Create color gradient bar
+            scale.innerHTML = `
+                <div style="margin-bottom: 5px;"><strong>${parameter}</strong></div>
+                <div style="
+                    width: 200px; 
+                    height: 20px; 
+                    background: linear-gradient(to right, 
+                        hsl(240, 70%, 50%), 
+                        hsl(180, 70%, 50%), 
+                        hsl(120, 70%, 50%), 
+                        hsl(60, 70%, 50%), 
+                        hsl(0, 70%, 50%)
+                    );
+                    border: 1px solid #ccc;
+                    margin-bottom: 5px;
+                "></div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px;">
+                    <span>${minVal.toFixed(4)}</span>
+                    <span>${maxVal.toFixed(4)}</span>
+                </div>
+                <div style="text-align: center; font-size: 10px; color: #666; margin-top: 5px;">
+                    Blue = Low, Red = High
+                </div>
+            `;
+        }
+        
+        function hideColorLegend() {
+            const legend = document.getElementById('colorLegend');
+            legend.style.display = 'none';
+        }
+
+        // Add some sample data for demonstration
+        uploadArea.addEventListener('dblclick', () => {
+            // Load sample data from your actual results
+            const sampleCSV = `Rank,minCutoff,beta,dCutoff,meanVariance,meanLatency,validPositions
+1,0.001,0.0001,0.0001,0.2011,1239.36,9
+2,0.001,0.0001,0.0009,0.4993,1238.39,9
+60,0.001,0.0004,0.0009,1.4413,872.69,9
+349,0.031,0.001,0.0049,11.1560,440.34,9`;
+            
+            parseCSV(sampleCSV);
+            alert('Loaded sample data! (Double-click was detected)');
+        });
+    </script>
+</body>
+</html>

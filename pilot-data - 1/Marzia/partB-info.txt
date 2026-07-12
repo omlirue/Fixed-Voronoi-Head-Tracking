@@ -1,0 +1,9 @@
+Part: Part B
+Calibration Type: Standard
+Calibration Source: Fresh calibration: 2026-05-14T23:33:17.913Z
+Participant: P08
+Filter Order: oneEuro first
+Variance Order: Low → High → Med
+Trials Completed: 32
+Trials Missed (timeout): 0
+Timestamp: 2026-05-15T00:18:29.096Z

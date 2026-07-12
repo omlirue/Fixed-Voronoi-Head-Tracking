@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mode Comparison Experiment</title>
+
+    <!-- Add math.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+
+    <!-- Add PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <!-- OpenCV.js for head pose estimation -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="console.log('✅ OpenCV.js loaded')"></script>
+
+    <!-- MediaPipe dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+    <!-- Your styles -->
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="mode-comparison-styles.css?v=20260119c" />
+
+    <!-- Your scripts -->
+    <script src="js/state.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/math.js"></script>
+    <script src="js/head-pose.js"></script>
+    <script src="js/grid.js"></script>
+    <script src="js/initialization.js"></script>
+    <script src="js/dataCollection.js"></script>
+    <script src="js/calibration.js"></script>
+    <script src="js/oneEuroFilter.js"></script>
+    <script src="js/exponential-parameters.js"></script>
+    <script src="js/tracking.js"></script>
+    <script src="js/mode-comparison-experiment.js?v=20260119b"></script>
+    <script src="js/script.js"></script>
+  </head>
+  <body>
+    <!-- Back to Home Button -->
+    <a href="index.html" id="back-home-btn" style="
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #64c8ff;
+      text-decoration: none;
+      border-radius: 5px;
+      border: 1px solid #64c8ff;
+      z-index: 3000;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    " onmouseover="this.style.background='rgba(100, 200, 255, 0.2)'" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)'">
+      ← Back to Home
+    </a>
+
+    <!-- Video Preview -->
+    <video id="video-input" class="video-preview" playsinline></video>
+
+    <!-- Mode Comparison Experiment UI Container -->
+    <div id="mode-comparison-ui"></div>
+
+    <!-- Script to auto-start experiment -->
+    <script>
+      // Wait for everything to load
+      window.addEventListener('load', async function() {
+        console.log('🚀 Mode Comparison page loaded');
+        
+        // Check if we have stored calibration data (passed from main page)
+        const storedCalibration = sessionStorage.getItem('modeComparisonCalibration');
+        
+        if (!storedCalibration) {
+          console.error('❌ No calibration data found');
+          showError('No calibration data found. Please complete calibration on the main page first.');
+          return;
+        }
+        
+        console.log('📦 Loading calibration from session storage...');
+        const calibrationData = JSON.parse(storedCalibration);
+        
+        // Restore calibration data
+        window.state.calibrationData = calibrationData.calibrationData;
+        window.state.transformationMatrices = calibrationData.transformationMatrices;
+        window.state.config = calibrationData.config;
+        
+        console.log('✅ Calibration restored');
+        
+        // Clear session storage
+        sessionStorage.removeItem('modeComparisonCalibration');
+        
+        // Initialize video and face tracking
+        console.log('🎥 Initializing video and face tracking...');
+        
+        // Show loading message
+        const container = document.getElementById('mode-comparison-ui');
+        container.innerHTML = `
+          <div class="modal-screen welcome-screen">
+            <h2>Initializing...</h2>
+            <p>Setting up camera and face tracking...</p>
+            <div class="loading-spinner"></div>
+            <p style="color: #aaa; font-size: 13px; margin-top: 20px;">
+              Please ensure your face is visible to the camera
+            </p>
+          </div>
+        `;
+        
+        try {
+          // Check camera permissions first
+          console.log('Checking camera permissions...');
+          const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+          console.log('Camera permission status:', permissionStatus.state);
+          
+          if (permissionStatus.state === 'denied') {
+            showError('Camera access denied. Please allow camera access in your browser settings and refresh.');
+            return;
+          }
+          
+          // Always initialize fresh (camera was released when we navigated away from main page)
+          console.log('Starting video initialization...');
+          
+          // Make sure state exists
+          if (!window.state) {
+            console.error('State not initialized!');
+            showError('Application state not initialized. Please refresh the page.');
+            return;
+          }
+          
+          await window.initialize();
+          console.log('✅ Video and face mesh initialized');
+          
+          // Wait for face tracking to be active
+          let retries = 0;
+          const maxRetries = 30; // 3 seconds max
+          
+          container.innerHTML = `
+            <div class="modal-screen welcome-screen">
+              <h2>Initializing...</h2>
+              <p>Detecting your face...</p>
+              <div class="loading-spinner"></div>
+              <p style="color: #aaa; font-size: 13px; margin-top: 20px;">
+                Please look at the camera
+              </p>
+            </div>
+          `;
+          
+          while (!window.state.lastLandmarks && retries < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+          
+          if (!window.state.lastLandmarks) {
+            console.warn('⚠️ No face detected yet, but continuing anyway...');
+            // Still continue - face might be detected once experiment starts
+          } else {
+            console.log('✅ Face detected and tracking active');
+          }
+          
+          // Ensure tracking is marked as active
+          window.state.isTracking = true;
+          
+          // Give a bit more time for everything to stabilize
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Start the mode comparison experiment
+          if (window.modeComparisonExperiment) {
+            console.log('🎯 Starting Mode Comparison Experiment...');
+            window.modeComparisonExperiment.start();
+          } else {
+            console.error('❌ Mode Comparison experiment not loaded');
+            showError('Mode Comparison system not loaded. Please refresh the page.');
+          }
+          
+        } catch (error) {
+          console.error('❌ Failed to initialize:', error);
+          console.error('Error details:', error.stack);
+          
+          let errorMessage = 'Failed to initialize camera. ';
+          
+          if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            errorMessage += 'Please allow camera access and refresh the page.';
+          } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera found. Please connect a camera and refresh.';
+          } else if (error.name === 'NotReadableError') {
+            errorMessage += 'Camera is already in use. Please close other applications using the camera.';
+          } else {
+            errorMessage += 'Please refresh the page and try again.';
+          }
+          
+          errorMessage += '<br><br><small>Error: ' + error.message + '</small>';
+          
+          showError(errorMessage);
+        }
+      });
+      
+      // Show error message
+      function showError(message) {
+        const container = document.getElementById('mode-comparison-ui');
+        container.innerHTML = `
+          <div class="modal-screen error-screen">
+            <h2>⚠️ Error</h2>
+            <p>${message}</p>
+            <a href="index.html" class="btn-primary" style="
+              display: inline-block;
+              text-decoration: none;
+              margin-top: 20px;
+            ">
+              Back to Home
+            </a>
+          </div>
+        `;
+      }
+    </script>
+  </body>
+</html>

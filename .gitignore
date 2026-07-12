@@ -1,0 +1,13 @@
+node_modules/
+**/fitts-cursor-paths-*.json
+participants.json
+.vercel
+.env
+.env.*.local
+*.md
+!README.md
+
+
+.DS_Store
+api.json
+public/credentials/service-account.json

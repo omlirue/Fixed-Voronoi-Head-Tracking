@@ -1,0 +1,67 @@
+
+Scanning /Users/soha/head-control-website-js/pilot-data for participant folders…
+  ✓ Aashritha: 128 trials (Part A,Part B), variance ✓, questionnaire ✓
+     · Marzia: deduped 2 duplicate trial rows
+  ✓ Marzia: 126 trials (Part A,Part B), variance ✓, questionnaire ✓
+  ✓ Professor: 256 trials (Part A,Part B), variance ✓, questionnaire ✓
+  ✓ Soha: 128 trials (Part A,Part B), variance ✓, questionnaire ✓
+
+Applied --min-amplitude=300.0: dropped 128 trials with Amplitude below the matched outer-ring threshold (keeps everyone on the same IDe operating points: ≈2.39 and 3.07).
+
+Loaded 4 participants, 488 trials total after filtering.
+
+[1/7] data coverage…
+[2/7] Fitts fits per participant…
+Participant  n_cells    slope  intercept       r2
+  Aashritha       12 5.133728  -3.470970 0.183994
+     Marzia       12 7.533440  -4.717769 0.220321
+  Professor       12 1.841694  -0.250959 0.464659
+       Soha       12 0.997818   1.377621 0.365279
+
+[3/7] between-participant variation…
+ PairNumber  FilterType      mean      std     min     max  count       CV
+          1 exponential  3.018175 1.110870  1.7550  4.3253      4 0.368060
+          1     oneEuro  2.600325 1.728433  0.5733  4.5401      4 0.664699
+          2 exponential 10.648620 3.489774  6.4562 15.7363      5 0.327721
+          2     oneEuro 10.390260 3.388014  6.4356 15.5460      5 0.326076
+          3 exponential 15.817625 4.823961 10.7611 22.1282      4 0.304974
+          3     oneEuro 13.682975 6.522199  6.4881 21.3622      4 0.476665
+
+[4/7] descriptive table…
+
+[5/7] sign test…
+  One Euro better in 7/12 cells (p=0.3872)
+
+[5a] filter contrast — triangulated initial read…
+  per-cell mean ΔTP (OE − Exp) = -0.009 bits/s, SD = 0.208, d_z = -0.04 (n_cells = 12)
+  paired t-test (cells):   t = -0.15, p = 0.884
+  Wilcoxon signed-rank:    W = 37.0, p = 0.910
+  bootstrap 95% CI:        [-0.107, +0.081] bits/s (cluster-bootstrap on participants, 10000 resamples)
+  per-participant 1-samp t: t = -0.16, p = 0.884, d_z = -0.08 (n_participants = 4)
+
+[6/7] RQ1+RQ2 cell-mean mixed model…
+  fit OK (n_obs=32 cells, formula=TP ~ filter_oe * MeasuredLatency + IDe)
+
+[6a] RQ2 per-participant TP-vs-latency curves…
+  fit 8 per-(participant,filter) curves; group curves for 2 filter(s).
+
+[6b] RQ3 calibration comparison (Part A vs Part B, mid variance)…
+  8 per-(participant,filter) deltas computed.
+  comparison kind: test_retest_same_calibration  (calibration actually swapped in 0/4 participants)
+
+[6c] sub-RQ TP vs subjective preference (Spearman)…
+  ρ summary across 8 pairs: mean = +0.352
+
+[6d] direction effects…
+  8 directions in data.
+
+[7/7] power analysis…
+  recommended n for 80% power: None
+
+Generating figures…
+
+✓ Wrote /Users/soha/head-control-website-js/pilot-analysis/output/pilot_memo.html
+✓ Wrote /Users/soha/head-control-website-js/pilot-analysis/output/summary.json
+✓ Wrote /Users/soha/head-control-website-js/pilot-analysis/output/figures/01_data_coverage.png  …  04_descriptive_table.png
+
+Open the memo:  open '/Users/soha/head-control-website-js/pilot-analysis/output/pilot_memo.html'

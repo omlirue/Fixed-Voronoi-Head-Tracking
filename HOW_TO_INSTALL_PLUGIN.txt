@@ -1,0 +1,88 @@
+========================================
+ROTATION PLUGIN - QUICK INSTALLATION
+========================================
+
+⚡ TWO STEPS TO ADD ROTATION FEATURES ⚡
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1: Open public/index.html
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Find the END of the file where you see:
+
+    </body>
+</html>
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2: Add These Lines BEFORE </body>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add this:
+
+    <!-- Rotation Features Plugin -->
+    <script src="js/rotation-plugin.js"></script>
+    <script src="js/rotation-ui.js"></script>
+    </body>
+</html>
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMPLETE EXAMPLE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your index.html should look like:
+
+<!DOCTYPE html>
+<html>
+<head>
+    ... (existing head content) ...
+</head>
+<body>
+    ... (existing body content) ...
+    
+    <script src="js/state.js"></script>
+    <script src="js/math.js"></script>
+    <script src="js/calibration.js"></script>
+    <script src="js/tracking.js"></script>
+    ... (other existing scripts) ...
+    
+    <!-- ADD THESE TWO LINES ↓ -->
+    <script src="js/rotation-plugin.js"></script>
+    <script src="js/rotation-ui.js"></script>
+    <!-- ADD THESE TWO LINES ↑ -->
+    
+</body>
+</html>
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+THAT'S IT!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Save the file
+✅ Refresh your browser
+✅ See purple panel in top-right corner
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOW TO USE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "ENABLE Rotation Features" button
+2. Do calibration as normal
+3. Start tracking
+4. Done! Rotation is now included
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TO REMOVE PLUGIN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Just delete the two script lines you added!
+Your original code will work exactly as before.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUESTIONS? Read: ROTATION_PLUGIN_GUIDE.md
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

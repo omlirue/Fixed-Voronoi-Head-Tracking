@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mode Comparison Test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/mode-comparison-inline.js?v=20260120-v1"></script>
+</head>
+<body>
+  <h1>Mode Comparison Script Test</h1>
+  <div id="status"></div>
+  <button id="test-btn">Test Mode Comparison</button>
+  
+  <script>
+    const statusDiv = document.getElementById('status');
+    
+    // Check if script loaded
+    if (typeof ModeComparisonExperiment !== 'undefined') {
+      statusDiv.innerHTML += '<p style="color: green;">✓ ModeComparisonExperiment class is defined</p>';
+    } else {
+      statusDiv.innerHTML += '<p style="color: red;">✗ ModeComparisonExperiment class is NOT defined</p>';
+    }
+    
+    // Check if window object exists
+    if (window.modeComparisonExperiment) {
+      statusDiv.innerHTML += '<p style="color: green;">✓ window.modeComparisonExperiment exists</p>';
+      statusDiv.innerHTML += '<p>Type: ' + typeof window.modeComparisonExperiment + '</p>';
+    } else {
+      statusDiv.innerHTML += '<p style="color: red;">✗ window.modeComparisonExperiment does NOT exist</p>';
+    }
+    
+    // Check if state exists
+    if (window.state) {
+      statusDiv.innerHTML += '<p style="color: green;">✓ window.state exists</p>';
+    } else {
+      statusDiv.innerHTML += '<p style="color: red;">✗ window.state does NOT exist</p>';
+    }
+    
+    // Check PapaParse
+    if (window.Papa) {
+      statusDiv.innerHTML += '<p style="color: green;">✓ PapaParse is loaded</p>';
+    } else {
+      statusDiv.innerHTML += '<p style="color: red;">✗ PapaParse is NOT loaded</p>';
+    }
+    
+    // Test button
+    document.getElementById('test-btn').addEventListener('click', () => {
+      if (window.modeComparisonExperiment) {
+        alert('Mode Comparison Experiment object exists! Methods available: ' + Object.getOwnPropertyNames(Object.getPrototypeOf(window.modeComparisonExperiment)).join(', '));
+      } else {
+        alert('ERROR: window.modeComparisonExperiment is undefined');
+      }
+    });
+  </script>
+</body>
+</html>

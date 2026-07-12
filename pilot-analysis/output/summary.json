@@ -1,0 +1,1224 @@
+{
+  "n_participants": 4,
+  "n_trials_total": 488,
+  "fitts_fits": [
+    {
+      "Participant": "Aashritha",
+      "n_cells": 12,
+      "slope": 5.133727561307177,
+      "intercept": -3.470970472048011,
+      "r2": 0.18399433651004027
+    },
+    {
+      "Participant": "Marzia",
+      "n_cells": 12,
+      "slope": 7.53343992409979,
+      "intercept": -4.717769167214368,
+      "r2": 0.22032105375751154
+    },
+    {
+      "Participant": "Professor",
+      "n_cells": 12,
+      "slope": 1.841694207434217,
+      "intercept": -0.25095880654226516,
+      "r2": 0.46465890344652994
+    },
+    {
+      "Participant": "Soha",
+      "n_cells": 12,
+      "slope": 0.9978180980182838,
+      "intercept": 1.3776211293468936,
+      "r2": 0.3652793035708861
+    }
+  ],
+  "between_participant_variation": [
+    {
+      "PairNumber": 1,
+      "FilterType": "exponential",
+      "mean": 3.0181750000000003,
+      "std": 1.1108695014116947,
+      "min": 1.755,
+      "max": 4.3253,
+      "count": 4,
+      "CV": 0.36806000361532865
+    },
+    {
+      "PairNumber": 1,
+      "FilterType": "oneEuro",
+      "mean": 2.6003249999999998,
+      "std": 1.7284327011775724,
+      "min": 0.5733,
+      "max": 4.5401,
+      "count": 4,
+      "CV": 0.6646987208051196
+    },
+    {
+      "PairNumber": 2,
+      "FilterType": "exponential",
+      "mean": 10.64862,
+      "std": 3.4897743045933503,
+      "min": 6.4562,
+      "max": 15.7363,
+      "count": 5,
+      "CV": 0.32772080369037027
+    },
+    {
+      "PairNumber": 2,
+      "FilterType": "oneEuro",
+      "mean": 10.390260000000001,
+      "std": 3.388014304574288,
+      "min": 6.4356,
+      "max": 15.546,
+      "count": 5,
+      "CV": 0.32607598891406836
+    },
+    {
+      "PairNumber": 3,
+      "FilterType": "exponential",
+      "mean": 15.817625,
+      "std": 4.823960731857174,
+      "min": 10.7611,
+      "max": 22.1282,
+      "count": 4,
+      "CV": 0.30497377019983557
+    },
+    {
+      "PairNumber": 3,
+      "FilterType": "oneEuro",
+      "mean": 13.682974999999999,
+      "std": 6.522198717904365,
+      "min": 6.4881,
+      "max": 21.3622,
+      "count": 4,
+      "CV": 0.47666525137291893
+    }
+  ],
+  "descriptive_table": [
+    {
+      "Participant": "Aashritha",
+      "PairNumber": 1,
+      "FilterType": "exponential",
+      "n": 15,
+      "n_total": 15,
+      "meanMT": 11.732173333333334,
+      "IDe": 3.4788900557508344,
+      "TP": 0.29652562717145053,
+      "errorRate": 0.0,
+      "meanReEntries": 1.5333333333333334
+    },
+    {
+      "Participant": "Aashritha",
+      "PairNumber": 1,
+      "FilterType": "oneEuro",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 16.508675,
+      "IDe": 3.736565071628954,
+      "TP": 0.22633948948834198,
+      "errorRate": 0.0,
+      "meanReEntries": 3.8125
+    },
+    {
+      "Participant": "Aashritha",
+      "PairNumber": 2,
+      "FilterType": "exponential",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 7.297162500000001,
+      "IDe": 3.3567838527580474,
+      "TP": 0.46001221060351155,
+      "errorRate": 0.0,
+      "meanReEntries": 1.46875
+    },
+    {
+      "Participant": "Aashritha",
+      "PairNumber": 2,
+      "FilterType": "oneEuro",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 8.661209374999999,
+      "IDe": 3.700718157755787,
+      "TP": 0.4272749910004095,
+      "errorRate": 0.0,
+      "meanReEntries": 1.71875
+    },
+    {
+      "Participant": "Aashritha",
+      "PairNumber": 3,
+      "FilterType": "exponential",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 6.34423125,
+      "IDe": 4.087635883887467,
+      "TP": 0.6443075169883612,
+      "errorRate": 0.0,
+      "meanReEntries": 2.0
+    },
+    {
+      "Participant": "Aashritha",
+      "PairNumber": 3,
+      "FilterType": "oneEuro",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 12.6573875,
+      "IDe": 3.6912452631678807,
+      "TP": 0.2916277362266013,
+      "errorRate": 0.0,
+      "meanReEntries": 2.6875
+    },
+    {
+      "Participant": "Marzia",
+      "PairNumber": 1,
+      "FilterType": "exponential",
+      "n": 8,
+      "n_total": 8,
+      "meanMT": 22.39565,
+      "IDe": 3.253024197390981,
+      "TP": 0.145252502043521,
+      "errorRate": 0.0,
+      "meanReEntries": 4.625
+    },
+    {
+      "Participant": "Marzia",
+      "PairNumber": 1,
+      "FilterType": "oneEuro",
+      "n": 12,
+      "n_total": 12,
+      "meanMT": 12.251533333333333,
+      "IDe": 3.3858182778532506,
+      "TP": 0.2763587369624415,
+      "errorRate": 0.0,
+      "meanReEntries": 1.8333333333333333
+    },
+    {
+      "Participant": "Marzia",
+      "PairNumber": 2,
+      "FilterType": "exponential",
+      "n": 30,
+      "n_total": 30,
+      "meanMT": 13.704103333333334,
+      "IDe": 3.634966832716697,
+      "TP": 0.26524660127708927,
+      "errorRate": 0.0,
+      "meanReEntries": 5.633333333333334
+    },
+    {
+      "Participant": "Marzia",
+      "PairNumber": 2,
+      "FilterType": "oneEuro",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 11.357065625,
+      "IDe": 3.6474103543225707,
+      "TP": 0.3211578126566096,
+      "errorRate": 0.0,
+      "meanReEntries": 3.5
+    },
+    {
+      "Participant": "Marzia",
+      "PairNumber": 3,
+      "FilterType": "exponential",
+      "n": 14,
+      "n_total": 14,
+      "meanMT": 20.289521428571426,
+      "IDe": 3.91092381198174,
+      "TP": 0.19275584324401218,
+      "errorRate": 0.0,
+      "meanReEntries": 12.785714285714286
+    },
+    {
+      "Participant": "Marzia",
+      "PairNumber": 3,
+      "FilterType": "oneEuro",
+      "n": 9,
+      "n_total": 9,
+      "meanMT": 9.15231111111111,
+      "IDe": 3.2960530258607377,
+      "TP": 0.3601334117520607,
+      "errorRate": 0.0,
+      "meanReEntries": 3.111111111111111
+    },
+    {
+      "Participant": "Professor",
+      "PairNumber": 1,
+      "FilterType": "exponential",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 5.6232500000000005,
+      "IDe": 3.791726516761004,
+      "TP": 0.6742944946002762,
+      "errorRate": 0.0,
+      "meanReEntries": 0.3125
+    },
+    {
+      "Participant": "Professor",
+      "PairNumber": 1,
+      "FilterType": "oneEuro",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 4.82133125,
+      "IDe": 3.8005423722711043,
+      "TP": 0.7882765516829204,
+      "errorRate": 0.0,
+      "meanReEntries": 0.6875
+    },
+    {
+      "Participant": "Professor",
+      "PairNumber": 2,
+      "FilterType": "exponential",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 5.114803125,
+      "IDe": 4.014840990120911,
+      "TP": 0.7849453619235659,
+      "errorRate": 0.0,
+      "meanReEntries": 1.40625
+    },
+    {
+      "Participant": "Professor",
+      "PairNumber": 2,
+      "FilterType": "oneEuro",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 4.41715625,
+      "IDe": 4.079046792750783,
+      "TP": 0.923455400236472,
+      "errorRate": 0.0,
+      "meanReEntries": 0.75
+    },
+    {
+      "Participant": "Professor",
+      "PairNumber": 3,
+      "FilterType": "exponential",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 3.66468125,
+      "IDe": 4.238353014986394,
+      "TP": 1.1565406991362193,
+      "errorRate": 0.0,
+      "meanReEntries": 0.9375
+    },
+    {
+      "Participant": "Professor",
+      "PairNumber": 3,
+      "FilterType": "oneEuro",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 5.05073125,
+      "IDe": 4.135447387982261,
+      "TP": 0.8187819116256206,
+      "errorRate": 0.0,
+      "meanReEntries": 1.9375
+    },
+    {
+      "Participant": "Soha",
+      "PairNumber": 1,
+      "FilterType": "exponential",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 4.5474250000000005,
+      "IDe": 3.465239817448176,
+      "TP": 0.7620224231181769,
+      "errorRate": 0.0,
+      "meanReEntries": 0.3125
+    },
+    {
+      "Participant": "Soha",
+      "PairNumber": 1,
+      "FilterType": "oneEuro",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 4.3702,
+      "IDe": 3.929382258764814,
+      "TP": 0.899130991433988,
+      "errorRate": 0.0,
+      "meanReEntries": 0.8125
+    },
+    {
+      "Participant": "Soha",
+      "PairNumber": 2,
+      "FilterType": "exponential",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 4.47460625,
+      "IDe": 3.694772539830727,
+      "TP": 0.8257201490814364,
+      "errorRate": 0.0,
+      "meanReEntries": 1.03125
+    },
+    {
+      "Participant": "Soha",
+      "PairNumber": 2,
+      "FilterType": "oneEuro",
+      "n": 32,
+      "n_total": 32,
+      "meanMT": 3.72665,
+      "IDe": 3.9224257797863835,
+      "TP": 1.0525339862306318,
+      "errorRate": 0.0,
+      "meanReEntries": 0.5625
+    },
+    {
+      "Participant": "Soha",
+      "PairNumber": 3,
+      "FilterType": "exponential",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 3.4906625,
+      "IDe": 4.397904432971674,
+      "TP": 1.2599053712502066,
+      "errorRate": 0.0,
+      "meanReEntries": 0.6875
+    },
+    {
+      "Participant": "Soha",
+      "PairNumber": 3,
+      "FilterType": "oneEuro",
+      "n": 16,
+      "n_total": 16,
+      "meanMT": 4.01710625,
+      "IDe": 3.916252827839197,
+      "TP": 0.9748940117875141,
+      "errorRate": 0.0,
+      "meanReEntries": 1.0
+    }
+  ],
+  "sign_test": {
+    "comparisons": 12,
+    "oneEuro_better": 7,
+    "p_one_sided": 0.38720703125,
+    "per_pair": [
+      {
+        "PairNumber": 1,
+        "n": 4,
+        "oneEuro_better": 3,
+        "p_one_sided": 0.3125,
+        "mean_delta": 0.0780026806585668
+      },
+      {
+        "PairNumber": 2,
+        "n": 4,
+        "oneEuro_better": 3,
+        "p_one_sided": 0.3125,
+        "mean_delta": 0.09712446680962993
+      },
+      {
+        "PairNumber": 3,
+        "n": 4,
+        "oneEuro_better": 1,
+        "p_one_sided": 0.9375,
+        "mean_delta": -0.20201808980675062
+      }
+    ]
+  },
+  "filter_initial_read": {
+    "ok": true,
+    "delta_definition": "\u0394TP = TP(oneEuro) \u2212 TP(exponential), bits/s",
+    "per_cell": {
+      "n_cells": 12,
+      "mean_delta": -0.00896364744618463,
+      "sd_delta": 0.2079072197346471,
+      "cohens_dz": -0.04311369012401288,
+      "paired_t_test": {
+        "n": 12,
+        "mean_delta": -0.00896364744618463,
+        "sd_delta": 0.2079072197346471,
+        "t": -0.1493502035931417,
+        "p_two_sided": 0.8839803272902869,
+        "cohens_dz": -0.04311369012401288
+      },
+      "wilcoxon_signed_rank": {
+        "n": 12,
+        "statistic": 37.0,
+        "p_two_sided": 0.90966796875
+      },
+      "bootstrap_participant_cluster": {
+        "n_boot": 10000,
+        "mean": -0.009150249548788087,
+        "ci95_low": -0.10732486401179979,
+        "ci95_high": 0.08149319602536831,
+        "p_two_sided_approx": 0.851
+      }
+    },
+    "per_participant": {
+      "summary": {
+        "n_participants": 4,
+        "mean": -0.008963647446184626,
+        "sd": 0.11283795604593373,
+        "n_oneEuro_higher": 2
+      },
+      "values": [
+        {
+          "Participant": "Aashritha",
+          "mean_delta": -0.15186771268265684
+        },
+        {
+          "Participant": "Marzia",
+          "mean_delta": 0.11813167160216313
+        },
+        {
+          "Participant": "Professor",
+          "mean_delta": -0.02842223070501611
+        },
+        {
+          "Participant": "Soha",
+          "mean_delta": 0.026303682000771305
+        }
+      ],
+      "paired_t_test_vs_zero": {
+        "t": -0.1588764589556325,
+        "p_two_sided": 0.8838592805326163,
+        "cohens_dz": -0.07943822947781623
+      },
+      "wilcoxon_signed_rank": {
+        "note": "n=4 too small for Wilcoxon"
+      }
+    },
+    "per_pair": [
+      {
+        "PairNumber": 1,
+        "n": 4,
+        "mean_delta_TP": 0.0780026806585668,
+        "sd_delta_TP": 0.09927727977773604,
+        "n_oneEuro_higher": 3
+      },
+      {
+        "PairNumber": 2,
+        "n": 4,
+        "mean_delta_TP": 0.09712446680962993,
+        "sd_delta_TP": 0.11119755442279583,
+        "n_oneEuro_higher": 3
+      },
+      {
+        "PairNumber": 3,
+        "n": 4,
+        "mean_delta_TP": -0.20201808980675062,
+        "sd_delta_TP": 0.247968759675191,
+        "n_oneEuro_higher": 1
+      }
+    ]
+  },
+  "mixed_model_cell_means": {
+    "ok": true,
+    "formula": "TP ~ filter_oe * MeasuredLatency + IDe",
+    "covariate": "MeasuredLatency",
+    "unit": "cell means (one row per Participant \u00d7 Pair \u00d7 Filter, Part A only)",
+    "fixed_effects": {
+      "Intercept": -0.15425392161826415,
+      "filter_oe": -0.05186434685722519,
+      "MeasuredLatency": -7.099463622409408e-05,
+      "filter_oe:MeasuredLatency": 6.614977826137479e-05,
+      "IDe": 0.2220853099821106
+    },
+    "standard_errors": {
+      "Intercept": 0.5548680720882064,
+      "filter_oe": 0.05852657985096035,
+      "MeasuredLatency": 4.4396491495478695e-05,
+      "filter_oe:MeasuredLatency": 5.574230671525823e-05,
+      "IDe": 0.13526584022903893
+    },
+    "p_values": {
+      "Intercept": 0.7810115320248595,
+      "filter_oe": 0.37552733002796435,
+      "MeasuredLatency": 0.10979735050009821,
+      "filter_oe:MeasuredLatency": 0.23534326472922218,
+      "IDe": 0.10062248830118375,
+      "Group Var": 0.2710373394923724
+    },
+    "between_participant_sd": 0.3015367801314451,
+    "residual_sd": 0.11980422700262822,
+    "n_obs": 32,
+    "n_participants": 4
+  },
+  "rq2_curves": {
+    "per_participant": [
+      {
+        "Participant": "Aashritha",
+        "FilterType": "exponential",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          -5.332349790944986e-06,
+          0.0017150647285445108,
+          0.5085532875492856
+        ],
+        "x_min": 140.73,
+        "x_max": 416.99
+      },
+      {
+        "Participant": "Aashritha",
+        "FilterType": "oneEuro",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          -1.9555202352633447e-05,
+          0.008706056243593292,
+          -0.0651906106220184
+        ],
+        "x_min": 45.67,
+        "x_max": 408.73
+      },
+      {
+        "Participant": "Marzia",
+        "FilterType": "exponential",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          -7.742703894292442e-08,
+          0.000216357218937626,
+          0.19201033241400817
+        ],
+        "x_min": 3.45,
+        "x_max": 2995.91
+      },
+      {
+        "Participant": "Marzia",
+        "FilterType": "oneEuro",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          4.039557262236655e-08,
+          -0.000136250331434393,
+          0.3609481018401674
+        ],
+        "x_min": 5.99,
+        "x_max": 2552.53
+      },
+      {
+        "Participant": "Professor",
+        "FilterType": "exponential",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          2.5778579782689107e-07,
+          -0.0008785799583722636,
+          1.205816177988939
+        ],
+        "x_min": 57.04,
+        "x_max": 2621.72
+      },
+      {
+        "Participant": "Professor",
+        "FilterType": "oneEuro",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          -2.1174997797537778e-07,
+          0.0004279923968333094,
+          0.791064959131616
+        ],
+        "x_min": 66.98,
+        "x_max": 2027.71
+      },
+      {
+        "Participant": "Soha",
+        "FilterType": "exponential",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          1.474440269369062e-07,
+          -0.0005927874448287179,
+          1.3491910892141776
+        ],
+        "x_min": 156.73,
+        "x_max": 2252.36
+      },
+      {
+        "Participant": "Soha",
+        "FilterType": "oneEuro",
+        "n_points": 4,
+        "degree": 2,
+        "coef": [
+          -3.1083490844766295e-07,
+          0.0003976129424934259,
+          0.9369275648107663
+        ],
+        "x_min": 103.93,
+        "x_max": 1368.06
+      }
+    ],
+    "group_curve": {
+      "exponential": {
+        "x": [
+          156.73,
+          162.04142857142855,
+          167.35285714285715,
+          172.6642857142857,
+          177.97571428571428,
+          183.28714285714284,
+          188.5985714285714,
+          193.91,
+          199.22142857142856,
+          204.53285714285713,
+          209.84428571428572,
+          215.15571428571428,
+          220.46714285714285,
+          225.7785714285714,
+          231.08999999999997,
+          236.40142857142857,
+          241.71285714285713,
+          247.0242857142857,
+          252.3357142857143,
+          257.64714285714285,
+          262.9585714285714,
+          268.27,
+          273.58142857142855,
+          278.8928571428571,
+          284.2042857142857,
+          289.51571428571424,
+          294.8271428571428,
+          300.1385714285714,
+          305.45,
+          310.76142857142855,
+          316.0728571428572,
+          321.38428571428574,
+          326.6957142857143,
+          332.00714285714287,
+          337.31857142857143,
+          342.63,
+          347.94142857142856,
+          353.2528571428571,
+          358.5642857142857,
+          363.87571428571425,
+          369.1871428571428,
+          374.4985714285714,
+          379.80999999999995,
+          385.12142857142857,
+          390.43285714285713,
+          395.7442857142857,
+          401.0557142857143,
+          406.3671428571429,
+          411.67857142857144,
+          416.99
+        ],
+        "y_mean": [
+          0.8011855193564774,
+          0.7996780668077694,
+          0.7981000219369856,
+          0.7964513847441257,
+          0.7947321552291899,
+          0.7929423333921781,
+          0.7910819192330902,
+          0.7891509127519265,
+          0.7871493139486868,
+          0.785077122823371,
+          0.7829343393759794,
+          0.7807209636065117,
+          0.778436995514968,
+          0.7760824351013484,
+          0.7736572823656527,
+          0.7711615373078811,
+          0.7685951999280336,
+          0.76595827022611,
+          0.7632507482021104,
+          0.7604726338560348,
+          0.7576239271878833,
+          0.7547046281976558,
+          0.7517147368853525,
+          0.748654253250973,
+          0.7455231772945174,
+          0.742321509015986,
+          0.7390492484153788,
+          0.7357063954926952,
+          0.7322929502479358,
+          0.7288089126811006,
+          0.7252542827921892,
+          0.7216290605812019,
+          0.7179332460481386,
+          0.7141668391929994,
+          0.710329840015784,
+          0.7064222485164928,
+          0.7024440646951257,
+          0.6983952885516824,
+          0.6942759200861632,
+          0.6900859592985682,
+          0.6858254061888971,
+          0.6814942607571499,
+          0.6770925230033269,
+          0.6726201929274277,
+          0.6680772705294526,
+          0.6634637558094016,
+          0.6587796487672746,
+          0.6540249494030715,
+          0.6491996577167926,
+          0.6443037737084376
+        ],
+        "y_sd": [
+          0.46266862832769623,
+          0.46044664039201344,
+          0.45826777670241575,
+          0.45613162648207134,
+          0.45403791521556597,
+          0.45198650812785623,
+          0.44997741356239473,
+          0.4480107862498812,
+          0.4460869304574818,
+          0.44420630300659003,
+          0.44236951614526715,
+          0.44057734025942025,
+          0.43883070640455196,
+          0.43713070863756953,
+          0.43547860612569844,
+          0.43387582500702065,
+          0.43232395997459305,
+          0.4308247755535318,
+          0.42938020703791885,
+          0.4279923610519488,
+          0.4266635156974571,
+          0.42539612024790785,
+          0.4241927943471673,
+          0.4230563266700141,
+          0.42198967300044493,
+          0.4209959536835102,
+          0.4200784504067736,
+          0.4192406022686158,
+          0.41848600109262096,
+          0.4178183859502737,
+          0.41724163685824994,
+          0.4167597676217912,
+          0.4163769178020494,
+          0.41609734379292723,
+          0.41592540900181746,
+          0.4158655731387265,
+          0.41592238062949594,
+          0.41610044818108516,
+          0.4164044515399969,
+          0.41683911149869723,
+          0.41740917921905485,
+          0.418119420956089,
+          0.41897460227934,
+          0.41997947190257184,
+          0.42113874524490635,
+          0.4224570878574531,
+          0.42393909885865527,
+          0.4255892945285419,
+          0.42741209221653276,
+          0.4294117947191149
+        ],
+        "n_participants": 4
+      },
+      "oneEuro": {
+        "x": [
+          103.93,
+          110.15040816326531,
+          116.37081632653062,
+          122.59122448979593,
+          128.81163265306122,
+          135.03204081632654,
+          141.25244897959186,
+          147.47285714285715,
+          153.69326530612244,
+          159.91367346938776,
+          166.13408163265308,
+          172.35448979591837,
+          178.5748979591837,
+          184.795306122449,
+          191.0157142857143,
+          197.2361224489796,
+          203.4565306122449,
+          209.67693877551022,
+          215.8973469387755,
+          222.1177551020408,
+          228.33816326530612,
+          234.55857142857144,
+          240.77897959183673,
+          246.99938775510205,
+          253.21979591836737,
+          259.44020408163266,
+          265.66061224489795,
+          271.8810204081633,
+          278.1014285714286,
+          284.3218367346939,
+          290.5422448979592,
+          296.76265306122446,
+          302.9830612244898,
+          309.20346938775515,
+          315.4238775510204,
+          321.64428571428573,
+          327.864693877551,
+          334.0851020408163,
+          340.30551020408166,
+          346.52591836734695,
+          352.74632653061224,
+          358.9667346938776,
+          365.1871428571429,
+          371.40755102040816,
+          377.62795918367345,
+          383.8483673469388,
+          390.0687755102041,
+          396.2891836734694,
+          402.5095918367347,
+          408.73
+        ],
+        "y_mean": [
+          0.6959455811256815,
+          0.7038856184275922,
+          0.7114379975455207,
+          0.7186027184794671,
+          0.7253797812294314,
+          0.7317691857954134,
+          0.7377709321774133,
+          0.7433850203754309,
+          0.7486114503894663,
+          0.7534502222195198,
+          0.7579013358655908,
+          0.7619647913276799,
+          0.7656405886057867,
+          0.7689287276999113,
+          0.7718292086100538,
+          0.7743420313362142,
+          0.7764671958783922,
+          0.7782047022365882,
+          0.7795545504108019,
+          0.7805167404010336,
+          0.7810912722072829,
+          0.7812781458295502,
+          0.7810773612678352,
+          0.7804889185221382,
+          0.779512817592459,
+          0.7781490584787976,
+          0.776397641181154,
+          0.7742585656995281,
+          0.7717318320339202,
+          0.7688174401843302,
+          0.7655153901507579,
+          0.7618256819332032,
+          0.7577483155316667,
+          0.7532832909461478,
+          0.7484306081766469,
+          0.7431902672231636,
+          0.7375622680856984,
+          0.7315466107642508,
+          0.725143295258821,
+          0.7183523215694092,
+          0.7111736896960152,
+          0.7036073996386389,
+          0.6956534513972805,
+          0.68731184497194,
+          0.6785825803626173,
+          0.6694656575693124,
+          0.6599610765920254,
+          0.6500688374307562,
+          0.6397889400855046,
+          0.6291213845562712
+        ],
+        "y_sd": [
+          0.27254092572875893,
+          0.2719944661406918,
+          0.2721595829680725,
+          0.2729300892415121,
+          0.27420263462627,
+          0.2758787454679718,
+          0.27786632646510845,
+          0.2800806558843094,
+          0.2824449443945555,
+          0.2848905451705764,
+          0.28735690489053145,
+          0.28979133732079115,
+          0.2921486882641316,
+          0.29439094631000456,
+          0.29648684026438105,
+          0.2984114524590398,
+          0.3001458677058732,
+          0.30167687038442065,
+          0.3029966967183513,
+          0.3041028453127001,
+          0.30499794608753705,
+          0.30568968548811903,
+          0.30619078395591837,
+          0.30651901983635893,
+          0.3066972919496726,
+          0.30675371077752384,
+          0.30672170548695227,
+          0.30664013075798074,
+          0.3065533536287725,
+          0.30651129648208164,
+          0.30656940820886386,
+          0.30678853206620843,
+          0.307234636619418,
+          0.3079783764823165,
+          0.3090944535471492,
+          0.3106607581602729,
+          0.31275728398922115,
+          0.31546483006156545,
+          0.3188635273365456,
+          0.3230312524555048,
+          0.3280420139809664,
+          0.33396441182888664,
+          0.3408602745732601,
+          0.34878356948999095,
+          0.3577796570111056,
+          0.36788492808258616,
+          0.3791268254305141,
+          0.39152421440175056,
+          0.40508804141679816,
+          0.419822201526955
+        ],
+        "n_participants": 4
+      }
+    },
+    "ok": true
+  },
+  "rq3_calibration": {
+    "ok": true,
+    "comparison_kind": "test_retest_same_calibration",
+    "n_participants_swapped_calibration": 0,
+    "n_participants_total": 4,
+    "calibration_audit": [
+      {
+        "Participant": "Aashritha",
+        "partA_source": "Fresh calibration: 2026-05-14T20:18:36.621Z",
+        "partB_source": "Fresh calibration: 2026-05-14T20:18:36.621Z",
+        "calibration_actually_swapped": false
+      },
+      {
+        "Participant": "Marzia",
+        "partA_source": "Fresh calibration: 2026-05-14T23:33:17.913Z",
+        "partB_source": "Fresh calibration: 2026-05-14T23:33:17.913Z",
+        "calibration_actually_swapped": false
+      },
+      {
+        "Participant": "Professor",
+        "partA_source": "Fresh calibration: 2026-05-05T02:37:51.538Z",
+        "partB_source": "Fresh calibration: 2026-05-05T02:37:51.538Z",
+        "calibration_actually_swapped": false
+      },
+      {
+        "Participant": "Soha",
+        "partA_source": "Fresh calibration: 2026-05-27T00:32:37.065Z",
+        "partB_source": "Fresh calibration: 2026-05-27T00:32:37.065Z",
+        "calibration_actually_swapped": false
+      }
+    ],
+    "rows": [
+      {
+        "Participant": "Aashritha",
+        "FilterType": "exponential",
+        "partA_mid_TP": 0.4372669838923172,
+        "partB_mid_TP": 0.4852535443545958,
+        "delta_A_minus_B": -0.04798656046227856
+      },
+      {
+        "Participant": "Aashritha",
+        "FilterType": "oneEuro",
+        "partA_mid_TP": 0.3868262267204063,
+        "partB_mid_TP": 0.47717068938664514,
+        "delta_A_minus_B": -0.09034446266623886
+      },
+      {
+        "Participant": "Marzia",
+        "FilterType": "exponential",
+        "partA_mid_TP": 0.20831446174856288,
+        "partB_mid_TP": 0.3486126655174041,
+        "delta_A_minus_B": -0.14029820376884122
+      },
+      {
+        "Participant": "Marzia",
+        "FilterType": "oneEuro",
+        "partA_mid_TP": 0.3056907527278234,
+        "partB_mid_TP": 0.3382734626128565,
+        "delta_A_minus_B": -0.03258270988503309
+      },
+      {
+        "Participant": "Professor",
+        "FilterType": "exponential",
+        "partA_mid_TP": 0.805953247364107,
+        "partB_mid_TP": 0.765004833177737,
+        "delta_A_minus_B": 0.040948414186369964
+      },
+      {
+        "Participant": "Professor",
+        "FilterType": "oneEuro",
+        "partA_mid_TP": 0.9252489623818896,
+        "partB_mid_TP": 0.9216687781506187,
+        "delta_A_minus_B": 0.003580184231270933
+      },
+      {
+        "Participant": "Soha",
+        "FilterType": "exponential",
+        "partA_mid_TP": 0.710764691832215,
+        "partB_mid_TP": 0.9850346272532744,
+        "delta_A_minus_B": -0.2742699354210594
+      },
+      {
+        "Participant": "Soha",
+        "FilterType": "oneEuro",
+        "partA_mid_TP": 1.1508135701124271,
+        "partB_mid_TP": 0.9697198247268112,
+        "delta_A_minus_B": 0.18109374538561596
+      }
+    ],
+    "per_filter": [
+      {
+        "FilterType": "exponential",
+        "n_participants": 4,
+        "mean_delta_TP_A_minus_B": -0.1054015713664523,
+        "sd_delta_TP_A_minus_B": 0.134720823780073,
+        "n_partA_higher": 1
+      },
+      {
+        "FilterType": "oneEuro",
+        "n_participants": 4,
+        "mean_delta_TP_A_minus_B": 0.015436689266403736,
+        "sd_delta_TP_A_minus_B": 0.11701616947071002,
+        "n_partA_higher": 2
+      }
+    ],
+    "pooled_paired": {
+      "n": 8,
+      "mean_delta_TP_A_minus_B": -0.04498244105002428,
+      "t": -0.9531240806802693,
+      "p_t": 0.37227175198983853,
+      "wilcoxon_p": 0.3828125
+    }
+  },
+  "subrq_tp_vs_subjective": {
+    "ok": true,
+    "per_pair": [
+      {
+        "Participant": "Aashritha",
+        "FilterType": "exponential",
+        "n_levels": 5,
+        "spearman_rho": 0.9999999999999999,
+        "p_value": 1.4042654220543672e-24
+      },
+      {
+        "Participant": "Aashritha",
+        "FilterType": "oneEuro",
+        "n_levels": 4,
+        "spearman_rho": 0.7777777777777779,
+        "p_value": 0.22222222222222202
+      },
+      {
+        "Participant": "Marzia",
+        "FilterType": "exponential",
+        "n_levels": 4,
+        "spearman_rho": 0.05555555555555556,
+        "p_value": 0.9444444444444444
+      },
+      {
+        "Participant": "Marzia",
+        "FilterType": "oneEuro",
+        "n_levels": 4,
+        "spearman_rho": -0.5000000000000001,
+        "p_value": 0.4999999999999999
+      },
+      {
+        "Participant": "Professor",
+        "FilterType": "exponential",
+        "n_levels": 4,
+        "spearman_rho": 0.316227766016838,
+        "p_value": 0.683772233983162
+      },
+      {
+        "Participant": "Professor",
+        "FilterType": "oneEuro",
+        "n_levels": 4,
+        "spearman_rho": 0.3333333333333334,
+        "p_value": 0.6666666666666665
+      },
+      {
+        "Participant": "Soha",
+        "FilterType": "exponential",
+        "n_levels": 5,
+        "spearman_rho": 0.0,
+        "p_value": 1.0
+      },
+      {
+        "Participant": "Soha",
+        "FilterType": "oneEuro",
+        "n_levels": 4,
+        "spearman_rho": 0.8333333333333335,
+        "p_value": 0.1666666666666665
+      }
+    ],
+    "summary": {
+      "mean_rho": 0.35202847075210475,
+      "median_rho": 0.32478054967508574,
+      "n_pairs": 8,
+      "n_positive": 6,
+      "wilcoxon_p": 0.109375
+    }
+  },
+  "direction_effects": [
+    {
+      "Direction": "up",
+      "n_total": 61,
+      "n_completed": 61,
+      "completion_rate": 1.0,
+      "mean_MT": 8.959252459016396,
+      "mean_reentries": 2.7049180327868854
+    },
+    {
+      "Direction": "up-right",
+      "n_total": 57,
+      "n_completed": 57,
+      "completion_rate": 1.0,
+      "mean_MT": 7.3341,
+      "mean_reentries": 1.9824561403508771
+    },
+    {
+      "Direction": "right",
+      "n_total": 64,
+      "n_completed": 64,
+      "completion_rate": 1.0,
+      "mean_MT": 6.569525,
+      "mean_reentries": 1.90625
+    },
+    {
+      "Direction": "down-right",
+      "n_total": 62,
+      "n_completed": 62,
+      "completion_rate": 1.0,
+      "mean_MT": 7.084174193548387,
+      "mean_reentries": 1.8870967741935485
+    },
+    {
+      "Direction": "down",
+      "n_total": 61,
+      "n_completed": 61,
+      "completion_rate": 1.0,
+      "mean_MT": 9.584481967213113,
+      "mean_reentries": 2.5737704918032787
+    },
+    {
+      "Direction": "down-left",
+      "n_total": 58,
+      "n_completed": 58,
+      "completion_rate": 1.0,
+      "mean_MT": 7.2070482758620695,
+      "mean_reentries": 1.9310344827586208
+    },
+    {
+      "Direction": "left",
+      "n_total": 63,
+      "n_completed": 63,
+      "completion_rate": 1.0,
+      "mean_MT": 8.736700000000003,
+      "mean_reentries": 2.2857142857142856
+    },
+    {
+      "Direction": "up-left",
+      "n_total": 62,
+      "n_completed": 62,
+      "completion_rate": 1.0,
+      "mean_MT": 7.766135483870969,
+      "mean_reentries": 1.6935483870967742
+    }
+  ],
+  "power_analysis": {
+    "ok": true,
+    "mean_delta_TP": -0.00896364744618463,
+    "sd_delta_TP": 0.2079072197346471,
+    "cohens_dz": -0.04311369012401288,
+    "n_paired_observations": 12,
+    "n_for_80_power": null,
+    "n_for_90_power": null,
+    "min_detectable_dz_at_n12": 0.8886542652908501,
+    "min_detectable_dz_at_n20": null,
+    "recommended_n": 20,
+    "interpretation": "Pilot effect size for \u0394TP is essentially zero (d_z = -0.043), so a paired-t test cannot estimate a meaningful target n. With n=12 (HCI standard) a real study could detect d_z \u2265 0.89; with n=20 it could detect d_z \u2265 \u2014. Pilot does not yet support a strong directional claim on filter type.",
+    "note": "Paired-t power on per-participant \u0394TP collapsed across variance pairs. Conservative estimate. For final study, refine with simr in R or a simulation-based mixed-model power analysis."
+  },
+  "recommended_n": 20
+}

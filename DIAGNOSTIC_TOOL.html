@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fitts Experiment Diagnostic Tool</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #1a1a1a;
+      color: #00ff00;
+      padding: 20px;
+    }
+    .panel {
+      background: #000;
+      border: 2px solid #00ff00;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .value {
+      color: #ffff00;
+      font-weight: bold;
+    }
+    .error {
+      color: #ff0000;
+      font-weight: bold;
+    }
+    .success {
+      color: #00ff00;
+      font-weight: bold;
+    }
+    button {
+      background: #00ff00;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #00cc00;
+    }
+    #log {
+      height: 300px;
+      overflow-y: scroll;
+      background: #000;
+      padding: 10px;
+      border: 1px solid #00ff00;
+      margin-top: 10px;
+    }
+    .log-entry {
+      margin: 2px 0;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Fitts Experiment Diagnostic Tool</h1>
+  
+  <div class="panel">
+    <h2>Current State</h2>
+    <div id="current-state">Loading...</div>
+  </div>
+  
+  <div class="panel">
+    <h2>Rank 23 Test</h2>
+    <button onclick="setRank23()">Set to Rank 23</button>
+    <button onclick="setRank20()">Set to Rank 20</button>
+    <button onclick="setRank1()">Set to Rank 1</button>
+    <div id="rank-status" style="margin-top: 10px;"></div>
+  </div>
+  
+  <div class="panel">
+    <h2>Cursor Tracking Monitor</h2>
+    <button onclick="startMonitoring()">Start Monitoring</button>
+    <button onclick="stopMonitoring()">Stop Monitoring</button>
+    <button onclick="clearLog()">Clear Log</button>
+    <div id="log"></div>
+  </div>
+  
+  <script>
+    let monitorInterval = null;
+    let logEntries = [];
+    
+    function updateState() {
+      const state = window.opener?.state || window.parent?.state;
+      if (!state) {
+        document.getElementById('current-state').innerHTML = '<span class="error">❌ Cannot access window.state</span>';
+        return;
+      }
+      
+      const filterType = state.config?.filterType || 'unknown';
+      const smoothingFactor = state.config?.exponentialSmoothingFactor || 'N/A';
+      const cursorX = state.cursorX;
+      const cursorY = state.cursorY;
+      const isTracking = state.isTracking;
+      
+      // Calculate what rank this smoothing factor corresponds to
+      let estimatedRank = 'unknown';
+      if (filterType === 'exponential' && smoothingFactor !== 'N/A') {
+        const alpha = 1 - smoothingFactor;
+        // Rank 20: alpha = 0.01998
+        // Rank 23: alpha = 0.02298
+        if (Math.abs(alpha - 0.01998) < 0.0001) estimatedRank = '20';
+        else if (Math.abs(alpha - 0.02298) < 0.0001) estimatedRank = '23';
+        else if (Math.abs(alpha - 0.001) < 0.0001) estimatedRank = '1';
+        else estimatedRank = `~${Math.round(alpha * 1000)}`;
+      }
+      
+      document.getElementById('current-state').innerHTML = `
+        <div>Filter Type: <span class="value">${filterType}</span></div>
+        <div>Smoothing Factor: <span class="value">${smoothingFactor}</span></div>
+        <div>Alpha (1-smoothing): <span class="value">${1 - smoothingFactor}</span></div>
+        <div>Estimated Rank: <span class="value">${estimatedRank}</span></div>
+        <div>Cursor X: <span class="value">${cursorX}</span></div>
+        <div>Cursor Y: <span class="value">${cursorY}</span></div>
+        <div>Is Tracking: <span class="${isTracking ? 'success' : 'error'}">${isTracking ? '✅ Yes' : '❌ No'}</span></div>
+      `;
+    }
+    
+    function setRank23() {
+      const state = window.opener?.state || window.parent?.state;
+      if (!state) {
+        alert('Cannot access window.state');
+        return;
+      }
+      
+      const alpha = 0.02298;
+      const smoothingFactor = 1 - alpha;
+      state.config.exponentialSmoothingFactor = smoothingFactor;
+      
+      document.getElementById('rank-status').innerHTML = `
+        <span class="success">✅ Set to Rank 23</span><br>
+        Alpha: ${alpha}<br>
+        Smoothing Factor: ${smoothingFactor}
+      `;
+      
+      updateState();
+    }
+    
+    function setRank20() {
+      const state = window.opener?.state || window.parent?.state;
+      if (!state) {
+        alert('Cannot access window.state');
+        return;
+      }
+      
+      const alpha = 0.01998;
+      const smoothingFactor = 1 - alpha;
+      state.config.exponentialSmoothingFactor = smoothingFactor;
+      
+      document.getElementById('rank-status').innerHTML = `
+        <span class="success">✅ Set to Rank 20</span><br>
+        Alpha: ${alpha}<br>
+        Smoothing Factor: ${smoothingFactor}
+      `;
+      
+      updateState();
+    }
+    
+    function setRank1() {
+      const state = window.opener?.state || window.parent?.state;
+      if (!state) {
+        alert('Cannot access window.state');
+        return;
+      }
+      
+      const alpha = 0.001;
+      const smoothingFactor = 1 - alpha;
+      state.config.exponentialSmoothingFactor = smoothingFactor;
+      
+      document.getElementById('rank-status').innerHTML = `
+        <span class="success">✅ Set to Rank 1</span><br>
+        Alpha: ${alpha}<br>
+        Smoothing Factor: ${smoothingFactor}
+      `;
+      
+      updateState();
+    }
+    
+    function startMonitoring() {
+      if (monitorInterval) return;
+      
+      const state = window.opener?.state || window.parent?.state;
+      if (!state) {
+        alert('Cannot access window.state');
+        return;
+      }
+      
+      let lastX = state.cursorX;
+      let lastY = state.cursorY;
+      
+      monitorInterval = setInterval(() => {
+        const curX = state.cursorX;
+        const curY = state.cursorY;
+        const smoothing = state.config.exponentialSmoothingFactor;
+        
+        const deltaX = curX - lastX;
+        const deltaY = curY - lastY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        if (distance > 0.1) {  // Only log if cursor moved
+          const entry = `[${new Date().toLocaleTimeString()}] X:${curX.toFixed(1)} Y:${curY.toFixed(1)} Δ:${distance.toFixed(2)} S:${smoothing.toFixed(5)}`;
+          logEntries.push(entry);
+          
+          if (logEntries.length > 100) {
+            logEntries.shift();
+          }
+          
+          updateLog();
+        }
+        
+        lastX = curX;
+        lastY = curY;
+      }, 100);
+    }
+    
+    function stopMonitoring() {
+      if (monitorInterval) {
+        clearInterval(monitorInterval);
+        monitorInterval = null;
+      }
+    }
+    
+    function clearLog() {
+      logEntries = [];
+      updateLog();
+    }
+    
+    function updateLog() {
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML = logEntries.map(entry => 
+        `<div class="log-entry">${entry}</div>`
+      ).join('');
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    
+    // Update state every second
+    setInterval(updateState, 1000);
+    updateState();
+  </script>
+</body>
+</html>
+

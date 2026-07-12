@@ -1,0 +1,286 @@
+[
+  {
+    "participant": "Aashritha",
+    "n_total": 128,
+    "n_completed": 127,
+    "completion_rate": 0.9921875,
+    "range_summary": {
+      "endpoint_x": {
+        "min": 372.86,
+        "max": 1129.43,
+        "mean": 755.7323622047244,
+        "stdev": 250.58942243626262,
+        "n": 127
+      },
+      "endpoint_y": {
+        "min": 40.83,
+        "max": 787.57,
+        "mean": 416.75055118110237,
+        "stdev": 249.42610167925247,
+        "n": 127
+      },
+      "target_x": {
+        "min": 389.77,
+        "max": 1122.23,
+        "mean": 753.9614960629922,
+        "stdev": 253.16082282671076,
+        "n": 127
+      },
+      "target_y": {
+        "min": 45.27,
+        "max": 777.73,
+        "mean": 413.53913385826775,
+        "stdev": 253.15994743301945,
+        "n": 127
+      }
+    },
+    "by_direction": {
+      "down": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 15.564211313620595,
+        "endpoint_dist_max": 28.053185202397213,
+        "y_signed_error_mean": -4.973750000000003,
+        "mt_mean": 13.67293125,
+        "mt_max": 49.6409,
+        "reentries_mean": 3.8125,
+        "reentries_max": 16.0
+      },
+      "down-left": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 20.980427182284437,
+        "endpoint_dist_max": 40.1283254073727,
+        "y_signed_error_mean": 2.463749999999969,
+        "mt_mean": 9.67635625,
+        "mt_max": 19.9586,
+        "reentries_mean": 2.4375,
+        "reentries_max": 6.0
+      },
+      "down-right": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 15.443131197833722,
+        "endpoint_dist_max": 29.42211753086438,
+        "y_signed_error_mean": 2.2174999999999514,
+        "mt_mean": 8.319375,
+        "mt_max": 15.0317,
+        "reentries_mean": 1.75,
+        "reentries_max": 4.0
+      },
+      "left": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 18.007063786251763,
+        "endpoint_dist_max": 34.38849226122021,
+        "y_signed_error_mean": 0.1687499999999993,
+        "mt_mean": 9.49699375,
+        "mt_max": 17.0344,
+        "reentries_mean": 1.8125,
+        "reentries_max": 4.0
+      },
+      "right": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 21.554773858745126,
+        "endpoint_dist_max": 39.39269475423065,
+        "y_signed_error_mean": -0.5981249999999996,
+        "mt_mean": 7.08726875,
+        "mt_max": 13.5595,
+        "reentries_mean": 1.875,
+        "reentries_max": 5.0
+      },
+      "up": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 17.94626052691376,
+        "endpoint_dist_max": 33.90838539358663,
+        "y_signed_error_mean": 9.949375,
+        "mt_mean": 10.39819375,
+        "mt_max": 33.9262,
+        "reentries_mean": 1.25,
+        "reentries_max": 5.0
+      },
+      "up-left": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 17.51565542917545,
+        "endpoint_dist_max": 39.341938183063625,
+        "y_signed_error_mean": 7.919375000000004,
+        "mt_mean": 10.42244375,
+        "mt_max": 40.5404,
+        "reentries_mean": 1.1875,
+        "reentries_max": 5.0
+      },
+      "up-right": {
+        "n_total": 16,
+        "n_completed": 15,
+        "n_timeout": 1,
+        "completion_rate": 0.9375,
+        "endpoint_dist_mean": 18.293749869044934,
+        "endpoint_dist_max": 33.581013981117415,
+        "y_signed_error_mean": 8.900000000000007,
+        "mt_mean": 9.97588,
+        "mt_max": 20.9173,
+        "reentries_mean": 2.3333333333333335,
+        "reentries_max": 7.0
+      }
+    }
+  },
+  {
+    "participant": "Marzia",
+    "n_total": 128,
+    "n_completed": 105,
+    "completion_rate": 0.8203125,
+    "range_summary": {
+      "endpoint_x": {
+        "min": 378.06,
+        "max": 1134.1,
+        "mean": 765.1519047619047,
+        "stdev": 257.39500734823986,
+        "n": 105
+      },
+      "endpoint_y": {
+        "min": 27.21,
+        "max": 796.52,
+        "mean": 408.09504761904765,
+        "stdev": 245.51773893481587,
+        "n": 105
+      },
+      "target_x": {
+        "min": 389.77,
+        "max": 1122.23,
+        "mean": 759.4886666666666,
+        "stdev": 258.82490057608874,
+        "n": 105
+      },
+      "target_y": {
+        "min": 45.27,
+        "max": 777.73,
+        "mean": 411.5,
+        "stdev": 246.65679233646554,
+        "n": 105
+      }
+    },
+    "by_direction": {
+      "down": {
+        "n_total": 16,
+        "n_completed": 13,
+        "n_timeout": 3,
+        "completion_rate": 0.8125,
+        "endpoint_dist_mean": 21.10000772561201,
+        "endpoint_dist_max": 39.070573325714136,
+        "y_signed_error_mean": -5.291538461538459,
+        "mt_mean": 16.972215384615385,
+        "mt_max": 40.7377,
+        "reentries_mean": 5.615384615384615,
+        "reentries_max": 19.0
+      },
+      "down-left": {
+        "n_total": 16,
+        "n_completed": 10,
+        "n_timeout": 6,
+        "completion_rate": 0.625,
+        "endpoint_dist_mean": 17.698149210326264,
+        "endpoint_dist_max": 36.18401995356512,
+        "y_signed_error_mean": -9.747000000000037,
+        "mt_mean": 13.11429,
+        "mt_max": 24.8899,
+        "reentries_mean": 5.2,
+        "reentries_max": 17.0
+      },
+      "down-right": {
+        "n_total": 16,
+        "n_completed": 14,
+        "n_timeout": 2,
+        "completion_rate": 0.875,
+        "endpoint_dist_mean": 21.246048102252495,
+        "endpoint_dist_max": 36.99146117687164,
+        "y_signed_error_mean": -3.09000000000004,
+        "mt_mean": 12.035250000000001,
+        "mt_max": 31.0959,
+        "reentries_mean": 5.0,
+        "reentries_max": 32.0
+      },
+      "left": {
+        "n_total": 16,
+        "n_completed": 15,
+        "n_timeout": 1,
+        "completion_rate": 0.9375,
+        "endpoint_dist_mean": 21.83270231551336,
+        "endpoint_dist_max": 39.81877195494605,
+        "y_signed_error_mean": -8.066666666666663,
+        "mt_mean": 17.03064,
+        "mt_max": 35.4254,
+        "reentries_mean": 5.266666666666667,
+        "reentries_max": 18.0
+      },
+      "right": {
+        "n_total": 16,
+        "n_completed": 16,
+        "n_timeout": 0,
+        "completion_rate": 1.0,
+        "endpoint_dist_mean": 14.561546754579666,
+        "endpoint_dist_max": 40.1142181775988,
+        "y_signed_error_mean": 2.0387500000000003,
+        "mt_mean": 10.9772125,
+        "mt_max": 28.2348,
+        "reentries_mean": 3.375,
+        "reentries_max": 14.0
+      },
+      "up": {
+        "n_total": 16,
+        "n_completed": 13,
+        "n_timeout": 3,
+        "completion_rate": 0.8125,
+        "endpoint_dist_mean": 17.81755933494277,
+        "endpoint_dist_max": 34.83575892671207,
+        "y_signed_error_mean": -0.7084615384615375,
+        "mt_mean": 17.083853846153847,
+        "mt_max": 37.8837,
+        "reentries_mean": 8.76923076923077,
+        "reentries_max": 21.0
+      },
+      "up-left": {
+        "n_total": 16,
+        "n_completed": 14,
+        "n_timeout": 2,
+        "completion_rate": 0.875,
+        "endpoint_dist_mean": 21.391055857493857,
+        "endpoint_dist_max": 38.82118107425378,
+        "y_signed_error_mean": -0.4271428571428544,
+        "mt_mean": 12.272621428571428,
+        "mt_max": 27.2904,
+        "reentries_mean": 4.357142857142857,
+        "reentries_max": 13.0
+      },
+      "up-right": {
+        "n_total": 16,
+        "n_completed": 10,
+        "n_timeout": 6,
+        "completion_rate": 0.625,
+        "endpoint_dist_mean": 14.997709300075263,
+        "endpoint_dist_max": 25.890697170991807,
+        "y_signed_error_mean": -4.4429999999999925,
+        "mt_mean": 12.187990000000001,
+        "mt_max": 31.2681,
+        "reentries_mean": 4.4,
+        "reentries_max": 16.0
+      }
+    }
+  }
+]

@@ -1,0 +1,9 @@
+Part: Part A
+Calibration Type: Personal
+Calibration Source: Fresh calibration: 2026-05-27T00:32:37.065Z
+Participant: P10
+Filter Order: oneEuro first
+Variance Order: Med → High → Low
+Trials Completed: 96
+Trials Missed (timeout): 0
+Timestamp: 2026-05-27T00:49:28.856Z
