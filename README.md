@@ -1,4 +1,1 @@
-Steps to run this code:
-1. Clone the repository
-2. Run npm install (assuming you have node.js). Download it from the website: https://nodejs.org/en
-3. Run node app.js
+This is a new head-based tracking system to be used for research on the effectiveness using a fixed Voroni system to help people with motor disabilities use their head as a mouse. We are using the Fitts expirement to analyze the effectiveness of our system.
