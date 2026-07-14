@@ -1,3 +1,4 @@
+//Connects UI to Backend
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await initialize();
