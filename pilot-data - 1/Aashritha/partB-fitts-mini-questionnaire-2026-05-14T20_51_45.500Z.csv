@@ -1,4 +1,0 @@
-ParticipantID,Part,PairNumber,PairVariance,FilterType,FilterPhase,EasyToHit,Concentration,Control,Effort,Timestamp
-P07,Part B,2,27.568884128082324,oneEuro,0,5,5,3,5,1778791755049
-P07,Part B,2,27.568884128082324,exponential,1,5,5,3,5,1778791904781
-P07,Part B,2,27.568884128082324,exponential,1,5,5,3,5,1778791905500

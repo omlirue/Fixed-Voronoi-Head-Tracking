@@ -1,0 +1,38 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "Steps to run this code:\r 1. Clone the repository\r 2. Run npm install (assuming you have node.js). Download it from the website: https://n...content-available-to-author-only...s.org/en\r 3. Run node app.js",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/storage": "^7.14.0",
+    "@mediapipe/face_detection": "^0.4.1646425229",
+    "@mediapipe/tasks-vision": "^0.10.16",
+    "@upstash/redis": "^1.37.0",
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "express": "^4.22.2",
+    "fs": "^0.0.1-security",
+    "googleapis": "^133.0.0",
+    "math.js": "^1.1.46",
+    "multer": "^1.4.5-lts.1",
+    "stream": "^0.0.2",
+    "youtube-player": "^5.6.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.25.6",
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.4",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "keywords": []
+}
