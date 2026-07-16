@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Voronoi Activation</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #1e1e24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      border: 2px solid #fff;
+      background-color: #111;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="artboard" width="800" height="400"></canvas>
+
+<script>
+  const canvas = document.getElementById("artboard");
+  const ctx = canvas.getContext("2d");
+
+  // 1. Same 12 static points
+  const points = [
+    [100, 200], [150, 130], [220, 270], 
+    [300, 100], [350, 300], [420, 120], 
+    [500, 280], [580, 100], [650, 250], 
+    [700, 150], [750, 220], [800, 200]
+  ];
+
+  const delaunay = d3.Delaunay.from(points);
+  const voronoi = delaunay.voronoi([0, 0, 800, 400]);
+
+  const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
+  
+  // Track which cell index is currently "active" (-1 means none)
+  let activeIndex = -1;
+
+  // 2. Wrap drawing inside a function so we can redraw on hover
+  function draw() {
+    ctx.clearRect(0, 0, 800, 400);
+
+    for (let i = 0; i < points.length; i++) {
+      const polygon = voronoi.cellPolygon(i);
+      if (!polygon) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(polygon[0][0], polygon[0][1]);
+      for (let j = 1; j < polygon.length; j++) {
+        ctx.lineTo(polygon[j][0], polygon[j][1]);
+      }
+      ctx.closePath();
+
+      // Check if this is the active cell
+      if (i === activeIndex) {
+        ctx.fillStyle = colors[i % colors.length]; // Bright, full color
+        ctx.strokeStyle = "#ffffff";              // Bright white border
+        ctx.lineWidth = 6;                         // Thick line
+      } else {
+        ctx.fillStyle = "rgba(100, 100, 100, 0.2)"; // Dimmed out gray
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; // Faint border
+        ctx.lineWidth = 2;
+      }
+
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Draw the generator dots
+    for (let i = 0; i < points.length; i++) {
+      ctx.beginPath();
+      ctx.arc(points[i][0], points[i][1], i === activeIndex ? 8 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = i === activeIndex ? "#ffffff" : "rgba(255, 255, 255, 0.4)";
+      ctx.fill();
+    }
+  }
+
+  // 3. Listen to the cursor (Mouse) movements
+  canvas.addEventListener("mousemove", (event) => {
+    // Get cursor coordinates relative to the canvas bounds
+    const rect = canvas.getBoundingClientRect();
+    const cursorX = event.clientX - rect.left;
+    const cursorY = event.clientY - rect.top;
+
+    // MAGIC LINE: Find the closest cell to the cursor!
+    activeIndex = delaunay.find(cursorX, cursorY);
+
+    // Redraw the canvas with the updated active index
+    draw();
+  });
+
+  // Reset when the cursor leaves the canvas
+  canvas.addEventListener("mouseleave", () => {
+    activeIndex = -1;
+    draw();
+  });
+
+  // Initial draw on page load
+  draw();
+</script>
+</body>
+</html>
