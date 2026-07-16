@@ -236,4 +236,4 @@ function initializeCursors() {
 window.updateCursor = updateCursor;
 window.updateCursorPosition = updateCursorPosition;
 window.createReferenceGrid = createReferenceGrid;
-window.initializeCursors = initializeCursors;
+window.initializeCursors = initializeCursors; //hi
