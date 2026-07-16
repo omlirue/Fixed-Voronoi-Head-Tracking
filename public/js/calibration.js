@@ -230,7 +230,7 @@ function showNextCalibrationPoint() {
   const existingHint = calibrationUI.querySelector('.calibration-hint');
   if (existingHint) existingHint.remove();
 
-// Create new target
+  // Create new target
   const currentTarget = document.createElement("div");
   currentTarget.id = "calibration-target";
   currentTarget.classList.add("calibration-point");
