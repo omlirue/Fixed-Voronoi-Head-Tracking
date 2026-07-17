@@ -2,59 +2,214 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Simple Voronoi Activation</title>
+  <title>Full Screen Voronoi Experiment</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
-    body {
+    body, html {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background-color: #1e1e24;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      user-select: none;
     }
+    
+    .game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
     canvas {
-      border: 2px solid #fff;
       background-color: #111;
       cursor: crosshair;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1a2e;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      z-index: 99999;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .overlay-screen h1 {
+      margin: 0 0 10px 0;
+      font-size: 32px;
+      color: #64c8ff;
+    }
+
+    .overlay-screen p {
+      color: #ccc;
+      font-size: 18px;
+      margin: 0 0 25px 0;
+    }
+
+    .directions-list {
+      text-align: left;
+      max-width: 650px;
+      margin: 0 auto 25px auto;
+      color: #ddd;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .directions-list li {
+      margin-bottom: 12px;
+    }
+
+    .start-button {
+      background: #64ff64;
+      color: #111;
+      border: none;
+      padding: 16px 48px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      z-index: 100000;
+    }
+
+    kbd {
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: monospace;
+      color: #64c8ff;
+    }
+
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
 
-<canvas id="artboard" width="800" height="400"></canvas>
+<div class="game-container">
+  <div id="config-screen" class="overlay-screen">
+    <h1>Voronoi Calibration Experiment</h1>
+    <p>Hover over the green cells and select them to progress through your trials.</p>
+    <button id="config-button" class="start-button">Start Game</button>
+    <p style="margin-top: 18px; font-size: 14px; color: #888;">or press <kbd>Space</kbd></p>
+  </div>
+
+  <div id="directions-screen" class="overlay-screen hidden">
+    <h1>Directions</h1>
+    <p style="color: #64c8ff; font-weight: bold; margin-bottom: 15px;">For calibration:</p>
+    <ol class="directions-list">
+      <li>Move your head to the greenlit space until it turns red. The next space you will have to move to will be lit yellow while you are on the current greenlit space.</li>
+      <li>Once the current space turns red, move your head to the following greenlit space that was previously yellow.</li>
+      <li>Stay on the new greenlit space until it turns red, and repeat these steps until the final space is red.</li>
+    </ol>
+    <button id="directions-button" class="start-button">Got it!</button>
+    <p style="margin-top: 15px; font-size: 14px; color: #888;">or press <kbd>Space</kbd></p>
+  </div>
+
+  <div id="end-screen" class="overlay-screen hidden">
+    <h1>Experiment Complete</h1>
+    <p>You have finished both Fitts' Law experiment trials successfully.</p>
+  </div>
+
+  <canvas id="artboard"></canvas>
+</div>
 
 <script>
+  const configScreen = document.getElementById('config-screen');
+  const directionsScreen = document.getElementById('directions-screen');
+  const endScreen = document.getElementById('end-screen');
+  const startBtn = document.getElementById('config-button');
+  const directionsBtn = document.getElementById('directions-button');
   const canvas = document.getElementById("artboard");
   const ctx = canvas.getContext("2d");
 
-  // 1. Same 12 static points
-  const points = [
-    [100, 200], [150, 130], [220, 270], 
-    [300, 100], [350, 300], [420, 120], 
-    [500, 280], [580, 100], [650, 250], 
-    [700, 150], [750, 220], [800, 200]
-  ];
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
 
-  const delaunay = d3.Delaunay.from(points);
-  const voronoi = delaunay.voronoi([0, 0, 800, 400]);
-
-  const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
-  
-  // Track which cell index is currently "active" (-1 means none)
+  let currentScreen = "welcome"; 
+  let isStarted = false;
   let activeIndex = -1;
-
-  // --- [SPOT 1] Sequence Trackers ---
-  const sequence = [0, 5, 10, 2, 7, 11, 4, 8, 1, 6, 3, 9];
   let currentTrialIndex = 0; 
+  let currentRound = 1; 
+  
+  const sequence = [0, 5, 10, 2, 7, 11, 4, 8, 1, 6, 3, 9];
 
-  // 2. Wrap drawing inside a function so we can redraw on hover
+  let points = [];
+  function updatePointLayoutScale() {
+    if (currentRound === 1) {
+      points = [
+        [width * 0.125, height * 0.50], [width * 0.187, height * 0.32], [width * 0.275, height * 0.67], 
+        [width * 0.375, height * 0.25], [width * 0.437, height * 0.75], [width * 0.525, height * 0.30], 
+        [width * 0.625, height * 0.70], [width * 0.725, height * 0.25], [width * 0.812, height * 0.62], 
+        [width * 0.875, height * 0.37], [width * 0.937, height * 0.55], [width * 0.960, height * 0.50]
+      ];
+    } else if (currentRound === 2) {
+      points = [
+        [width * 0.100, height * 0.35], [width * 0.200, height * 0.65], [width * 0.280, height * 0.20], 
+        [width * 0.350, height * 0.55], [width * 0.440, height * 0.30], [width * 0.510, height * 0.72], 
+        [width * 0.590, height * 0.40], [width * 0.670, height * 0.60], [width * 0.760, height * 0.25], 
+        [width * 0.830, height * 0.75], [width * 0.890, height * 0.42], [width * 0.950, height * 0.58]
+      ];
+    }
+  }
+  updatePointLayoutScale();
+
+  let delaunay, voronoi;
+  function computeVoronoiDiagram() {
+    if (typeof d3 !== 'undefined') {
+      try {
+        delaunay = d3.Delaunay.from(points);
+        voronoi = delaunay.voronoi([0, 0, width, height]);
+      } catch (err) {
+        console.error("D3 Layout Generation Failed", err);
+      }
+    }
+  }
+  computeVoronoiDiagram();
+
+  function loadSecondVoronoiMap() {
+    currentRound = 2;
+    currentTrialIndex = 0;
+    
+    updatePointLayoutScale();
+    computeVoronoiDiagram();
+    draw();
+  }
+
   function draw() {
-    ctx.clearRect(0, 0, 800, 400);
+    ctx.clearRect(0, 0, width, height);
+    
+    if (typeof d3 === 'undefined' || !voronoi) {
+      ctx.fillStyle = "#ff5555";
+      ctx.font = "20px sans-serif";
+      ctx.fillText("Error: Connect to the internet to load the D3 library script.", 50, height / 2);
+      return;
+    }
 
-    // Reset shadow blur baseline
     ctx.shadowBlur = 0;
-
     for (let i = 0; i < points.length; i++) {
       const polygon = voronoi.cellPolygon(i);
       if (!polygon) continue;
@@ -66,71 +221,54 @@
       }
       ctx.closePath();
 
-      // --- [SPOT 2] Traffic Light Cell Highlighting ---
       const currentTargetIndex = sequence[currentTrialIndex];
       const nextTargetIndex = sequence[currentTrialIndex + 1];
       const sequencePosition = sequence.indexOf(i);
 
-      ctx.save(); // Isolate canvas shadow glows to this cell only
-
-      if (i === currentTargetIndex) {
-        // 🟢 Current Target (Green)
+      ctx.save();
+      if (isStarted && i === currentTargetIndex) {
         ctx.fillStyle = 'rgba(100, 255, 100, 0.4)';
         ctx.strokeStyle = 'rgba(100, 255, 100, 1)';
         ctx.lineWidth = 5;
         if (i === activeIndex) {
           ctx.shadowBlur = 25;
           ctx.shadowColor = 'rgba(100, 255, 100, 1)';
-        } else {
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = 'rgba(100, 255, 100, 0.5)';
         }
-      } 
-      else if (sequencePosition !== -1 && sequencePosition < currentTrialIndex) {
-        // 🔴 Completed Target (Red)
+      } else if (isStarted && sequencePosition !== -1 && sequencePosition < currentTrialIndex) {
         ctx.fillStyle = 'rgba(255, 100, 100, 0.15)';
         ctx.strokeStyle = 'rgba(255, 100, 100, 0.4)';
         ctx.lineWidth = 2;
-      } 
-      else if (i === nextTargetIndex) {
-        // 🟡 Next Target Preview (Yellow)
+      } else if (isStarted && i === nextTargetIndex) {
         ctx.fillStyle = 'rgba(255, 200, 100, 0.2)';
         ctx.strokeStyle = 'rgba(255, 200, 100, 0.6)';
         ctx.lineWidth = 3;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(255, 200, 100, 0.4)';
-      } 
-      else {
-        // ⚪ Inactive Targets (Gray)
+      } else {
         ctx.fillStyle = 'rgba(150, 150, 150, 0.05)';
         ctx.strokeStyle = 'rgba(150, 150, 150, 0.15)';
         ctx.lineWidth = 1;
       }
-
       ctx.fill();
       ctx.stroke();
-      ctx.restore(); // Cleanly clear glows for the next cells
+      ctx.restore();
     }
 
-    // --- [SPOT 3] Dynamic Generator Dots ---
     const currentTargetIndex = sequence[currentTrialIndex];
     const nextTargetIndex = sequence[currentTrialIndex + 1];
 
     for (let i = 0; i < points.length; i++) {
       ctx.beginPath();
-      
       let radius = 4;
       let fillStyle = "rgba(150, 150, 150, 0.4)";
 
-      if (i === currentTargetIndex) {
+      if (isStarted && i === currentTargetIndex) {
         radius = i === activeIndex ? 10 : 7;
-        fillStyle = "#64ff64"; // Green active dot
-      } else if (sequence.indexOf(i) < currentTrialIndex) {
+        fillStyle = "#64ff64";
+      } else if (isStarted && sequence.indexOf(i) < currentTrialIndex) {
         radius = 4;
-        fillStyle = "rgba(255, 100, 100, 0.5)"; // Red completed dot
-      } else if (i === nextTargetIndex) {
+        fillStyle = "rgba(255, 100, 100, 0.5)";
+      } else if (isStarted && i === nextTargetIndex) {
         radius = 5;
-        fillStyle = "rgba(255, 200, 100, 0.8)"; // Yellow upcoming dot
+        fillStyle = "rgba(255, 200, 100, 0.8)";
       }
 
       ctx.arc(points[i][0], points[i][1], radius, 0, Math.PI * 2);
@@ -139,48 +277,79 @@
     }
   }
 
-  // Action hook to register a hit and advance the layout index
   function attemptAcquisition() {
+    if (!isStarted) return;
     const currentTargetIndex = sequence[currentTrialIndex];
     if (activeIndex === currentTargetIndex) {
-      console.log(`🎯 Target acquired at index: ${currentTargetIndex}!`);
-      currentTrialIndex = (currentTrialIndex + 1) % sequence.length; // Loop sequence back to start
+      if (currentTrialIndex < sequence.length - 1) {
+        currentTrialIndex++;
+        draw();
+      } else {
+        if (currentRound === 1) {
+          loadSecondVoronoiMap(); 
+        } else {
+          isStarted = false;
+          currentScreen = "end";
+          endScreen.classList.remove('hidden'); 
+          ctx.clearRect(0, 0, width, height);
+        }
+      }
+    }
+  }
+
+  function advanceFlow() {
+    if (currentScreen === "welcome") {
+      configScreen.classList.add('hidden');
+      directionsScreen.classList.remove('hidden');
+      currentScreen = "directions";
+    } else if (currentScreen === "directions") {
+      directionsScreen.classList.add('hidden');
+      isStarted = true;
+      currentScreen = "game";
       draw();
     }
   }
 
-  // 3. Listen to the cursor (Mouse) movements
+  startBtn.onclick = function() { advanceFlow(); };
+  directionsBtn.onclick = function() { advanceFlow(); };
+
+  window.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (currentScreen === "welcome" || currentScreen === "directions") {
+        advanceFlow();
+      } else if (currentScreen === "game") {
+        attemptAcquisition();
+      }
+    }
+  });
+
   canvas.addEventListener("mousemove", (event) => {
-    // Get cursor coordinates relative to the canvas bounds
+    if (!isStarted || !delaunay) return;
     const rect = canvas.getBoundingClientRect();
     const cursorX = event.clientX - rect.left;
     const cursorY = event.clientY - rect.top;
-
-    // MAGIC LINE: Find the closest cell to the cursor!
     activeIndex = delaunay.find(cursorX, cursorY);
-
-    // Redraw the canvas with the updated active index
     draw();
   });
 
-  // Reset when the cursor leaves the canvas
   canvas.addEventListener("mouseleave", () => {
     activeIndex = -1;
     draw();
   });
 
-  // Tap mouse to capture target
   canvas.addEventListener("click", attemptAcquisition);
 
-  // Press SPACE to capture target
-  document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
-      e.preventDefault(); // Stop window scrolling
-      attemptAcquisition();
-    }
+  window.addEventListener("resize", () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    updatePointLayoutScale();
+    computeVoronoiDiagram();
+    draw();
   });
 
-  // Initial draw on page load
   draw();
 </script>
 </body>
