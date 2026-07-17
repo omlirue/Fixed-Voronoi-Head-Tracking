@@ -40,13 +40,18 @@
   const voronoi = delaunay.voronoi([0, 0, 800, 400]);
 
   const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
-  
+
   // Track which cell index is currently "active" (-1 means none)
   let activeIndex = -1;
 
   // --- [SPOT 1] Sequence Trackers ---
   const sequence = [0, 5, 10, 2, 7, 11, 4, 8, 1, 6, 3, 9];
   let currentTrialIndex = 0; 
+
+  window.delaunay;
+  window.activeIndex = activeIndex;
+  window.drawVoronoi = draw;
+  window.attemptAcquisition = attemptAcquisition;
 
   // 2. Wrap drawing inside a function so we can redraw on hover
   function draw() {
@@ -179,6 +184,20 @@
       attemptAcquisition();
     }
   });
+
+  // Mock head pose for testing — simulates what tracking.js would provide
+  function mockHeadPose(yaw, pitch) {
+    const canvasWidth = 800;
+    const canvasHeight = 400;
+    const maxYaw = 30;
+    const maxPitch = 20;
+
+    const x = ((yaw / maxYaw) + 0.5) * canvasWidth;
+    const y = ((pitch / maxPitch) + 0.5) * canvasHeight;
+
+    activeIndex = delaunay.find(x, y);
+    draw();
+  }
 
   // Initial draw on page load
   draw();
