@@ -193,47 +193,65 @@ function updateCursorFromHeadPosition(headPositionX, headPositionY) {
 }
 
 function updateCursorPosition(x, y) {
-  const cursorSize = 20; // Size of cursor in pixels
-
-  // Create or get cursor element (only need the clipped one now)
-  let cursorWithClipping = document.getElementById("head-cursor-clipped");
-  if (!cursorWithClipping) {
-    cursorWithClipping = document.createElement("div");
-    cursorWithClipping.id = "head-cursor-clipped";
-    cursorWithClipping.style.position = "fixed";
-    cursorWithClipping.style.width = `${cursorSize}px`;
-    cursorWithClipping.style.height = `${cursorSize}px`;
-    cursorWithClipping.style.borderRadius = "50%";
-    cursorWithClipping.style.backgroundColor = "red";
-    cursorWithClipping.style.zIndex = "1000";
-    cursorWithClipping.style.pointerEvents = "none";
-    cursorWithClipping.style.transform = "translate(-50%, -50%)";
-    document.body.appendChild(cursorWithClipping);
+  // // Create or get cursor element (only need the clipped one now)
+  // let cursorWithClipping = document.getElementById("head-cursor-clipped");
+  // if (!cursorWithClipping) {
+  //   cursorWithClipping = document.createElement("div");
+  //   cursorWithClipping.id = "head-cursor-clipped";
+  //   cursorWithClipping.style.position = "fixed";
+  //   cursorWithClipping.style.width = `${cursorSize}px`;
+  //   cursorWithClipping.style.height = `${cursorSize}px`;
+  //   cursorWithClipping.style.borderRadius = "50%";
+  //   cursorWithClipping.style.backgroundColor = "red";
+  //   cursorWithClipping.style.zIndex = "1000";
+  //   cursorWithClipping.style.pointerEvents = "none";
+  //   cursorWithClipping.style.transform = "translate(-50%, -50%)";
+  //   document.body.appendChild(cursorWithClipping);
+  if (window.delaunay) {
+    window.activeIndex = window.delaunay.find(x, y);
+    if (typeof window.drawVoronoi === "function") {
+      window.drawVoronoi();
+    }
   }
-
-  // Apply positions
-  const boundedX = Math.max(0, Math.min(window.innerWidth - cursorSize, x));
-  const boundedY = Math.max(0, Math.min(window.innerHeight - cursorSize, y));
-
-  cursorWithClipping.style.left = `${boundedX}px`;
-  cursorWithClipping.style.top = `${boundedY}px`;
 }
 
-// Initialize cursors for tracking
+//   // Apply positions
+//   const boundedX = Math.max(0, Math.min(window.innerWidth - cursorSize, x));
+//   const boundedY = Math.max(0, Math.min(window.innerHeight - cursorSize, y));
+
+//   cursorWithClipping.style.left = `${boundedX}px`;
+//   cursorWithClipping.style.top = `${boundedY}px`;
+// }
+
+//Initialize cursors for tracking
 function initializeCursors() {
   // Create cursor elements if they don't exist
   if (!document.getElementById("head-cursor-clipped")) {
-  updateCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
-}
-  
-  // Create reference grid if enabled
+    updateCursorPosition(window.innerWidth / 2, window.innerHeight / 2);
+  }
+  // Create reference grid if enabled 
   if (state.config.showReferenceGrid) {
     createReferenceGrid();
   }
 }
 
+// Update last positions
+// state.lastHeadX = headPositionX;
+// state.lastHeadY = headPositionY;
+
+// Find nearest Voronoi cell based on cursor position
+// function triggerVoronoiActivation(x, y) {
+//   if (window.delaunay) {
+//     window.activeIndex = window.delaunay.find(x, y);
+//     // Call the draw function of Voronoi visualization to update
+//     if (typeof window.drawVoronoi === "function") {
+//       window.drawVoronoi();
+//     }
+//   }
+// }
+
 // Make functions globally available
 window.updateCursor = updateCursor;
 window.updateCursorPosition = updateCursorPosition;
 window.createReferenceGrid = createReferenceGrid;
-window.initializeCursors = initializeCursors; //hi
+window.initializeCursors = initializeCursors;
