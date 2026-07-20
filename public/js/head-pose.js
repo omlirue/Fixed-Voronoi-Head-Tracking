@@ -94,7 +94,9 @@ function estimateHeadPoseSolvePnP(landmarks, width, height) {
     const modelPoints = cv.matFromArray(6, 3, cv.CV_64F, modelPointsData);
 
     // Camera intrinsics (approx) - EXACT same as Timothy's
-    const fx = width, fy = width, cx = width / 2, cy = height / 2;
+    const fx = window.estimatedFocalLength || width;
+    const fy = window.estimatedFocalLength || width;
+    const cx = width / 2, cy = height / 2;
     const cameraMatrix = cv.matFromArray(3, 3, cv.CV_64F, [
       fx, 0, cx,
       0, fy, cy,
