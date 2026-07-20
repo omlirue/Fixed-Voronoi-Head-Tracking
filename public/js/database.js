@@ -78,89 +78,18 @@ function saveToIndexedDB(videoNumber, data) {
   });
 }
 
-function initializeCursors() {
-  // Remove existing cursors
-  ["head-cursor-clipped", "head-cursor-raw"].forEach(id => {
-    const existing = document.getElementById(id);
-    if (existing) existing.remove();
-  });
-
-  // Reset cursor state
-  state.lastHeadX = null;
-  state.lastHeadY = null;
-  state.cursorX = null;
-  state.cursorY = null;
-  state.rawCursorX = null;
-  state.rawCursorY = null;
-
-  // Create cursors with consistent styles
-  const cursors = [
-    { id: "head-cursor-clipped", color: "red", zIndex: "1000" },
-    { id: "head-cursor-raw", color: "blue", opacity: "0.5", zIndex: "999" }
-  ];
-
-  cursors.forEach(({ id, color, opacity = "1", zIndex }) => {
-    const cursor = document.createElement("div");
-    cursor.id = id;
-    cursor.style.position = "fixed";
-    cursor.style.width = "20px";
-    cursor.style.height = "20px";
-    cursor.style.borderRadius = "50%";
-    cursor.style.backgroundColor = color;
-    cursor.style.opacity = opacity;
-    cursor.style.zIndex = zIndex;
-    cursor.style.transform = "translate(-50%, -50%)";
-    cursor.style.pointerEvents = "none";
-    document.body.appendChild(cursor);
-  });
-
-  // Initialize positions at center
-  const centerX = window.innerWidth / 2;
-  const centerY = window.innerHeight / 2;
-  cursors.forEach(({ id }) => {
-    const cursor = document.getElementById(id);
-    cursor.style.left = `${centerX}px`;
-    cursor.style.top = `${centerY}px`;
-  });
-}
-
 function determineConfiguration(headers) {
   const config = {
-    coordinateSystem: "2d",
     landmarkPoints: "3",
-    filterType: "exponential",
-    useRotation: false
+    rotationOnlyMode: headers.includes("yaw") && headers.includes("pitch") && headers.includes("roll"),
   };
-
-  // Improved 3D coordinate detection
-  const has3DCoordinates = headers.some(header => 
-    header.includes("_z") || 
-    header.includes("landmark3_2_z") || 
-    header.includes("landmark6_2_z")
-  );
   
-  if (has3DCoordinates) {
-    config.coordinateSystem = "3d";
-    console.log("Detected 3D coordinates in calibration data");
-  }
-
-  // Determine number of landmarks
-  const landmarkCount = Math.max(
-    headers.filter(h => h.match(/landmark3_\d+_x/)).length,
-    headers.filter(h => h.match(/landmark6_\d+_x/)).length
-  );
-
-  if (landmarkCount > 3) {
-    config.landmarkPoints = "6";
-  }
-  
-  // Detect rotation data (yaw, pitch, roll)
-  const hasRotation = headers.includes("yaw") && headers.includes("pitch") && headers.includes("roll");
-  if (hasRotation) {
-    config.useRotation = true;
+  if (config.rotationOnlyMode) {
     console.log("Detected rotation data (yaw, pitch, roll) in calibration file");
+  } else {
+    console.warn("⚠️ Uploaded file has no yaw/pitch/roll columns — not a valid rotation-only calibration file");
   }
-
+  
   console.log("Determined configuration:", config);
   return config;
 }
@@ -191,122 +120,44 @@ function updateConfigurationUI(config) {
   }
 }
 
-// Add our own implementation of residual calculation
+// Create translation matric for own rotation only landmarks if it don't work ima go back to AZ, prolly because I didn't make it lmao-Jesus
 function calculateResidualsDirectly() {
   try {
-    if (!state.calibrationData || 
+    if (!state.calibrationData ||
         !state.calibrationData.cursorPositions ||
-        !state.transformationMatrices) {
-      console.warn("calculateResidualsDirectly: missing data");
-      return null;
-    }
-    
-    const numLandmarks = state.config.landmarkPoints === "3" ? 3 : 6;
-    
-    const rawLandmarks = numLandmarks === 3 ? 
-      state.calibrationData.landmarkPoints3 : 
-      state.calibrationData.landmarkPoints6;
-    
-    if (!rawLandmarks || !rawLandmarks.length) {
-      console.warn("calculateResidualsDirectly: no landmark data");
+        !state.calibrationData.rotationOnlyPoints ||
+        !state.transformationMatrices ||
+        !state.transformationMatrices.rotationOnly) {
+      console.warn("calculateResidualsDirectly: missing rotation-only data or matrix");
       return null;
     }
 
-    // Use calculateTransformationMatrixForConfig's own approach:
-    // It builds a P matrix internally from the raw data and solves B*P=Q.
-    // To get the exact same residuals, we replicate its P-matrix construction
-    // and multiply B*p for each column.
-    // 
-    // Simplest correct approach: call the same function that trains the matrix
-    // to build the P matrix, then multiply. But we don't have access to the
-    // internal P matrix.
-    //
-    // Instead, use the fact that the NATIVE-mode matrix was trained directly
-    // with the raw landmark data. The raw data includes bias, and the function
-    // handles it. We just need to match the matrix to the data format.
-    //
-    // Strategy: try each available matrix with the raw data. The one that
-    // was trained with the raw data will produce small residuals (training error).
-    
-    // Try matrices in order of preference
-    const matricesToTry = [];
-    
-    if (numLandmarks === 3) {
-      // Try 3D matrix first (raw data is always in 3D format)
-      if (state.transformationMatrices.threePoint3d) matricesToTry.push({ name: 'threePoint3d', m: state.transformationMatrices.threePoint3d });
-      if (state.transformationMatrices.threePoint) matricesToTry.push({ name: 'threePoint', m: state.transformationMatrices.threePoint });
-      if (state.transformationMatrices.threePoint2d) matricesToTry.push({ name: 'threePoint2d', m: state.transformationMatrices.threePoint2d });
-    } else {
-      if (state.transformationMatrices.sixPoint3d) matricesToTry.push({ name: 'sixPoint3d', m: state.transformationMatrices.sixPoint3d });
-      if (state.transformationMatrices.sixPoint) matricesToTry.push({ name: 'sixPoint', m: state.transformationMatrices.sixPoint });
-      if (state.transformationMatrices.sixPoint2d) matricesToTry.push({ name: 'sixPoint2d', m: state.transformationMatrices.sixPoint2d });
-    }
-    
-    if (matricesToTry.length === 0) {
-      console.warn("calculateResidualsDirectly: no matrices available");
-      return null;
-    }
-    
+    const rotationPoints = state.calibrationData.rotationOnlyPoints;
+    const matrix = state.transformationMatrices.rotationOnly;
     const actualPositions = state.calibrationData.cursorPositions.map(pos => ({
       x: pos[0][0], y: pos[1][0]
     }));
-    
-    let bestResult = null;
-    
-    for (const { name, m } of matricesToTry) {
-      try {
-        const matrixCols = math.size(math.matrix(m)).valueOf()[1];
-        
-        let sumSqErr = 0, sumErr = 0, maxErr = 0, count = 0;
-        
-        for (let i = 0; i < rawLandmarks.length; i++) {
-          const rawPoint = rawLandmarks[i];
-          
-          // Adjust input to match matrix width
-          let inputVector = rawPoint;
-          if (rawPoint.length > matrixCols) {
-            inputVector = rawPoint.slice(0, matrixCols);
-          } else if (rawPoint.length < matrixCols) {
-            // Pad with zeros (missing rotation terms)
-            inputVector = [...rawPoint];
-            while (inputVector.length < matrixCols) inputVector.push([0]);
-          }
-          
-          const result = math.multiply(m, inputVector);
-          const predX = result[0][0];
-          const predY = result[1][0];
-          
-          const dx = predX - actualPositions[i].x;
-          const dy = predY - actualPositions[i].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          sumSqErr += dist * dist;
-          sumErr += dist;
-          maxErr = Math.max(maxErr, dist);
-          count++;
-        }
-        
-        if (count > 0) {
-          const rmse = Math.sqrt(sumSqErr / count);
-          const meanError = sumErr / count;
-          
-          console.log(`calculateResidualsDirectly [${name}]: RMSE=${rmse.toFixed(2)}, mean=${meanError.toFixed(2)}, max=${maxErr.toFixed(2)}, cols=${matrixCols}, dataLen=${rawLandmarks[0].length}`);
-          
-          // Keep the result with lowest RMSE (the matrix that actually matches the data)
-          if (!bestResult || rmse < bestResult.rmse) {
-            bestResult = { rmse, meanError, maxError: maxErr };
-          }
-        }
-      } catch (err) {
-        console.warn(`calculateResidualsDirectly: ${name} failed:`, err.message);
-      }
+
+    let sumSqErr = 0, sumErr = 0, maxErr = 0, count = 0;
+
+    for (let i = 0; i < rotationPoints.length; i++) {
+      const result = math.multiply(matrix, rotationPoints[i]);
+      const dx = result[0][0] - actualPositions[i].x;
+      const dy = result[1][0] - actualPositions[i].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      sumSqErr += dist * dist;
+      sumErr += dist;
+      maxErr = Math.max(maxErr, dist);
+      count++;
     }
-    
-    if (bestResult) {
-      console.log("calculateResidualsDirectly best result:", bestResult);
-    }
-    
-    return bestResult;
+
+    if (count === 0) return null;
+
+    const rmse = Math.sqrt(sumSqErr / count);
+    const meanError = sumErr / count;
+    console.log(`calculateResidualsDirectly [rotationOnly]: RMSE=${rmse.toFixed(2)}, mean=${meanError.toFixed(2)}, max=${maxErr.toFixed(2)}`);
+
+    return { rmse, meanError, maxError: maxErr };
   } catch (error) {
     console.error("calculateResidualsDirectly error:", error);
     return null;
@@ -416,239 +267,29 @@ async function handleCalibrationUpload(file) {
       console.log(`Calculating matrices for native coordinate system: ${nativeCoordinateSystem}`);
 
       // Calculate matrices in the native mode
-      state.transformationMatrices = {
-          threePoint: calculateTransformationMatrixForConfig(
-              processedData.landmarkPoints3,
-              processedData.cursorPositions,
-              "3"
-          ),
-          sixPoint: calculateTransformationMatrixForConfig(
-              processedData.landmarkPoints6,
-              processedData.cursorPositions,
-              "6"
-          )
-      };
+      state.transformationMatrices = { rotationOnly: null };
 
-      // Store in coordinate-system-specific locations
-      if (nativeCoordinateSystem === "2d") {
-          state.transformationMatrices.threePoint2d = state.transformationMatrices.threePoint;
-          state.transformationMatrices.sixPoint2d = state.transformationMatrices.sixPoint;
-          
-          // Now calculate 3D matrices
-          console.log("Pre-calculating 3D matrices");
-          
-          // Temporarily switch to 3D mode for calculation
-          config.coordinateSystem = "3d";
-          state.config.coordinateSystem = "3d";
-          
-          try {
-              state.transformationMatrices.threePoint3d = calculateTransformationMatrixForConfig(
-                  processedData.landmarkPoints3,
-                  processedData.cursorPositions,
-                  "3"
-              );
-              
-              state.transformationMatrices.sixPoint3d = calculateTransformationMatrixForConfig(
-                  processedData.landmarkPoints6,
-                  processedData.cursorPositions,
-                  "6"
-              );
-              
-              console.log("Successfully pre-calculated 3D matrices");
-          } catch (error) {
-              console.error("Error pre-calculating 3D matrices:", error);
-              
-              // Fall back to conversion if direct calculation fails
-              if (window.convert2DMatrixTo3D) {
-                  console.log("Trying 2D to 3D matrix conversion");
-                  state.transformationMatrices.threePoint3d = window.convert2DMatrixTo3D(
-                      state.transformationMatrices.threePoint2d, 3
-                  );
-                  state.transformationMatrices.sixPoint3d = window.convert2DMatrixTo3D(
-                      state.transformationMatrices.sixPoint2d, 6
-                  );
-              }
-              
-              // Final fallback - copy 2D matrices if all else fails
-              if (!state.transformationMatrices.threePoint3d) {
-                  console.warn("Using 2D matrices for 3D as fallback");
-                  state.transformationMatrices.threePoint3d = state.transformationMatrices.threePoint2d;
-                  state.transformationMatrices.sixPoint3d = state.transformationMatrices.sixPoint2d;
-              }
-          }
-      } else {
-          // For 3D native files
-          state.transformationMatrices.threePoint3d = state.transformationMatrices.threePoint;
-          state.transformationMatrices.sixPoint3d = state.transformationMatrices.sixPoint;
-          
-          // Now calculate 2D matrices
-          console.log("Pre-calculating 2D matrices");
-          
-          // Temporarily switch to 2D mode for calculation
-          config.coordinateSystem = "2d";
-          state.config.coordinateSystem = "2d";
-          
-          try {
-              state.transformationMatrices.threePoint2d = calculateTransformationMatrixForConfig(
-                  processedData.landmarkPoints3,
-                  processedData.cursorPositions,
-                  "3"
-              );
-              
-              state.transformationMatrices.sixPoint2d = calculateTransformationMatrixForConfig(
-                  processedData.landmarkPoints6,
-                  processedData.cursorPositions,
-                  "6"
-              );
-              
-              console.log("Successfully pre-calculated 2D matrices");
-          } catch (error) {
-              console.error("Error pre-calculating 2D matrices:", error);
-              
-              // Fall back to 3D matrices if calculation fails
-              console.warn("Using 3D matrices for 2D as fallback");
-              state.transformationMatrices.threePoint2d = state.transformationMatrices.threePoint3d;
-              state.transformationMatrices.sixPoint2d = state.transformationMatrices.sixPoint3d;
-          }
+      if (processedData.rotationOnlyPoints && processedData.rotationOnlyPoints.length > 0) {
+        console.log("🔬 Calculating rotation-only matrix from loaded data...");
+        try {
+          const rotationOnlyMatrix = calculateTransformationMatrixForConfig(
+          processedData.rotationOnlyPoints,
+          processedData.cursorPositions,
+          "rotation"
+          );
+          if (rotationOnlyMatrix) {
+            state.transformationMatrices.rotationOnly = rotationOnlyMatrix;
+            console.log("✅ Rotation-only matrix calculated successfully");
+           } else {
+            console.warn("⚠️ Failed to calculate rotation-only matrix");
+           }
+        } catch (error) {
+          console.error("Error calculating rotation-only matrix:", error);
       }
+    }
 
-      // Default to 2D mode after file upload (users can switch to 3D if needed)
-      // This is more intuitive since most users expect 2D tracking
-      config.coordinateSystem = "2d";
-      state.config.coordinateSystem = "2d";
-      console.log("Defaulting to 2D coordinate system after file upload (native was:", nativeCoordinateSystem, ")");
-
-      // Calculate rotation-only matrix if rotation-only mode was used
-      if (config.rotationOnlyMode && processedData.rotationOnlyPoints && processedData.rotationOnlyPoints.length > 0) {
-          console.log("🔬 Calculating rotation-only matrix from loaded data...");
-          try {
-              const rotationOnlyMatrix = calculateTransformationMatrixForConfig(
-                  processedData.rotationOnlyPoints,
-                  processedData.cursorPositions,
-                  "rotation"
-              );
-              
-              if (rotationOnlyMatrix) {
-                  state.transformationMatrices.rotationOnly = rotationOnlyMatrix;
-                  console.log("✅ Rotation-only matrix calculated successfully");
-              } else {
-                  console.warn("⚠️ Failed to calculate rotation-only matrix");
-              }
-          } catch (error) {
-              console.error("Error calculating rotation-only matrix:", error);
-          }
-      }
-
-      // CRITICAL FIX: Calculate NoRotation matrices if file had rotation enabled
-      // This allows switching between "landmarks only" and "landmarks+rotation" modes
-      if (config.useRotation) {
-          console.log("🔄 Calculating NoRotation matrices for landmarks-only mode...");
-          
-          // Helper function to strip rotation terms from landmark vectors
-          const stripRotationTerms = (points, numLandmarks) => {
-              return points.map(point => {
-                  if (!point || !Array.isArray(point)) return null;
-                  
-                  // Each point structure: [bias=1, ...landmarks, yaw, pitch, roll]
-                  // 3D has 6 terms per landmark (x, y, z, x², y², z²)
-                  // We need to keep: [bias=1, ...landmarks] and strip [yaw, pitch, roll]
-                  const termsPerLandmark = 6; // Always 6 for 3D format
-                  const biasTerms = 1;
-                  const rotationTerms = 3;
-                  const landmarkTerms = numLandmarks * termsPerLandmark;
-                  const totalWithRotation = biasTerms + landmarkTerms + rotationTerms;
-                  
-                  // Check if point has rotation terms
-                  if (point.length >= totalWithRotation) {
-                      // Strip rotation terms (last 3 elements)
-                      return point.slice(0, biasTerms + landmarkTerms);
-                  }
-                  return point; // Already doesn't have rotation
-              }).filter(p => p !== null);
-          };
-          
-          // Temporarily disable rotation in config for matrix calculation
-          const savedUseRotation = state.config.useRotation;
-          state.config.useRotation = false;
-          
-          try {
-              // Strip rotation terms from 3-point and 6-point data
-              const landmarks3NoRot = stripRotationTerms(processedData.landmarkPoints3, 3);
-              const landmarks6NoRot = stripRotationTerms(processedData.landmarkPoints6, 6);
-              
-              console.log("  Processing 3-point NoRotation data:", {
-                  originalLength: processedData.landmarkPoints3[0]?.length,
-                  strippedLength: landmarks3NoRot[0]?.length,
-                  count: landmarks3NoRot.length
-              });
-              
-              // Calculate 2D NoRotation matrices
-              state.config.coordinateSystem = "2d";
-              
-              if (landmarks3NoRot.length > 0) {
-                  const matrix3_2d = calculateTransformationMatrixForConfig(
-                      landmarks3NoRot,
-                      processedData.cursorPositions,
-                      "3"
-                  );
-                  if (matrix3_2d) {
-                      state.transformationMatrices.threePoint2dNoRotation = matrix3_2d;
-                      const dims = math.size(math.matrix(matrix3_2d)).valueOf();
-                      console.log(`  ✅ threePoint2dNoRotation: ${dims[0]}×${dims[1]}`);
-                  }
-              }
-              
-              if (landmarks6NoRot.length > 0) {
-                  const matrix6_2d = calculateTransformationMatrixForConfig(
-                      landmarks6NoRot,
-                      processedData.cursorPositions,
-                      "6"
-                  );
-                  if (matrix6_2d) {
-                      state.transformationMatrices.sixPoint2dNoRotation = matrix6_2d;
-                      const dims = math.size(math.matrix(matrix6_2d)).valueOf();
-                      console.log(`  ✅ sixPoint2dNoRotation: ${dims[0]}×${dims[1]}`);
-                  }
-              }
-              
-              // Calculate 3D NoRotation matrices
-              state.config.coordinateSystem = "3d";
-              
-              if (landmarks3NoRot.length > 0) {
-                  const matrix3_3d = calculateTransformationMatrixForConfig(
-                      landmarks3NoRot,
-                      processedData.cursorPositions,
-                      "3"
-                  );
-                  if (matrix3_3d) {
-                      state.transformationMatrices.threePoint3dNoRotation = matrix3_3d;
-                      const dims = math.size(math.matrix(matrix3_3d)).valueOf();
-                      console.log(`  ✅ threePoint3dNoRotation: ${dims[0]}×${dims[1]}`);
-                  }
-              }
-              
-              if (landmarks6NoRot.length > 0) {
-                  const matrix6_3d = calculateTransformationMatrixForConfig(
-                      landmarks6NoRot,
-                      processedData.cursorPositions,
-                      "6"
-                  );
-                  if (matrix6_3d) {
-                      state.transformationMatrices.sixPoint3dNoRotation = matrix6_3d;
-                      const dims = math.size(math.matrix(matrix6_3d)).valueOf();
-                      console.log(`  ✅ sixPoint3dNoRotation: ${dims[0]}×${dims[1]}`);
-                  }
-              }
-              
-              console.log("✅ NoRotation matrices calculated for landmarks-only mode");
-          } catch (error) {
-              console.error("Error calculating NoRotation matrices:", error);
-          } finally {
-              // Restore config
-              state.config.useRotation = savedUseRotation;
-              state.config.coordinateSystem = "2d"; // Reset to 2d as default
-          }
-      }
+console.log("=== TRANSFORMATION MATRICES STATUS ===");
+console.log("rotationOnly matrix available:", !!state.transformationMatrices.rotationOnly);
 
       // Verify all matrices exist
       console.log("=== TRANSFORMATION MATRICES STATUS ===");
@@ -874,11 +515,9 @@ function processCalibrationData(data, config, screenInfo = {}) {
   console.log("Processing calibration data with config:", config);
 
   const processedData = {
-      landmarkPoints3: [],
-      landmarkPoints6: [],
-      cursorPositions: [],
+      rotationOnlyPoints: [],
       allPoints: [],
-      rotationOnlyPoints: [] // For rotation-only mode
+      cursorPositions: [],
   };
 
   const is3D = config.coordinateSystem === "3d";
@@ -899,10 +538,20 @@ function processCalibrationData(data, config, screenInfo = {}) {
       console.warn("⚠️ No relative coords and no original dimensions - using absolute positions as-is");
   }
 
+  const DEG2RAD = Math.PI / 180;
+  const ANGLE_SCALE = 1000; // Match calibration scaling
+  const screenWidthforGain = originalWidth || window.innerWidth;
+  const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidthforGain / 1920) * 1.5));
+
   data.forEach((row, index) => {
       try {
           if (!row.targetX || !row.targetY) {
               console.warn(`Missing target coordinates in row ${index}`);
+              return;
+          }
+
+          if (typeof row.yaw == 'undefined' || typeof row.pitch == 'undefined' || typeof row.roll == 'undefined') {
+              console.warn('you are missing yaw/pitch/roll ${index} - lock in');
               return;
           }
           
@@ -923,95 +572,19 @@ function processCalibrationData(data, config, screenInfo = {}) {
               scaledTargetY = row.targetY;
           }
 
-          // Process 3-point landmarks
-          const threePointVector = [[1.0]]; // Bias term
-          let validThreePoint = true;
+          const yaw = row.yaw * DEG2RAD * ROTATION_GAIN;
+          const pitch = row.pitch * DEG2RAD * ROTATION_GAIN;
+          const roll = row.roll * DEG2RAD * ROTATION_GAIN;
 
-          // Handle 3-point landmarks
-          for (let i = 0; i < 3; i++) {
-              const x = row[`landmark3_${i}_x`];
-              const y = row[`landmark3_${i}_y`];
-              // Always read z even if in 2D mode (makes it more robust when switching)
-              const z = row[`landmark3_${i}_z`] || 0;
-              
-              if (typeof x === 'undefined' || typeof y === 'undefined') {
-                  console.warn(`Missing data for 3-point landmark ${i}`);
-                  validThreePoint = false;
-                  break;
-              }
-
-              threePointVector.push([x], [y]);
-              // Always include z in the vector (for compatibility with 3D mode)
-              threePointVector.push([z]);
-              
-              // Add quadratic terms (must match calibration.js scale: 0.00001 for all)
-              threePointVector.push([x * x * 0.00001], [y * y * 0.00001]);
-              threePointVector.push([z * z * 0.00001]);
-          }
-
-          // Process 6-point landmarks
-          const sixPointVector = [[1.0]]; // Bias term
-          let validSixPoint = true;
-
-          // Handle 6-point landmarks
-          for (let i = 0; i < 6; i++) {
-              const x = row[`landmark6_${i}_x`];
-              const y = row[`landmark6_${i}_y`];
-              // Always read z even if in 2D mode
-              const z = row[`landmark6_${i}_z`] || 0;
-              
-              if (typeof x === 'undefined' || typeof y === 'undefined') {
-                  console.warn(`Missing data for 6-point landmark ${i}`);
-                  validSixPoint = false;
-                  break;
-              }
-
-              sixPointVector.push([x], [y]);
-              // Always include z in the vector
-              sixPointVector.push([z]);
-              
-              // Add quadratic terms (must match calibration.js scale: 0.00001 for all)
-              sixPointVector.push([x * x * 0.00001], [y * y * 0.00001]);
-              sixPointVector.push([z * z * 0.00001]);
-          }
-
-          // Add rotation data if available
-          if (config.useRotation && typeof row.yaw !== 'undefined' && typeof row.pitch !== 'undefined' && typeof row.roll !== 'undefined') {
-              // Convert degrees to radians and scale to match position feature magnitude
-              const DEG2RAD = Math.PI / 180;
-              const ANGLE_SCALE = 1000;
-              threePointVector.push([row.yaw * DEG2RAD * ANGLE_SCALE]);
-              threePointVector.push([row.pitch * DEG2RAD * ANGLE_SCALE]);
-              threePointVector.push([row.roll * DEG2RAD * ANGLE_SCALE]);
-              
-              sixPointVector.push([row.yaw * DEG2RAD * ANGLE_SCALE]);
-              sixPointVector.push([row.pitch * DEG2RAD * ANGLE_SCALE]);
-              sixPointVector.push([row.roll * DEG2RAD * ANGLE_SCALE]);
-              
-              // Add rotation-only data if in rotation-only mode
-              if (config.rotationOnlyMode) {
-                  const DEG2RAD = Math.PI / 180;
-                  const ANGLE_SCALE = 1000; // Match calibration scaling
-                  
-                  // Apply screen-size adaptive rotation gain
-                  // IMPORTANT: Use ORIGINAL screen width to match tracking code!
-                  // The tracking code uses calibrationWidth (original), so import must match.
-                  const screenWidth = originalWidth || window.innerWidth;
-                  const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
-                  
-                  const yaw = row.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-                  const pitch = row.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-                  const roll = row.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-                  
-                  const rotationOnlyVector = [
-                      [1.0], // Bias term
-                      [yaw],
-                      [pitch],
-                      [roll]
-                  ];
-                  processedData.rotationOnlyPoints.push(rotationOnlyVector);
-              }
-          }
+          processedData.rotationOnlyPoints.push([[1,0], [yaw], [pitch], [roll]]);
+          processedData.rotationOnlyPoints.push([[scaledTargetX], [scaledTargetY]]);
+          processedData.allPoints.push({
+            targetX: scaledTargetX,
+            targetY: scaledTargetY,
+            yaw: row.yaw,
+            pitch: row.pitch,
+            roll: row.roll
+          });
 
           // Only add valid data points
           if (validThreePoint && validSixPoint) {
@@ -1031,85 +604,24 @@ function processCalibrationData(data, config, screenInfo = {}) {
                   roll: config.useRotation ? row.roll : null
               });
           }
-
       } catch (error) {
           console.error(`Error processing row ${index}:`, error);
       }
   });
 
   // Validate processed data
-  if (!processedData.landmarkPoints3.length || 
-      !processedData.landmarkPoints6.length || 
-      !processedData.cursorPositions.length) {
+  if (!processedData.rotationOnlyPoints.length || !processedData.cursorPositions.length) {
       throw new Error("No valid calibration points found in data");
   }
 
   console.log("Processed calibration data:", {
-      points3: processedData.landmarkPoints3.length,
-      points6: processedData.landmarkPoints6.length,
-      cursorPositions: processedData.cursorPositions.length,
-      is3D: is3D,
-      sampleAllPoint: processedData.allPoints[0] // Log sample for debugging
+    rotationOnlyPoints: processedData.rotationOnlyPoints.length,
+    cursorPositions: processedData.cursorPositions.length,
   });
 
   return processedData;
 }
 
-function calculateCalibrationResiduals() {
-  try {
-    if (!state.calibrationData || !state.transformationMatrices) {
-      console.warn("Cannot calculate residuals: missing calibration data or transformation matrices");
-      return null;
-    }
-
-    const { landmarkPoints3, landmarkPoints6, cursorPositions } = state.calibrationData;
-    const currentPoints = state.config.landmarkPoints === "3" ? landmarkPoints3 : landmarkPoints6;
-    const currentMatrix = state.config.landmarkPoints === "3" 
-      ? state.transformationMatrices.threePoint 
-      : state.transformationMatrices.sixPoint;
-    
-    if (!currentPoints || !currentPoints.length || !currentMatrix) {
-      console.warn("Cannot calculate residuals: missing points or transformation matrix");
-      return null;
-    }
-
-    // Calculate predicted cursor positions using our transformation matrix
-    const predictedPositions = currentPoints.map(point => {
-      const result = math.multiply(currentMatrix, point);
-      return [result[0][0], result[1][0]]; // Extract x, y as simple array
-    });
-
-    // Get actual cursor positions
-    const actualPositions = cursorPositions.map(pos => [pos[0][0], pos[1][0]]);
-
-    // Calculate residuals (Euclidean distance between predicted and actual)
-    const residuals = predictedPositions.map((pred, i) => {
-      const actual = actualPositions[i];
-      const dx = pred[0] - actual[0];
-      const dy = pred[1] - actual[1];
-      return Math.sqrt(dx * dx + dy * dy);
-    });
-
-    // Calculate statistics
-    const meanResidual = residuals.reduce((sum, val) => sum + val, 0) / residuals.length;
-    const maxResidual = Math.max(...residuals);
-    
-    console.log("Calculated residuals:", {
-      mean: meanResidual.toFixed(2),
-      max: maxResidual.toFixed(2),
-      individual: residuals.map(r => r.toFixed(2))
-    });
-
-    return {
-      mean: meanResidual,
-      max: maxResidual,
-      individual: residuals
-    };
-  } catch (error) {
-    console.error("Error calculating residuals:", error);
-    return null;
-  }
-}
 
 // Make functions globally available
 window.initDB = initDB;
