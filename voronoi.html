@@ -144,33 +144,62 @@
   const canvas = document.getElementById("artboard");
   const ctx = canvas.getContext("2d");
 
-  // 1. Same 12 static points
-  const points = [
-    [100, 200], [150, 130], [220, 270], 
-    [300, 100], [350, 300], [420, 120], 
-    [500, 280], [580, 100], [650, 250], 
-    [700, 150], [750, 220], [800, 200]
-  ];
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
 
-  const delaunay = d3.Delaunay.from(points);
-  const voronoi = delaunay.voronoi([0, 0, 800, 400]);
-
-  const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93"];
-
-  // Track which cell index is currently "active" (-1 means none)
+  let currentScreen = "welcome"; 
+  let isStarted = false;
   let activeIndex = -1;
   let currentTrialIndex = 0; 
   let currentRound = 1; 
   
   const sequence = [0, 5, 10, 2, 7, 11, 4, 8, 1, 6, 3, 9];
-  let currentTrialIndex = 0; 
 
-  window.delaunay;
-  window.activeIndex = activeIndex;
-  window.drawVoronoi = draw;
-  window.attemptAcquisition = attemptAcquisition;
+  let points = [];
+  function updatePointLayoutScale() {
+    if (currentRound === 1) {
+      points = [
+        [width * 0.125, height * 0.50], [width * 0.187, height * 0.32], [width * 0.275, height * 0.67], 
+        [width * 0.375, height * 0.25], [width * 0.437, height * 0.75], [width * 0.525, height * 0.30], 
+        [width * 0.625, height * 0.70], [width * 0.725, height * 0.25], [width * 0.812, height * 0.62], 
+        [width * 0.875, height * 0.37], [width * 0.937, height * 0.55], [width * 0.960, height * 0.50]
+      ];
+    } else if (currentRound === 2) {
+      points = [
+        [width * 0.100, height * 0.35], [width * 0.200, height * 0.65], [width * 0.280, height * 0.20], 
+        [width * 0.350, height * 0.55], [width * 0.440, height * 0.30], [width * 0.510, height * 0.72], 
+        [width * 0.590, height * 0.40], [width * 0.670, height * 0.60], [width * 0.760, height * 0.25], 
+        [width * 0.830, height * 0.75], [width * 0.890, height * 0.42], [width * 0.950, height * 0.58]
+      ];
+    }
+  }
+  updatePointLayoutScale();
 
-  // 2. Wrap drawing inside a function so we can redraw on hover
+  let delaunay, voronoi;
+  function computeVoronoiDiagram() {
+    if (typeof d3 !== 'undefined') {
+      try {
+        delaunay = d3.Delaunay.from(points);
+        voronoi = delaunay.voronoi([0, 0, width, height]);
+        window.delaunay = delaunay;
+      } catch (err) {
+        console.error("D3 Layout Generation Failed", err);
+      }
+    }
+  }
+  computeVoronoiDiagram();
+
+  function loadSecondVoronoiMap() {
+    currentRound = 2;
+    currentTrialIndex = 0;
+    
+    updatePointLayoutScale();
+    computeVoronoiDiagram();
+    draw();
+  }
+
   function draw() {
     ctx.clearRect(0, 0, width, height);
     
@@ -302,39 +331,48 @@
     const cursorX = event.clientX - rect.left;
     const cursorY = event.clientY - rect.top;
     activeIndex = delaunay.find(cursorX, cursorY);
+    window.activeIndex = activeIndex;
     draw();
   });
 
   canvas.addEventListener("mouseleave", () => {
     activeIndex = -1;
+    window.activeIndex = activeIndex;
     draw();
   });
 
   canvas.addEventListener("click", attemptAcquisition);
 
-  // Press SPACE to capture target
-  document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
-      e.preventDefault(); // Stop window scrolling
-      attemptAcquisition();
-    }
+  window.addEventListener("resize", () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    updatePointLayoutScale();
+    computeVoronoiDiagram();
+    draw();
   });
 
-  // Mock head pose for testing — simulates what tracking.js would provide
+  // Mock head pose function retained for tracking integrations
   function mockHeadPose(yaw, pitch) {
-    const canvasWidth = 800;
-    const canvasHeight = 400;
     const maxYaw = 30;
     const maxPitch = 20;
 
-    const x = ((yaw / maxYaw) + 0.5) * canvasWidth;
-    const y = ((pitch / maxPitch) + 0.5) * canvasHeight;
+    const x = ((yaw / maxYaw) + 0.5) * width;
+    const y = ((pitch / maxPitch) + 0.5) * height;
 
-    activeIndex = delaunay.find(x, y);
-    draw();
+    if (delaunay) {
+      activeIndex = delaunay.find(x, y);
+      window.activeIndex = activeIndex;
+      draw();
+    }
   }
 
-  // Initial draw on page load
+  // Export functions to window
+  window.drawVoronoi = draw;
+  window.attemptAcquisition = attemptAcquisition;
+  window.mockHeadPose = mockHeadPose;
+
   draw();
 </script>
 </body>
