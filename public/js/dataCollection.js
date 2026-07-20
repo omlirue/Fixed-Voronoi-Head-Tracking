@@ -39,124 +39,55 @@ function exportCalibrationData() {
 
     // Add metadata
     const metadata = {
-      coordinateSystem: state.config.coordinateSystem,
       timestamp: Date.now(),
       calibrationWidth: state.calibrationData.calibrationWidth,
       calibrationHeight: state.calibrationData.calibrationHeight,
-      useRotation: state.config.useRotation || false,
-      rotationOnlyMode: state.config.rotationOnlyMode || false
+      rotationOnlyMode: TRUE, // Indicate that this export is for rotation-only predictions
     };
     const metadataLine = `#${JSON.stringify(metadata)}`;
 
     // Calculate predictions for both 3-point and 6-point configurations
     const validData = state.dataCollection.calibrationData.map((frame) => {
-      const is3D = state.config.coordinateSystem === "3d";
-      const useRotation = state.config.useRotation || false;
+  // Rotation-only prediction: rebuild [1, yaw, pitch, roll] and multiply
+  // against the trained rotationOnly matrix.
+  if (frame.yaw === undefined || frame.pitch === undefined || frame.roll === undefined) {
+    console.warn("Frame missing yaw/pitch/roll, skipping prediction:", frame);
+    return frame;
+  }
 
-      // Reconstruct vectors with 3D components if needed
-      const threePointVector = [];
-      for (let i = 0; i < 3; i++) {
-        const x = frame[`landmark3_${i}_x`];
-        const y = frame[`landmark3_${i}_y`];
-        const z = is3D ? frame[`landmark3_${i}_z`] : null;
+  const DEG2RAD = Math.PI / 180;
+  const ANGLE_SCALE = 1000;
+  const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
+  const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
 
-        threePointVector.push([x], [y]);
-        if (is3D && z !== undefined) threePointVector.push([z]);
+  const rotationVector = [
+    [1.0],
+    [frame.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN],
+    [frame.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN],
+    [frame.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]
+  ];
 
-        threePointVector.push([x * x * 0.00001], [y * y * 0.00001]);
-        if (is3D && z !== undefined) threePointVector.push([z * z * 0.00001]);
-      }
+  try {
+    const matrix = state.transformationMatrices.rotationOnly;
+    if (!matrix) {
+      console.warn("No rotationOnly matrix available for prediction");
+      return frame;
+    }
 
-      // Similar reconstruction for sixPointVector
-      const sixPointVector = [];
-      for (let i = 0; i < 6; i++) {
-        const x = frame[`landmark6_${i}_x`];
-        const y = frame[`landmark6_${i}_y`];
-        const z = is3D ? frame[`landmark6_${i}_z`] : null;
+    const predicted = math
+      .multiply(math.matrix(matrix), math.matrix(rotationVector))
+      .toArray();
 
-        sixPointVector.push([x], [y]);
-        if (is3D && z !== undefined) sixPointVector.push([z]);
-
-        sixPointVector.push([x * x * 0.00001], [y * y * 0.00001]);
-        if (is3D && z !== undefined) sixPointVector.push([z * z * 0.00001]);
-      }
-
-      // Add rotation terms if rotation was used during calibration
-      if (useRotation) {
-        // Check if frame has rotation data
-        if (frame.yaw !== undefined && frame.pitch !== undefined && frame.roll !== undefined) {
-          // Convert degrees to radians (frame data is in degrees)
-          // AND Scale by 1000 to match feature scaling
-          const DEG2RAD = Math.PI / 180;
-          const ANGLE_SCALE = 1000;
-          
-          threePointVector.push([frame.yaw * DEG2RAD * ANGLE_SCALE]);
-          threePointVector.push([frame.pitch * DEG2RAD * ANGLE_SCALE]);
-          threePointVector.push([frame.roll * DEG2RAD * ANGLE_SCALE]);
-          
-          sixPointVector.push([frame.yaw * DEG2RAD * ANGLE_SCALE]);
-          sixPointVector.push([frame.pitch * DEG2RAD * ANGLE_SCALE]);
-          sixPointVector.push([frame.roll * DEG2RAD * ANGLE_SCALE]);
-        } else {
-          // No rotation data in frame, use zeros
-          threePointVector.push([0], [0], [0]);
-          sixPointVector.push([0], [0], [0]);
-        }
-      }
-
-      try {
-        // Select appropriate matrices based on coordinate system and rotation
-        let matrix3, matrix6;
-        
-        if (is3D) {
-          matrix3 = useRotation ? 
-            state.transformationMatrices.threePoint3d : 
-            (state.transformationMatrices.threePoint3dNoRotation || state.transformationMatrices.threePoint3d);
-          matrix6 = useRotation ? 
-            state.transformationMatrices.sixPoint3d : 
-            (state.transformationMatrices.sixPoint3dNoRotation || state.transformationMatrices.sixPoint3d);
-        } else {
-          matrix3 = useRotation ? 
-            state.transformationMatrices.threePoint2d : 
-            (state.transformationMatrices.threePoint2dNoRotation || state.transformationMatrices.threePoint2d);
-          matrix6 = useRotation ? 
-            state.transformationMatrices.sixPoint2d : 
-            (state.transformationMatrices.sixPoint2dNoRotation || state.transformationMatrices.sixPoint2d);
-        }
-
-        // Calculate predictions using both matrices
-        const predicted3 = math
-          .multiply(
-            math.matrix(matrix3),
-            math.matrix(threePointVector)
-          )
-          .toArray();
-
-        const predicted6 = math
-          .multiply(
-            math.matrix(matrix6),
-            math.matrix(sixPointVector)
-          )
-          .toArray();
-
-        // Add predictions to frame data
-        const enrichedFrame = {
-          ...frame,
-          predicted3X: Number(predicted3[0][0].toFixed(3)),
-          predicted3Y: Number(predicted3[1][0].toFixed(3)),
-          predicted6X: Number(predicted6[0][0].toFixed(3)),
-          predicted6Y: Number(predicted6[1][0].toFixed(3)),
-        };
-
-        // Debug log to check data
-        console.log("Frame data:", enrichedFrame);
-
-        return enrichedFrame;
-      } catch (e) {
-        console.warn("Error calculating predictions:", e);
-        return frame;
-      }
-    });
+    return {
+      ...frame,
+      predictedX: Number(predicted[0][0].toFixed(3)),
+      predictedY: Number(predicted[1][0].toFixed(3))
+    };
+  } catch (e) {
+    console.warn("Error calculating prediction:", e);
+    return frame;
+  }
+});
 
     // Generate CSV rows
     const rows = validData.map((frame) =>

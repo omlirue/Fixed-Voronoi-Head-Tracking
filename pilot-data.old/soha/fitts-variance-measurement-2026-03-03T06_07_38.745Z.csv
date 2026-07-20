@@ -1,7 +1,0 @@
-PairNumber,FilterType,FilterRank,ExpectedVariance_px,MeasuredVariance_px,Difference_px,DifferencePercent,StdDevX_px,StdDevY_px,NumSamples
-1,exponential,interp,3.2225,2.0524,-1.1702,-36.31,1.1236,1.7175,312
-1,oneEuro,interp,3.2225,1.1177,-2.1049,-65.32,0.5531,0.9712,312
-2,exponential,interp,17.5129,9.3123,-8.2006,-46.83,7.5027,5.5162,312
-2,oneEuro,interp,17.5129,9.2916,-8.2213,-46.94,7.4895,5.4992,312
-3,exponential,interp,31.8033,15.2985,-16.5048,-51.90,10.9152,10.7192,312
-3,oneEuro,interp,31.8033,14.5777,-17.2256,-54.16,10.4910,10.1216,312

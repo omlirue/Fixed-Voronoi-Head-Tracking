@@ -442,6 +442,8 @@ function recordCalibrationPoint(point) {
 function getCSVHeaders() {
   // Get basic headers without isTransition
   const headers = [
+    "predictedX",
+    "predictedY",
     "timestamp",
     "frameIndex",
     "targetX",
