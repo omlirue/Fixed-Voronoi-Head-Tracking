@@ -364,19 +364,6 @@ console.log("rotationOnly matrix available:", !!state.transformationMatrices.rot
         return null;
       };
       
-      // Also patch calculateCalibrationResiduals if it's globally available
-      if (window.calculateCalibrationResiduals) {
-        const originalCalculate = window.calculateCalibrationResiduals;
-        window.calculateCalibrationResiduals = function() {
-          console.log("Using direct residual calculation from patched function");
-          const direct = calculateResidualsDirectly();
-          if (direct) {
-            return direct;
-          }
-          // Fall back to original implementation
-          return originalCalculate();
-        };
-      }
 
       // Update application state
       state.isCalibrating = false;
@@ -519,8 +506,6 @@ function processCalibrationData(data, config, screenInfo = {}) {
       allPoints: [],
       cursorPositions: [],
   };
-
-  const is3D = config.coordinateSystem === "3d";
   
   // Screen scaling info for cross-screen compatibility
   const { originalWidth, originalHeight, currentWidth, currentHeight } = screenInfo;
@@ -586,24 +571,6 @@ function processCalibrationData(data, config, screenInfo = {}) {
             roll: row.roll
           });
 
-          // Only add valid data points
-          if (validThreePoint && validSixPoint) {
-              processedData.landmarkPoints3.push(threePointVector);
-              processedData.landmarkPoints6.push(sixPointVector);
-              // Use scaled target positions for cross-screen compatibility
-              processedData.cursorPositions.push([[scaledTargetX], [scaledTargetY]]);
-              
-              // Add a complete point record for residual calculation
-              processedData.allPoints.push({
-                  targetX: scaledTargetX,  // Use scaled positions
-                  targetY: scaledTargetY,  // Use scaled positions
-                  landmarks3: threePointVector.map(v => v[0]),  // Flatten for easier access
-                  landmarks6: sixPointVector.map(v => v[0]),    // Flatten for easier access
-                  yaw: config.useRotation ? row.yaw : null,
-                  pitch: config.useRotation ? row.pitch : null,
-                  roll: config.useRotation ? row.roll : null
-              });
-          }
       } catch (error) {
           console.error(`Error processing row ${index}:`, error);
       }
