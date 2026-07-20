@@ -1,3 +1,0 @@
-ParticipantID,Part,FilterOrder,VarianceOrder,PairNumber,FilterType,FilterRank,ExpectedVariance_px,MeasuredVariance_px,Difference_px,DifferencePercent,ExpectedVariance_pct,MeasuredVariance_pct,StdDevX_px,StdDevY_px,NumSamples,ScreenWidth,ScreenHeight,LimitingDimension
-P05,Part B,exponential,High → Low → Med,2,exponential,interp,9.6598,6.4562,-3.2036,-33.16,1.0168,0.6796,4.2222,4.8843,310,1825,950,950
-P05,Part B,exponential,High → Low → Med,2,oneEuro,interp,9.6598,6.4356,-3.2242,-33.38,1.0168,0.6774,4.2248,4.8547,310,1825,950,950

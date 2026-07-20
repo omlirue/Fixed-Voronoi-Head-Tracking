@@ -1,7 +1,0 @@
-ParticipantID,Part,FilterOrder,VarianceOrder,PairNumber,FilterType,FilterRank,ExpectedVariance_px,MeasuredVariance_px,Difference_px,DifferencePercent,ExpectedVariance_pct,MeasuredVariance_pct,StdDevX_px,StdDevY_px,NumSamples,ScreenWidth,ScreenHeight,LimitingDimension
-P05,Part A,exponential,High → Low → Med,3,exponential,interp,17.6457,10.7611,-6.8846,-39.02,1.8574,1.1327,7.4623,7.7533,313,1825,950,950
-P05,Part A,exponential,High → Low → Med,3,oneEuro,interp,17.6457,10.5457,-7.1000,-40.24,1.8574,1.1101,7.3076,7.6033,313,1825,950,950
-P05,Part A,exponential,High → Low → Med,1,exponential,interp,1.6739,2.5507,0.8767,52.38,0.1762,0.2685,1.8245,1.7824,313,1825,950,950
-P05,Part A,exponential,High → Low → Med,1,oneEuro,interp,1.6739,1.9067,0.2328,13.91,0.1762,0.2007,1.3788,1.3169,313,1825,950,950
-P05,Part A,exponential,High → Low → Med,2,exponential,interp,9.6598,9.4548,-0.2050,-2.12,1.0168,0.9952,6.6673,6.7038,313,1825,950,950
-P05,Part A,exponential,High → Low → Med,2,oneEuro,interp,9.6598,9.4275,-0.2323,-2.40,1.0168,0.9924,6.6546,6.6779,313,1825,950,950

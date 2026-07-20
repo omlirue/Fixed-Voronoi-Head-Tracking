@@ -1,9 +1,0 @@
-Part: Part A
-Calibration Type: Personal
-Calibration Source: Fresh calibration: 2026-05-05T02:37:51.538Z
-Participant: P05
-Filter Order: exponential first
-Variance Order: High → Low → Med
-Trials Completed: 192
-Trials Missed (timeout): 0
-Timestamp: 2026-05-05T03:14:41.245Z

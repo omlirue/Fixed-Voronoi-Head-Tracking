@@ -1,7 +1,0 @@
-ParticipantID,Part,FilterOrder,VarianceOrder,PairNumber,FilterType,FilterRank,ExpectedVariance_px,MeasuredVariance_px,Difference_px,DifferencePercent,ExpectedVariance_pct,MeasuredVariance_pct,StdDevX_px,StdDevY_px,NumSamples,ScreenWidth,ScreenHeight,LimitingDimension
-P10,Part A,oneEuro,Med → High → Low,2,exponential,interp,7.9506,15.7363,7.7856,97.92,0.9661,1.9121,5.9466,14.5694,313,1512,823,823
-P10,Part A,oneEuro,Med → High → Low,2,oneEuro,interp,7.9506,15.5460,7.5953,95.53,0.9661,1.8889,5.8821,14.3902,313,1512,823,823
-P10,Part A,oneEuro,Med → High → Low,3,exponential,interp,14.2740,22.1282,7.8542,55.02,1.7344,2.6887,8.3681,20.4849,313,1512,823,823
-P10,Part A,oneEuro,Med → High → Low,3,oneEuro,interp,14.2740,21.3622,7.0882,49.66,1.7344,2.5956,8.0951,19.7690,313,1512,823,823
-P10,Part A,oneEuro,Med → High → Low,1,exponential,interp,1.6273,4.3253,2.6980,165.80,0.1977,0.5256,2.1144,3.7733,313,1512,823,823
-P10,Part A,oneEuro,Med → High → Low,1,oneEuro,interp,1.6273,4.5401,2.9129,179.00,0.1977,0.5517,2.0195,4.0662,313,1512,823,823
