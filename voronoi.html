@@ -35,6 +35,77 @@
       height: 100%;
     }
 
+    /* HUD Dashboard (Top Right) */
+    .hud-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(20, 20, 30, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 16px;
+      border-radius: 8px;
+      color: #fff;
+      z-index: 1000;
+      min-width: 220px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #64ff64;
+      transition: width 0.2s ease;
+    }
+
+    .hud-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #aaa;
+      font-weight: normal;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    .stat-value.errors {
+      color: #ff5555;
+    }
+
+    .stat-value.completed {
+      color: #64c8ff;
+    }
+
     .overlay-screen {
       position: absolute;
       top: 0;
@@ -108,6 +179,23 @@
 <body>
 
 <div class="game-container">
+  <div id="hud" class="hud-container hidden">
+    <div class="hud-title" id="hud-round-label">Round 1 Progress</div>
+    <div class="progress-bar-container">
+      <div id="progress-fill" class="progress-bar-fill"></div>
+    </div>
+    <div class="hud-stats">
+      <div class="stat-box">
+        <span class="stat-label">Completed</span>
+        <span id="completed-count" class="stat-value completed">0 / 20</span>
+      </div>
+      <div class="stat-box" style="text-align: right;">
+        <span class="stat-label">Errors</span>
+        <span id="error-count" class="stat-value errors">0</span>
+      </div>
+    </div>
+  </div>
+
   <div id="config-screen" class="overlay-screen">
     <h1>Voronoi Calibration Experiment</h1>
     <p>Hover over the green cells and select them to progress through your trials.</p>
@@ -129,7 +217,7 @@
 
   <div id="end-screen" class="overlay-screen hidden">
     <h1>Experiment Complete</h1>
-    <p>You have finished both Fitts' Law experiment trials successfully.</p>
+    <p id="final-stats-summary">You have finished both Fitts' Law experiment trials successfully.</p>
   </div>
 
   <canvas id="artboard"></canvas>
@@ -141,6 +229,12 @@
   const endScreen = document.getElementById('end-screen');
   const startBtn = document.getElementById('config-button');
   const directionsBtn = document.getElementById('directions-button');
+  const hud = document.getElementById('hud');
+  const progressFill = document.getElementById('progress-fill');
+  const completedCountEl = document.getElementById('completed-count');
+  const errorCountEl = document.getElementById('error-count');
+  const hudRoundLabel = document.getElementById('hud-round-label');
+  const finalStatsSummary = document.getElementById('final-stats-summary');
   const canvas = document.getElementById("artboard");
   const ctx = canvas.getContext("2d");
 
@@ -155,28 +249,38 @@
   let currentTrialIndex = 0; 
   let currentRound = 1; 
 
-  // Dwell selection state variables
-  const DWELL_TIME_MS = 300; // Updated to 300ms
+  // Error and Dwell state
+  let totalErrors = 0;
+  let erroredCellsMap = {}; // Maps cell indices to error state boolean
+  const DWELL_TIME_MS = 1000;
   let dwellTimer = null;
   let currentDwellTarget = -1;
   
-  const sequence = [0, 5, 10, 2, 7, 11, 4, 8, 1, 6, 3, 9];
+  // Both rounds execute sequential 0 -> 19 vertical snake paths
+  const sequenceRound1 = Array.from({ length: 20 }, (_, i) => i);
+  const sequenceRound2 = Array.from({ length: 20 }, (_, i) => i);
+
+  function getActiveSequence() {
+    return currentRound === 1 ? sequenceRound1 : sequenceRound2;
+  }
 
   let points = [];
   function updatePointLayoutScale() {
     if (currentRound === 1) {
       points = [
-        [width * 0.125, height * 0.50], [width * 0.187, height * 0.32], [width * 0.275, height * 0.67], 
-        [width * 0.375, height * 0.25], [width * 0.437, height * 0.75], [width * 0.525, height * 0.30], 
-        [width * 0.625, height * 0.70], [width * 0.725, height * 0.25], [width * 0.812, height * 0.62], 
-        [width * 0.875, height * 0.37], [width * 0.937, height * 0.55], [width * 0.960, height * 0.50]
+        [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
+        [width * 0.28, height * 0.18], [width * 0.36, height * 0.38], [width * 0.25, height * 0.60], [width * 0.33, height * 0.85],
+        [width * 0.46, height * 0.82], [width * 0.54, height * 0.58], [width * 0.44, height * 0.36], [width * 0.52, height * 0.15],
+        [width * 0.66, height * 0.18], [width * 0.74, height * 0.42], [width * 0.64, height * 0.65], [width * 0.72, height * 0.88],
+        [width * 0.84, height * 0.82], [width * 0.93, height * 0.60], [width * 0.83, height * 0.35], [width * 0.91, height * 0.14]
       ];
     } else if (currentRound === 2) {
       points = [
-        [width * 0.100, height * 0.35], [width * 0.200, height * 0.65], [width * 0.280, height * 0.20], 
-        [width * 0.350, height * 0.55], [width * 0.440, height * 0.30], [width * 0.510, height * 0.72], 
-        [width * 0.590, height * 0.40], [width * 0.670, height * 0.60], [width * 0.760, height * 0.25], 
-        [width * 0.830, height * 0.75], [width * 0.890, height * 0.42], [width * 0.950, height * 0.58]
+        [width * 0.12, height * 0.82], [width * 0.06, height * 0.60], [width * 0.13, height * 0.38], [width * 0.08, height * 0.15],
+        [width * 0.24, height * 0.14], [width * 0.31, height * 0.35], [width * 0.22, height * 0.62], [width * 0.29, height * 0.88],
+        [width * 0.50, height * 0.85], [width * 0.42, height * 0.62], [width * 0.52, height * 0.40], [width * 0.45, height * 0.18],
+        [width * 0.68, height * 0.12], [width * 0.62, height * 0.36], [width * 0.71, height * 0.58], [width * 0.65, height * 0.82],
+        [width * 0.88, height * 0.86], [width * 0.82, height * 0.64], [width * 0.90, height * 0.38], [width * 0.85, height * 0.12]
       ];
     }
   }
@@ -196,13 +300,74 @@
   }
   computeVoronoiDiagram();
 
+  function updateHUD() {
+    const sequence = getActiveSequence();
+    const progressPct = (currentTrialIndex / sequence.length) * 100;
+    
+    progressFill.style.width = `${progressPct}%`;
+    completedCountEl.innerText = `${currentTrialIndex} / ${sequence.length}`;
+    errorCountEl.innerText = totalErrors;
+    hudRoundLabel.innerText = `Round ${currentRound} Progress`;
+  }
+
   function loadSecondVoronoiMap() {
     currentRound = 2;
     currentTrialIndex = 0;
+    erroredCellsMap = {};
     
     updatePointLayoutScale();
     computeVoronoiDiagram();
+    updateHUD();
+    checkDwellState();
     draw();
+  }
+
+  function drawSequenceArrows(sequence) {
+    const headLength = 10;
+    const startOffset = 14;
+    const endOffset = 14;
+
+    ctx.save();
+    for (let k = 0; k < sequence.length - 1; k++) {
+      const fromP = points[sequence[k]];
+      const toP = points[sequence[k + 1]];
+
+      const dx = toP[0] - fromP[0];
+      const dy = toP[1] - fromP[1];
+      const len = Math.hypot(dx, dy);
+
+      if (len <= startOffset + endOffset) continue;
+
+      const angle = Math.atan2(dy, dx);
+      const startX = fromP[0] + (dx / len) * startOffset;
+      const startY = fromP[1] + (dy / len) * startOffset;
+      const endX = toP[0] - (dx / len) * endOffset;
+      const endY = toP[1] - (dy / len) * endOffset;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = "rgba(200, 200, 200, 0.18)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(
+        endX - headLength * Math.cos(angle - Math.PI / 6),
+        endY - headLength * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        endX - headLength * Math.cos(angle + Math.PI / 6),
+        endY - headLength * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fillStyle = "rgba(200, 200, 200, 0.22)";
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   function draw() {
@@ -215,6 +380,9 @@
       return;
     }
 
+    const sequence = getActiveSequence();
+
+    // 1. Draw cell polygons
     ctx.shadowBlur = 0;
     for (let i = 0; i < points.length; i++) {
       const polygon = voronoi.cellPolygon(i);
@@ -232,6 +400,7 @@
       const sequencePosition = sequence.indexOf(i);
 
       ctx.save();
+      // PRIORITY 1: Active current target ALWAYS takes precedence as green
       if (isStarted && i === currentTargetIndex) {
         ctx.fillStyle = 'rgba(100, 255, 100, 0.4)';
         ctx.strokeStyle = 'rgba(100, 255, 100, 1)';
@@ -240,15 +409,27 @@
           ctx.shadowBlur = 25;
           ctx.shadowColor = 'rgba(100, 255, 100, 1)';
         }
-      } else if (isStarted && sequencePosition !== -1 && sequencePosition < currentTrialIndex) {
-        ctx.fillStyle = 'rgba(255, 100, 100, 0.15)';
-        ctx.strokeStyle = 'rgba(255, 100, 100, 0.4)';
-        ctx.lineWidth = 2;
-      } else if (isStarted && i === nextTargetIndex) {
+      } 
+      // PRIORITY 2: Upcoming target ALWAYS takes precedence as yellow
+      else if (isStarted && i === nextTargetIndex) {
         ctx.fillStyle = 'rgba(255, 200, 100, 0.2)';
         ctx.strokeStyle = 'rgba(255, 200, 100, 0.6)';
         ctx.lineWidth = 3;
-      } else {
+      } 
+      // PRIORITY 3: Errored cell (not active or upcoming)
+      else if (isStarted && erroredCellsMap[i]) {
+        ctx.fillStyle = 'rgba(255, 60, 60, 0.5)';
+        ctx.strokeStyle = 'rgba(255, 60, 60, 0.9)';
+        ctx.lineWidth = 3;
+      } 
+      // PRIORITY 4: Previously completed cell
+      else if (isStarted && sequencePosition !== -1 && sequencePosition < currentTrialIndex) {
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.15)';
+        ctx.strokeStyle = 'rgba(255, 100, 100, 0.4)';
+        ctx.lineWidth = 2;
+      } 
+      // DEFAULT: Unvisited cell
+      else {
         ctx.fillStyle = 'rgba(150, 150, 150, 0.05)';
         ctx.strokeStyle = 'rgba(150, 150, 150, 0.15)';
         ctx.lineWidth = 1;
@@ -258,6 +439,10 @@
       ctx.restore();
     }
 
+    // 2. Draw directional path arrows
+    drawSequenceArrows(sequence);
+
+    // 3. Draw target point markers
     const currentTargetIndex = sequence[currentTrialIndex];
     const nextTargetIndex = sequence[currentTrialIndex + 1];
 
@@ -269,12 +454,15 @@
       if (isStarted && i === currentTargetIndex) {
         radius = i === activeIndex ? 10 : 7;
         fillStyle = "#64ff64";
-      } else if (isStarted && sequence.indexOf(i) < currentTrialIndex) {
-        radius = 4;
-        fillStyle = "rgba(255, 100, 100, 0.5)";
       } else if (isStarted && i === nextTargetIndex) {
         radius = 5;
         fillStyle = "rgba(255, 200, 100, 0.8)";
+      } else if (isStarted && erroredCellsMap[i]) {
+        radius = 6;
+        fillStyle = "#ff5555";
+      } else if (isStarted && sequence.indexOf(i) < currentTrialIndex) {
+        radius = 4;
+        fillStyle = "rgba(255, 100, 100, 0.5)";
       }
 
       ctx.arc(points[i][0], points[i][1], radius, 0, Math.PI * 2);
@@ -292,46 +480,62 @@
   }
 
   function checkDwellState() {
-    if (!isStarted) {
+    if (!isStarted || activeIndex === -1) {
       clearDwellTimer();
       return;
     }
 
-    const currentTargetIndex = sequence[currentTrialIndex];
-
-    if (activeIndex === currentTargetIndex) {
-      if (currentDwellTarget !== activeIndex) {
-        clearDwellTimer();
-        currentDwellTarget = activeIndex;
-
-        dwellTimer = setTimeout(() => {
-          attemptAcquisition();
-        }, DWELL_TIME_MS);
-      }
-    } else {
+    if (currentDwellTarget !== activeIndex) {
       clearDwellTimer();
+      currentDwellTarget = activeIndex;
+
+      dwellTimer = setTimeout(() => {
+        attemptAcquisition();
+      }, DWELL_TIME_MS);
     }
   }
 
   function attemptAcquisition() {
-    if (!isStarted) return;
+    if (!isStarted || activeIndex === -1) return;
     
-    // Clear existing timer on hit attempt
     clearDwellTimer();
 
+    const sequence = getActiveSequence();
     const currentTargetIndex = sequence[currentTrialIndex];
+    const activeSequencePosition = sequence.indexOf(activeIndex);
+    
     if (activeIndex === currentTargetIndex) {
+      // Correct cell selected
       if (currentTrialIndex < sequence.length - 1) {
         currentTrialIndex++;
+        updateHUD();
+        checkDwellState();
         draw();
       } else {
+        // Finished Round 1
         if (currentRound === 1) {
           loadSecondVoronoiMap(); 
         } else {
+          // Finished Round 2
           isStarted = false;
           currentScreen = "end";
+          hud.classList.add('hidden');
           endScreen.classList.remove('hidden'); 
+          finalStatsSummary.innerText = `You finished all trials with a total of ${totalErrors} error(s).`;
           ctx.clearRect(0, 0, width, height);
+        }
+      }
+    } else {
+      // Ignore errors if participant is hovering/dwelling on an ALREADY completed cell
+      const isAlreadyCompleted = activeSequencePosition !== -1 && activeSequencePosition < currentTrialIndex;
+      
+      if (!isAlreadyCompleted) {
+        // Incorrect uncompleted cell dwelled: mark cell red and log error
+        if (!erroredCellsMap[activeIndex]) {
+          erroredCellsMap[activeIndex] = true;
+          totalErrors++;
+          updateHUD();
+          draw();
         }
       }
     }
@@ -344,8 +548,10 @@
       currentScreen = "directions";
     } else if (currentScreen === "directions") {
       directionsScreen.classList.add('hidden');
+      hud.classList.remove('hidden');
       isStarted = true;
       currentScreen = "game";
+      updateHUD();
       draw();
     }
   }
@@ -354,6 +560,8 @@
   directionsBtn.onclick = function() { advanceFlow(); };
 
   window.addEventListener('keydown', function(e) {
+    if (e.repeat) return;
+
     if (e.code === 'Space') {
       e.preventDefault();
       if (currentScreen === "welcome" || currentScreen === "directions") {
@@ -396,7 +604,6 @@
     draw();
   });
 
-  // Mock head pose function retained for tracking integrations
   function mockHeadPose(yaw, pitch) {
     const maxYaw = 30;
     const maxPitch = 20;
@@ -412,7 +619,6 @@
     }
   }
 
-  // Export functions to window
   window.drawVoronoi = draw;
   window.attemptAcquisition = attemptAcquisition;
   window.mockHeadPose = mockHeadPose;
