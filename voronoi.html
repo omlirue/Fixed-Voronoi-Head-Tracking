@@ -154,6 +154,11 @@
   let activeIndex = -1;
   let currentTrialIndex = 0; 
   let currentRound = 1; 
+
+  // Dwell selection state variables
+  const DWELL_TIME_MS = 300; // Updated to 300ms
+  let dwellTimer = null;
+  let currentDwellTarget = -1;
   
   const sequence = [0, 5, 10, 2, 7, 11, 4, 8, 1, 6, 3, 9];
 
@@ -278,8 +283,42 @@
     }
   }
 
+  function clearDwellTimer() {
+    if (dwellTimer) {
+      clearTimeout(dwellTimer);
+      dwellTimer = null;
+    }
+    currentDwellTarget = -1;
+  }
+
+  function checkDwellState() {
+    if (!isStarted) {
+      clearDwellTimer();
+      return;
+    }
+
+    const currentTargetIndex = sequence[currentTrialIndex];
+
+    if (activeIndex === currentTargetIndex) {
+      if (currentDwellTarget !== activeIndex) {
+        clearDwellTimer();
+        currentDwellTarget = activeIndex;
+
+        dwellTimer = setTimeout(() => {
+          attemptAcquisition();
+        }, DWELL_TIME_MS);
+      }
+    } else {
+      clearDwellTimer();
+    }
+  }
+
   function attemptAcquisition() {
     if (!isStarted) return;
+    
+    // Clear existing timer on hit attempt
+    clearDwellTimer();
+
     const currentTargetIndex = sequence[currentTrialIndex];
     if (activeIndex === currentTargetIndex) {
       if (currentTrialIndex < sequence.length - 1) {
@@ -332,12 +371,15 @@
     const cursorY = event.clientY - rect.top;
     activeIndex = delaunay.find(cursorX, cursorY);
     window.activeIndex = activeIndex;
+    
+    checkDwellState();
     draw();
   });
 
   canvas.addEventListener("mouseleave", () => {
     activeIndex = -1;
     window.activeIndex = activeIndex;
+    clearDwellTimer();
     draw();
   });
 
@@ -350,6 +392,7 @@
     canvas.height = height;
     updatePointLayoutScale();
     computeVoronoiDiagram();
+    clearDwellTimer();
     draw();
   });
 
@@ -364,6 +407,7 @@
     if (delaunay) {
       activeIndex = delaunay.find(x, y);
       window.activeIndex = activeIndex;
+      checkDwellState();
       draw();
     }
   }
