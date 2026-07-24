@@ -94,7 +94,7 @@ function updateCursor() {
         if (headPose && headPose.angles) {
           state.lastRawAngles = headPose.angles;
         }
-        
+
         // Update live angles display
         if (window.liveRotationControl) {
           window.liveRotationControl.updateAngles(angles);
@@ -105,24 +105,9 @@ function updateCursor() {
           window.threeJSHeadViz.updateAngles(angles);
         }
         
-        // Create rotation-only vector (4 features: Bias, yaw, pitch, roll)
-        const DEG2RAD = Math.PI / 180;
-        const ANGLE_SCALE = 1000; // Match calibration scaling
-        
-        // Apply same rotation gain as calibration (screen-size adaptive)
-        const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-        const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
-        
-        const yaw = angles.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-        const pitch = angles.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-        const roll = angles.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-        
-        const rotationVector = [
-          [1.0], // Bias term
-          [yaw],
-          [pitch],
-          [roll]
-        ];
+        // Create rotation-only vector (Bias, yaw, pitch, roll) via the shared
+        // builder in head-pose.js so calibration and tracking never diverge.
+        const rotationVector = window.buildRotationVector(angles);
         
         // Log periodically with cursor position
         if (state._trackingFrameCount % 60 === 0) {
@@ -130,7 +115,7 @@ function updateCursor() {
             yaw: angles.yaw.toFixed(1) + '°',
             pitch: angles.pitch.toFixed(1) + '°',
             roll: angles.roll.toFixed(1) + '°',
-            gain: ROTATION_GAIN.toFixed(2) + 'x',
+            gain: window.rotationGainForWidth().toFixed(2) + 'x',
             cursorX: state.cursorX ? state.cursorX.toFixed(0) : 'N/A',
             cursorY: state.cursorY ? state.cursorY.toFixed(0) : 'N/A',
             matrixSize: math.size(math.matrix(rotationOnlyMatrix)).valueOf()
@@ -209,6 +194,9 @@ function updateCursorPosition(x, y) {
   //   document.body.appendChild(cursorWithClipping);
   if (window.delaunay) {
     window.activeIndex = window.delaunay.find(x, y);
+    if (typeof window.checkDwellState === "function") {
+      window.checkDwellState();
+    }
     if (typeof window.drawVoronoi === "function") {
       window.drawVoronoi();
     }

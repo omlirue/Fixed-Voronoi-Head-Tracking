@@ -1,4 +1,3 @@
-// Mode detection based on URL parameters
 (function() {
   const params = new URLSearchParams(window.location.search);
   const mode = (params.get('mode') || 'user').toLowerCase();

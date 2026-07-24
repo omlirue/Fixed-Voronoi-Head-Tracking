@@ -235,9 +235,40 @@ function estimateFocalLengthFromFaceSize(landmarks, imageWidth) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Rotation feature vector — SINGLE SOURCE OF TRUTH
+//
+// calibration.js (recordCalibrationPoint), tracking.js (updateCursor) and
+// dataCollection.js (offline prediction) all need to turn head angles into the
+// [bias, yaw, pitch, roll] vector that gets multiplied by the trained matrix.
+// The same formula used to be copy-pasted in all three; if any copy drifted, the
+// live cursor would stop matching what the matrix was trained on. They now all
+// call buildRotationVector() so they can never disagree.
+const _DEG2RAD = Math.PI / 180;
+const _ANGLE_SCALE = 1000;
+
+function rotationGainForWidth() {
+  const screenWidth =
+    (window.state && state.calibrationData && state.calibrationData.calibrationWidth) ||
+    window.innerWidth;
+  return Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
+}
+
+function buildRotationVector(angles) {
+  const s = _DEG2RAD * _ANGLE_SCALE * rotationGainForWidth();
+  return [
+    [1.0],            // bias
+    [angles.yaw * s],
+    [angles.pitch * s],
+    [angles.roll * s]
+  ];
+}
+
 // Make functions globally available
 window.estimateHeadPose = estimateHeadPose;
 window.estimateHeadPoseSolvePnP = estimateHeadPoseSolvePnP;
 window.estimateFocalLengthFromFaceSize = estimateFocalLengthFromFaceSize;
+window.buildRotationVector = buildRotationVector;
+window.rotationGainForWidth = rotationGainForWidth;
 
 console.log('✅ Head Pose Module: Matrix (smooth) → SolvePnP (fallback)');

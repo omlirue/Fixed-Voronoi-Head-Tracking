@@ -2,8 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Full Screen Voronoi Experiment</title>
+  <title>Full Screen Voronoi Experiment</title>  
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/mode.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script type="module" src="js/face-landmarker-init.js"></script>
+
+  <script src="js/state.js"></script>
+  <script src="js/database.js"></script>
+  <script src="js/math.js"></script>
+  <script src="js/head-pose.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/initialization.js"></script>
+  <script src="js/dataCollection.js"></script>
+  <script src="js/calibration.js"></script>
+  <script src="js/dwell++.js"></script>
+  <script src="js/tracking.js"></script>
+
   <style>
     body, html {
       margin: 0;
@@ -174,11 +190,45 @@
     .hidden {
       display: none !important;
     }
+
+    #calibration-target { 
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,0,0,0.5); transform: translate(-50%, -50%); 
+    }
+    #calibration-ui {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5000;
+    }
+
+    .calibration-hint {
+      position: absolute;
+      color: #fff;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
   </style>
 </head>
 <body>
 
 <div class="game-container">
+  <video id="video-input" playsinline style="display:none;"></video>
+
+  <div id="calibration-ui" class="hidden">
+    <div id="calibration-target"></div>
+    <div id="calibration-line"></div>
+    <div id="calibration-instructions">
+      <div id="progress"><span id="current-point-text">1</span>/20</div>
+    </div>
+  </div>
+
   <div id="hud" class="hud-container hidden">
     <div class="hud-title" id="hud-round-label">Round 1 Progress</div>
     <div class="progress-bar-container">
@@ -238,6 +288,18 @@
   const canvas = document.getElementById("artboard");
   const ctx = canvas.getContext("2d");
 
+  let trackingReady = false;
+  document.addEventListener('DOMContentLoaded', () => {
+    initialize()
+      .then(() => { trackingReady = true; })
+      .catch(err => {
+        console.error('Failed to initialize head tracking:', err);
+        configScreen.querySelector('h1').textContent = 'Camera Error';
+        configScreen.querySelector('p').textContent =
+          'Could not access your camera: ' + err.message + '. Please allow camera access and reload.';
+    });
+});
+
   let width = window.innerWidth;
   let height = window.innerHeight;
   canvas.width = width;
@@ -245,27 +307,26 @@
 
   let currentScreen = "welcome"; 
   let isStarted = false;
-  let activeIndex = -1;
+  var activeIndex = -1;
   let currentTrialIndex = 0; 
   let currentRound = 1; 
 
   // Error and Dwell state
   let totalErrors = 0;
   let erroredCellsMap = {}; // Maps cell indices to error state boolean
-  const DWELL_TIME_MS = 1000;
-  let dwellTimer = null;
-  let currentDwellTarget = -1;
+  let checkTargetIndex = null;
   
   // Both rounds execute sequential 0 -> 19 vertical snake paths
   const sequenceRound1 = Array.from({ length: 20 }, (_, i) => i);
   const sequenceRound2 = Array.from({ length: 20 }, (_, i) => i);
 
+//Gets the seqence of the two trials
   function getActiveSequence() {
     return currentRound === 1 ? sequenceRound1 : sequenceRound2;
   }
 
   let points = [];
-  function updatePointLayoutScale() {
+  function updatePointLayoutScale() { //hardcodes the 20point layout idk if that should be 
     if (currentRound === 1) {
       points = [
         [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
@@ -287,7 +348,7 @@
   updatePointLayoutScale();
 
   let delaunay, voronoi;
-  function computeVoronoiDiagram() {
+  function computeVoronoiDiagram() { 
     if (typeof d3 !== 'undefined') {
       try {
         delaunay = d3.Delaunay.from(points);
@@ -378,6 +439,23 @@
       ctx.font = "20px sans-serif";
       ctx.fillText("Error: Connect to the internet to load the D3 library script.", 50, height / 2);
       return;
+    }
+
+    if (checkTargetIndex !== null) {
+    for (let i = 0; i < points.length; i++) {
+      const polygon = voronoi.cellPolygon(i);
+      if (!polygon) continue;
+      ctx.beginPath();
+      ctx.moveTo(polygon[0][0], polygon[0][1]);
+      for (let j = 1; j < polygon.length; j++) ctx.lineTo(polygon[j][0], polygon[j][1]);
+      ctx.closePath();
+      ctx.fillStyle = i === checkTargetIndex ? 'rgba(100,255,100,0.4)' : 'rgba(150,150,150,0.05)';
+      ctx.strokeStyle = i === checkTargetIndex ? 'rgba(100,255,100,1)' : 'rgba(150,150,150,0.15)';
+      ctx.lineWidth = i === checkTargetIndex ? 5 : 1;
+      ctx.fill();
+      ctx.stroke();
+    }
+    return;
     }
 
     const sequence = getActiveSequence();
@@ -471,34 +549,11 @@
     }
   }
 
-  function clearDwellTimer() {
-    if (dwellTimer) {
-      clearTimeout(dwellTimer);
-      dwellTimer = null;
-    }
-    currentDwellTarget = -1;
-  }
-
-  function checkDwellState() {
-    if (!isStarted || activeIndex === -1) {
-      clearDwellTimer();
-      return;
-    }
-
-    if (currentDwellTarget !== activeIndex) {
-      clearDwellTimer();
-      currentDwellTarget = activeIndex;
-
-      dwellTimer = setTimeout(() => {
-        attemptAcquisition();
-      }, DWELL_TIME_MS);
-    }
-  }
 
   function attemptAcquisition() {
     if (!isStarted || activeIndex === -1) return;
     
-    clearDwellTimer();
+    resetDwellProgress();
 
     const sequence = getActiveSequence();
     const currentTargetIndex = sequence[currentTrialIndex];
@@ -519,6 +574,7 @@
           // Finished Round 2
           isStarted = false;
           currentScreen = "end";
+          window.isStarted = isStarted;
           hud.classList.add('hidden');
           endScreen.classList.remove('hidden'); 
           finalStatsSummary.innerText = `You finished all trials with a total of ${totalErrors} error(s).`;
@@ -546,13 +602,18 @@
       configScreen.classList.add('hidden');
       directionsScreen.classList.remove('hidden');
       currentScreen = "directions";
-    } else if (currentScreen === "directions") {
+    } 
+    else if (currentScreen === "directions") {
       directionsScreen.classList.add('hidden');
-      hud.classList.remove('hidden');
-      isStarted = true;
-      currentScreen = "game";
-      updateHUD();
-      draw();
+      currentScreen = "calibrating";
+      state.config = {
+        ...state.config,
+        coordinateSystem: "2d",
+        animationStyle: "without-line",
+        useRotation: true,
+        rotationOnlyMode: true
+    };
+    startCalibration();
     }
   }
 
@@ -561,10 +622,11 @@
 
   window.addEventListener('keydown', function(e) {
     if (e.repeat) return;
-
     if (e.code === 'Space') {
       e.preventDefault();
-      if (currentScreen === "welcome" || currentScreen === "directions") {
+      if (window.state?.isCalibrating && !window.state?.isLineAnimating) {
+        captureCalibrationPoint();
+      } else if (currentScreen === "welcome" || currentScreen === "directions") {
         advanceFlow();
       } else if (currentScreen === "game") {
         attemptAcquisition();
@@ -587,7 +649,7 @@
   canvas.addEventListener("mouseleave", () => {
     activeIndex = -1;
     window.activeIndex = activeIndex;
-    clearDwellTimer();
+    resetDwellProgress();
     draw();
   });
 
@@ -604,20 +666,157 @@
     draw();
   });
 
-  function mockHeadPose(yaw, pitch) {
-    const maxYaw = 30;
-    const maxPitch = 20;
+    function mockHeadPose(yaw, pitch) {
+      const maxYaw = 30;
+      const maxPitch = 20;
 
-    const x = ((yaw / maxYaw) + 0.5) * width;
-    const y = ((pitch / maxPitch) + 0.5) * height;
+      const x = ((yaw / maxYaw) + 0.5) * width;
+      const y = ((pitch / maxPitch) + 0.5) * height;
 
-    if (delaunay) {
-      activeIndex = delaunay.find(x, y);
-      window.activeIndex = activeIndex;
-      checkDwellState();
-      draw();
+      if (delaunay) {
+        activeIndex = delaunay.find(x, y);
+        window.activeIndex = activeIndex;
+        checkDwellState();
+        draw();
     }
   }
+
+  function revealGame() {
+  hud.classList.remove('hidden');
+  isStarted = true;
+  window.isStarted = true;
+  currentScreen = "game";
+  updateHUD();
+  draw();
+}
+window.revealGame = revealGame;
+
+  function runRegionReachabilityCheck() {
+  return new Promise(resolve => {
+    if (!points.length) { resolve(true); return; }
+
+    let topIdx = 0, bottomIdx = 0, leftIdx = 0, rightIdx = 0;
+    points.forEach((p, i) => {
+      if (p[1] < points[topIdx][1]) topIdx = i;
+      if (p[1] > points[bottomIdx][1]) bottomIdx = i;
+      if (p[0] < points[leftIdx][0]) leftIdx = i;
+      if (p[0] > points[rightIdx][0]) rightIdx = i;
+    });
+    const targets = [
+      { idx: topIdx, label: 'Top region' },
+      { idx: bottomIdx, label: 'Bottom region' },
+      { idx: leftIdx, label: 'Left region' },
+      { idx: rightIdx, label: 'Right region' }
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'region-check-overlay';
+    overlay.style.cssText = `position: fixed; top:0; left:0; width:100%; height:100%;
+      z-index: 100000; pointer-events: none;`;
+    document.body.appendChild(overlay);
+
+    const label = document.createElement('div');
+    label.style.cssText = `position: fixed; left:50%; top:16px; transform:translateX(-50%);
+      background: rgba(0,0,0,0.75); color:#fff; padding:10px 20px; border-radius:8px;
+      font-size:16px; z-index:100002; pointer-events:none;`;
+    overlay.appendChild(label);
+
+    const TIMEOUT_MS = 12000, DWELL_MS = 1000;
+    const failed = [];
+
+    function drawHighlight(targetIdx) {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < points.length; i++) {
+        const polygon = voronoi.cellPolygon(i);
+        if (!polygon) continue;
+        ctx.beginPath();
+        ctx.moveTo(polygon[0][0], polygon[0][1]);
+        for (let j = 1; j < polygon.length; j++) ctx.lineTo(polygon[j][0], polygon[j][1]);
+        ctx.closePath();
+        ctx.fillStyle = i === targetIdx ? 'rgba(100,255,100,0.4)' : 'rgba(150,150,150,0.05)';
+        ctx.strokeStyle = i === targetIdx ? 'rgba(100,255,100,1)' : 'rgba(150,150,150,0.15)';
+        ctx.lineWidth = i === targetIdx ? 5 : 1;
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    function checkOneTarget(target) {
+      return new Promise(res => {
+        label.innerHTML = `Move your head to the <strong style="color:#64ff64;">${target.label}</strong>
+          <span id="region-check-timer" style="color:#ffaa00; margin-left:12px;"></span>`;
+        checkTargetIndex = target.idx;   // real draw() now paints this every frame automatically
+
+        const startTime = performance.now();
+        let dwellStart = null, done = false;
+        const timerEl = document.getElementById('region-check-timer');
+
+        const tick = () => {
+          if (done) return;
+          const elapsed = performance.now() - startTime;
+          if (timerEl) timerEl.textContent = `(${Math.max(0,(TIMEOUT_MS-elapsed)/1000).toFixed(1)}s)`;
+
+          if (window.activeIndex === target.idx) {
+          if (dwellStart === null) dwellStart = performance.now();
+          if (performance.now() - dwellStart >= DWELL_MS) { done = true; res(true); return; }
+          } 
+          else {
+        dwellStart = null;
+        }
+        if (elapsed >= TIMEOUT_MS) { done = true; res(false); return; }
+        requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+    (async () => {
+      for (const target of targets) {
+        if (!(await checkOneTarget(target))) failed.push(target);
+      }
+      overlay.remove();
+      ctx.clearRect(0, 0, width, height);
+
+      checkTargetIndex = null;
+      draw();
+
+      if (failed.length === 0) { resolve(true); return; }
+
+      const failOverlay = document.createElement('div');
+      failOverlay.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.92); z-index:100000; display:flex; align-items:center; justify-content:center;`;
+      failOverlay.innerHTML = `
+        <div style="background: rgba(40,30,30,0.98); border:2px solid #ff6464; border-radius:12px;
+                    padding:36px; max-width:600px; text-align:center;">
+          <h2 style="color:#ff6464; margin:0 0 8px;">Calibration Issue Detected</h2>
+          <p style="color:#ccc; font-size:15px; margin:14px 0;">
+            We couldn't reach the following ${failed.length === 1 ? 'region' : 'regions'}:
+          </p>
+          <ul style="text-align:left; display:inline-block; color:#ffaa64; font-size:15px;">
+            ${failed.map(f => `<li>${f.label}</li>`).join('')}
+          </ul>
+          <div style="display:flex; gap:12px; justify-content:center; margin-top:14px;">
+            <button id="region-check-recalibrate" style="padding:12px 24px; font-weight:bold;
+              background:#ff6464; color:white; border:none; border-radius:8px; cursor:pointer;">Recalibrate</button>
+            <button id="region-check-continue" style="padding:12px 24px;
+              background:#444; color:#eee; border:none; border-radius:8px; cursor:pointer;">Continue Anyway</button>
+          </div>
+        </div>`;
+      document.body.appendChild(failOverlay);
+      document.getElementById('region-check-recalibrate').onclick = () => { window.location.reload(); resolve(false); };
+      document.getElementById('region-check-continue').onclick = () => { failOverlay.remove(); resolve(true); };
+    })();
+  });
+}
+
+window.runRegionReachabilityCheck = runRegionReachabilityCheck;
+
+  window.drawVoronoi = draw;
+  window.attemptAcquisition = attemptAcquisition;
+  window.mockHeadPose = mockHeadPose;
+
+  draw();
+  
 
   window.drawVoronoi = draw;
   window.attemptAcquisition = attemptAcquisition;
