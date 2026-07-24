@@ -1,30 +1,17 @@
-/**
- * Head Pose Estimation Module
- * 
- * PRIMARY: Uses MediaPipe's facialTransformationMatrixes (via FaceLandmarker API)
- *          This is smooth like Timothy's code because MediaPipe has internal filtering
- * 
- * FALLBACK: Uses OpenCV.js solvePnP when matrix not available
- */
-
-// Landmark indices (MediaPipe FaceMesh) - same as Timothy's
-const POSE_LANDMARK_INDICES = [1, 152, 33, 263, 61, 291];
-
-// Logging state to avoid spamming console
 let _lastLogTime = 0;
 let _loggedSource = null;
-
+ 
 /**
- * Get head pose angles - prefers smooth matrix method when available
+ * Get head pose angles from MediaPipe's smoothed transformation matrix.
+ * Signature keeps (landmarks, width, height) for drop-in compatibility with
+ * existing call sites — these params are unused now that the fallback is gone.
  */
 function estimateHeadPose(landmarks, width, height) {
   const now = Date.now();
-  
-  // PRIMARY: Use pre-computed matrix angles if available (smooth!)
+ 
   if (window.state && window.state.lastMatrixAngles) {
     const angles = window.state.lastMatrixAngles;
-    
-    // Log source change or every 5 seconds
+ 
     if (_loggedSource !== 'matrix' || now - _lastLogTime > 5000) {
       console.log('🎯 HEAD POSE SOURCE: Matrix (smooth FaceLandmarker API) ✅', {
         yaw: angles.yaw.toFixed(1),
@@ -34,23 +21,22 @@ function estimateHeadPose(landmarks, width, height) {
       _loggedSource = 'matrix';
       _lastLogTime = now;
     }
-    
+ 
     return {
-      rotation: null,
-      translation: null,
       angles: {
         yaw: angles.yaw,
         pitch: angles.pitch,
         roll: angles.roll
       },
-      source: 'matrix'  // For debugging
+      source: 'matrix'
     };
   }
-  
-  // Log fallback
-  if (_loggedSource !== 'solvepnp' || now - _lastLogTime > 5000) {
-    console.log('⚠️ HEAD POSE SOURCE: SolvePnP fallback (matrix not available)');
-    _loggedSource = 'solvepnp';
+ 
+  // No fallback — matrix not ready yet. Caller (RegionClassifier) treats
+  // this as "no valid reading this frame" and simply doesn't advance dwell.
+  if (_loggedSource !== 'unavailable' || now - _lastLogTime > 5000) {
+    console.warn('⚠️ HEAD POSE: matrix not yet available (no SolvePnP fallback in this build)');
+    _loggedSource = 'unavailable';
     _lastLogTime = now;
   }
   
