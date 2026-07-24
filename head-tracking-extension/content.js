@@ -445,15 +445,22 @@ if (!window.headTrackingContentScriptInitialized) {
     const style = document.createElement('style');
     style.textContent = `
       #calibration-ui {
-        display: none;
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.8);
-        z-index: 9999;
-        pointer-events: none;
+        z-index: 5000;
+      }
+
+      .calibration-hint {
+        position: absolute;
+        color: #fff;
+        font-size: 14px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 4px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
       }
 
       #calibration-target {

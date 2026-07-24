@@ -42,7 +42,7 @@ function exportCalibrationData() {
       timestamp: Date.now(),
       calibrationWidth: state.calibrationData.calibrationWidth,
       calibrationHeight: state.calibrationData.calibrationHeight,
-      rotationOnlyMode: TRUE, // Indicate that this export is for rotation-only predictions
+      rotationOnlyMode: true, // Indicate that this export is for rotation-only predictions
     };
     const metadataLine = `#${JSON.stringify(metadata)}`;
 
@@ -55,17 +55,13 @@ function exportCalibrationData() {
     return frame;
   }
 
-  const DEG2RAD = Math.PI / 180;
-  const ANGLE_SCALE = 1000;
-  const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-  const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
-
-  const rotationVector = [
-    [1.0],
-    [frame.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN],
-    [frame.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN],
-    [frame.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]
-  ];
+  // Shared builder (head-pose.js) so offline predictions match the trained
+  // matrix and the live cursor exactly.
+  const rotationVector = window.buildRotationVector({
+    yaw: frame.yaw,
+    pitch: frame.pitch,
+    roll: frame.roll
+  });
 
   try {
     const matrix = state.transformationMatrices.rotationOnly;
