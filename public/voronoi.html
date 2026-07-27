@@ -247,27 +247,97 @@
   </div>
 
   <div id="config-screen" class="overlay-screen">
-    <h1>Voronoi Calibration Experiment</h1>
-    <p>Hover over the green cells and select them to progress through your trials.</p>
-    <button id="config-button" class="start-button">Start Game</button>
-    <p style="margin-top: 18px; font-size: 14px; color: #888;">or press <kbd>Space</kbd></p>
+    <h1 style="font-size: 42px; margin-bottom: 6px;">DiscretePoint</h1>
+    <p style="color: #888; font-size: 16px; margin-bottom: 32px;">A Head-Pointing Research Study</p>
+    
+    <div style="max-width: 560px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 24px 32px; margin-bottom: 32px; text-align: left;">
+        <div style="margin-bottom: 18px;">
+            <span style="color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">What you'll do</span>
+            <p style="margin: 8px 0 0 0; color: #ccc; font-size: 15px; line-height: 1.6;">Complete a short calibration, then navigate through two rounds of a head-pointing task. No mouse or keyboard is required.</p>
+        </div>
+        <div style="margin-bottom: 18px;">
+            <span style="color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">How it works</span>
+            <p style="margin: 8px 0 0 0; color: #ccc; font-size: 15px; line-height: 1.6;">Your webcam tracks your head orientation. Point your head toward a region on screen to activate it.</p>
+        </div>
+        <div>
+            <span style="color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Duration</span>
+            <p style="margin: 8px 0 0 0; color: #ccc; font-size: 15px;">Approximately 5–10 minutes.</p>
+        </div>
+    </div>
+
+    <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">** Make sure your face is fully visible in the webcam before continuing.</p>
+    <button id="config-button" class="start-button">Begin →</button>
+    <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
   </div>
 
   <div id="directions-screen" class="overlay-screen hidden">
-    <h1>Directions</h1>
-    <p style="color: #64c8ff; font-weight: bold; margin-bottom: 15px;">For calibration:</p>
-    <ol class="directions-list">
-      <li>Move your head to the greenlit space until it turns red. The next space you will have to move to will be lit yellow while you are on the current greenlit space.</li>
-      <li>Once the current space turns red, move your head to the following greenlit space that was previously yellow.</li>
-      <li>Stay on the new greenlit space until it turns red, and repeat these steps until the final space is red.</li>
-    </ol>
-    <button id="directions-button" class="start-button">Got it!</button>
-    <p style="margin-top: 15px; font-size: 14px; color: #888;">or press <kbd>Space</kbd></p>
+    <h1 style="margin-bottom: 6px;">Stage 1: Calibration</h1>
+    <div style="max-width: 540px; text-align: left; margin-bottom: 32px;">
+        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+            <div style="background: #64c8ff; color: #111; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">1</div>
+            <div>
+                <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">A dot will appear at 20 different positions on the screen. Move your head to look directly at each dot.</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+            <div style="background: #64c8ff; color: #111; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">2</div>
+            <div>
+                <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">When your head is steady and centered on the dot, press <kbd>Space</kbd> to capture that position.</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <div style="background: #64c8ff; color: #111; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">3</div>
+            <div>
+                <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">Once the 20 dots are completed, highlighted regions will appear on the screen. Look directly at each highlighted region within the given time.</p>
+            </div>
+        </div>
+    </div>
+
+    <button id="directions-button" class="start-button">Start Calibration →</button>
+    <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
+  </div>
+
+  <div id="task-directions-screen" class="overlay-screen hidden">
+      <h1 style="margin-bottom: 6px;">Stage 2: Head-Pointing Task</h1>
+      <div style="max-width: 540px; text-align: left; margin-bottom: 28px;">
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+              <div style="width: 14px; height: 14px; background: rgba(100,255,100,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #64ff64; font-weight: bold;">green region</span> is your current target. Point your head toward it to activate it.</p>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+              <div style="width: 14px; height: 14px; background: rgba(255,200,100,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #ffc864; font-weight: bold;">yellow region</span> shows where you're going next.</p>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+              <div style="width: 14px; height: 14px; background: rgba(100,200,255,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">Hold your head still in the green region for a moment to <span style="color: #64c8ff; font-weight: bold;">confirm your selection</span>.</p>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+              <div style="width: 14px; height: 14px; background: rgba(255,60,60,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">If you activate the <span style="color: #ff5555; font-weight: bold;">wrong region</span>, it will flash red. Keep going and try to reach the correct one.</p>
+          </div>
+      </div>
+
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are two rounds with a short break in between.</p>
+      <button id="task-directions-button" class="start-button">Start Round 1 →</button>
+      <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
+  </div> 
+
+  <div id="break-screen" class="overlay-screen hidden">
+    <h1 style="margin-bottom: 6px;">Round 1 Complete</h1>
+    <p style="color: #888; font-size: 15px; margin-bottom: 32px;">Take a moment to rest before continuing.</p>
+
+    <div style="max-width: 420px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 24px 32px; margin-bottom: 32px;">
+        <p style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.</p>
+    </div>
+
+    <button id="break-button" class="start-button">Continue to Round 2 →</button>
+    <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
   </div>
 
   <div id="end-screen" class="overlay-screen hidden">
     <h1>Experiment Complete</h1>
-    <p id="final-stats-summary">You have finished both Fitts' Law experiment trials successfully.</p>
+    <p id="final-stats-summary">Congrats! You have finished both Fitts' Law experiment trials successfully.</p>
   </div>
 
   <canvas id="artboard"></canvas>
@@ -276,9 +346,13 @@
 <script>
   const configScreen = document.getElementById('config-screen');
   const directionsScreen = document.getElementById('directions-screen');
+  const taskDirectionsScreen = document.getElementById('task-directions-screen');
+  const breakScreen = document.getElementById('break-screen');
   const endScreen = document.getElementById('end-screen');
   const startBtn = document.getElementById('config-button');
   const directionsBtn = document.getElementById('directions-button');
+  const taskDirectionsBtn = document.getElementById('task-directions-button');
+  const breakBtn = document.getElementById('break-button');
   const hud = document.getElementById('hud');
   const progressFill = document.getElementById('progress-fill');
   const completedCountEl = document.getElementById('completed-count');
@@ -372,6 +446,12 @@
   }
 
   function loadSecondVoronoiMap() {
+    hud.classList.add('hidden');
+    isStarted = false;
+    window.isStarted = false;
+    breakScreen.classList.remove('hidden');
+    currentScreen = "break";
+
     currentRound = 2;
     currentTrialIndex = 0;
     erroredCellsMap = {};
@@ -612,13 +692,24 @@
         animationStyle: "without-line",
         useRotation: true,
         rotationOnlyMode: true
-    };
-    startCalibration();
+      };
+      startCalibration();
+    }
+    else if (currentScreen === "task-directions") {
+      taskDirectionsScreen.classList.add('hidden');
+      revealGame();
+    } 
+    else if (currentScreen === "break") {
+      breakScreen.classList.add('hidden');
+      loadSecondVoronoiMap();
+      revealGame();
     }
   }
 
   startBtn.onclick = function() { advanceFlow(); };
   directionsBtn.onclick = function() { advanceFlow(); };
+  taskDirectionsBtn.onclick = function() { advanceFlow(); };
+  breakBtn.onclick = function() { advanceFlow(); };
 
   window.addEventListener('keydown', function(e) {
     if (e.repeat) return;
@@ -626,7 +717,7 @@
       e.preventDefault();
       if (window.state?.isCalibrating && !window.state?.isLineAnimating) {
         captureCalibrationPoint();
-      } else if (currentScreen === "welcome" || currentScreen === "directions") {
+      } else if (currentScreen === "welcome" || currentScreen === "directions" || currentScreen === "task-directions" || currentScreen === "break") {
         advanceFlow();
       } else if (currentScreen === "game") {
         attemptAcquisition();
@@ -681,15 +772,30 @@
     }
   }
 
+  function showTaskDirections() {
+    taskDirectionsScreen.classList.remove('hidden');
+    currentScreen = "task-directions";
+  }
+  window.showTaskDirections = showTaskDirections;
+
   function revealGame() {
-  hud.classList.remove('hidden');
-  isStarted = true;
-  window.isStarted = true;
-  currentScreen = "game";
-  updateHUD();
-  draw();
-}
-window.revealGame = revealGame;
+    if (currentScreen === "calibrating") {
+      showTaskDirections();
+      return;
+    }
+    taskDirectionsScreen.classList.add('hidden');
+    breakScreen.classList.add('hidden');
+
+    document.getElementById('game-container')?.classList.remove('hidden');
+    hud.classList.remove('hidden');
+    
+    isStarted = true;
+    window.isStarted = true;
+    currentScreen = "game";
+    updateHUD();
+    draw();
+  }
+  window.revealGame = revealGame;
 
   function runRegionReachabilityCheck() {
   return new Promise(resolve => {
