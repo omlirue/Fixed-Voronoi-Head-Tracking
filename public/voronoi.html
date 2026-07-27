@@ -387,6 +387,7 @@
 
   // Error and Dwell state
   let totalErrors = 0;
+  let roundErrors = 0; // resets each round, feeds the per-run summary row
   let erroredCellsMap = {}; // Maps cell indices to error state boolean
   let checkTargetIndex = null;
   
@@ -398,6 +399,14 @@
   function getActiveSequence() {
     return currentRound === 1 ? sequenceRound1 : sequenceRound2;
   }
+
+  // Lets dwell++.js tell the correct region apart from a wrong one, so it
+  // can skip its border-flicker smoothing and use a quicker plain dwell
+  // time when the participant is sitting on the wrong cell.
+  function getCurrentTargetIndex() {
+    return getActiveSequence()[currentTrialIndex];
+  }
+  window.getCurrentTargetIndex = getCurrentTargetIndex;
 
   let points = [];
   function updatePointLayoutScale() { //hardcodes the 20point layout idk if that should be 
@@ -454,13 +463,15 @@
 
     currentRound = 2;
     currentTrialIndex = 0;
+    roundErrors = 0;
     erroredCellsMap = {};
-    
+
     updatePointLayoutScale();
     computeVoronoiDiagram();
     updateHUD();
     checkDwellState();
     draw();
+    if (window.startTaskRun) window.startTaskRun();
   }
 
   function drawSequenceArrows(sequence) {
@@ -539,6 +550,9 @@
     }
 
     const sequence = getActiveSequence();
+    // dwellState.targetIndex stays set through the dwell grace period, so a
+    // brief look-away from the intended cell keeps it glowing.
+    const dwellState = window.getDwellProgress ? window.getDwellProgress() : { targetIndex: null };
 
     // 1. Draw cell polygons
     ctx.shadowBlur = 0;
@@ -563,7 +577,7 @@
         ctx.fillStyle = 'rgba(100, 255, 100, 0.4)';
         ctx.strokeStyle = 'rgba(100, 255, 100, 1)';
         ctx.lineWidth = 5;
-        if (i === activeIndex) {
+        if (i === activeIndex || i === dwellState.targetIndex) {
           ctx.shadowBlur = 25;
           ctx.shadowColor = 'rgba(100, 255, 100, 1)';
         }
@@ -592,6 +606,13 @@
         ctx.strokeStyle = 'rgba(150, 150, 150, 0.15)';
         ctx.lineWidth = 1;
       }
+
+      // Whatever cell the dwell timer is actually counting toward
+      if (isStarted && i === dwellState.targetIndex) {
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = ctx.strokeStyle;
+      }
+
       ctx.fill();
       ctx.stroke();
       ctx.restore();
@@ -632,15 +653,28 @@
 
   function attemptAcquisition() {
     if (!isStarted || activeIndex === -1) return;
-    
+
+    // Snapshot dwell stats before resetDwellProgress() zeroes them.
+    const dwellStats = window.lastDwellStats || {};
     resetDwellProgress();
 
     const sequence = getActiveSequence();
     const currentTargetIndex = sequence[currentTrialIndex];
     const activeSequencePosition = sequence.indexOf(activeIndex);
-    
+
     if (activeIndex === currentTargetIndex) {
       // Correct cell selected
+      if (window.logCellSelection) {
+        window.logCellSelection({
+          round: currentRound,
+          trialIndex: currentTrialIndex,
+          selectedCell: activeIndex,
+          targetCell: currentTargetIndex,
+          correct: true,
+          dwellDurationMs: dwellStats.dwellDurationMs
+        });
+      }
+
       if (currentTrialIndex < sequence.length - 1) {
         currentTrialIndex++;
         updateHUD();
@@ -649,14 +683,22 @@
       } else {
         // Finished Round 1
         if (currentRound === 1) {
-          loadSecondVoronoiMap(); 
+          if (window.finishTaskRun) {
+            window.finishTaskRun({ round: 1, totalErrors: roundErrors, totalCells: sequence.length });
+          }
+          loadSecondVoronoiMap();
         } else {
           // Finished Round 2
+          if (window.finishTaskRun) {
+            window.finishTaskRun({ round: 2, totalErrors: roundErrors, totalCells: sequence.length });
+          }
+          if (window.exportTaskData) window.exportTaskData();
+
           isStarted = false;
           currentScreen = "end";
           window.isStarted = isStarted;
           hud.classList.add('hidden');
-          endScreen.classList.remove('hidden'); 
+          endScreen.classList.remove('hidden');
           finalStatsSummary.innerText = `You finished all trials with a total of ${totalErrors} error(s).`;
           ctx.clearRect(0, 0, width, height);
         }
@@ -664,12 +706,23 @@
     } else {
       // Ignore errors if participant is hovering/dwelling on an ALREADY completed cell
       const isAlreadyCompleted = activeSequencePosition !== -1 && activeSequencePosition < currentTrialIndex;
-      
+
       if (!isAlreadyCompleted) {
         // Incorrect uncompleted cell dwelled: mark cell red and log error
         if (!erroredCellsMap[activeIndex]) {
           erroredCellsMap[activeIndex] = true;
           totalErrors++;
+          roundErrors++;
+          if (window.logCellSelection) {
+            window.logCellSelection({
+              round: currentRound,
+              trialIndex: currentTrialIndex,
+              selectedCell: activeIndex,
+              targetCell: currentTargetIndex,
+              correct: false,
+              dwellDurationMs: dwellStats.dwellDurationMs
+            });
+          }
           updateHUD();
           draw();
         }
@@ -779,6 +832,15 @@
   window.showTaskDirections = showTaskDirections;
 
   function revealGame() {
+  hud.classList.remove('hidden');
+  isStarted = true;
+  window.isStarted = true;
+  currentScreen = "game";
+  updateHUD();
+  draw();
+  if (window.startTaskRun) window.startTaskRun();
+}
+window.revealGame = revealGame;
     if (currentScreen === "calibrating") {
       showTaskDirections();
       return;
