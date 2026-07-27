@@ -42,6 +42,9 @@ function startCalibration() {
   // Generate grid points before showing the first point
   generateGridPoints();
 
+  const artboard = document.getElementById("artboard");
+  if (artboard) artboard.classList.add("hidden");
+
   // Show calibration UI elements
   const calibrationUI = document.getElementById("calibration-ui");
   if (calibrationUI) {
@@ -356,6 +359,9 @@ function finishCalibration() {
       calibrationUI.classList.add("hidden");
     }
 
+    const artboardDone = document.getElementById("artboard");
+    if (artboardDone) artboardDone.classList.remove("hidden");
+
     // Show options instead of starting tracking directly
     showPostCalibrationOptions();
 
@@ -410,6 +416,10 @@ function finishCalibration() {
     state.transformationMatrices = {
       rotationOnly: null,
     };
+
+    // Restore the canvas even on failure so the page isn't left blank.
+    const artboardErr = document.getElementById("artboard");
+    if (artboardErr) artboardErr.classList.remove("hidden");
 
     clearCalibrationData();
 

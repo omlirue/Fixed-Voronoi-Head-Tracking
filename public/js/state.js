@@ -35,6 +35,13 @@ if (typeof window !== 'undefined' && !window.state) {
           videoNumber: 1,
           isRecording: false,
           startTime: null,
+
+          // Cell-selection task log (Voronoi dwell-selection experiment)
+          taskLog: [],
+          participant: null,
+          condition: null,
+          runStartTime: null,
+          lastSelectionTime: null,
       },
 
       // Application configuration
