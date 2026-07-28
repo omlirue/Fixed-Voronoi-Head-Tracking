@@ -409,26 +409,115 @@
   window.getCurrentTargetIndex = getCurrentTargetIndex;
 
   let points = [];
-  function updatePointLayoutScale() { //hardcodes the 20point layout idk if that should be 
+  // function updatePointLayoutScale() { //hardcodes the 20point layout idk if that should be 
+    // if (currentRound === 1) {
+    //   points = [
+    //     [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
+    //     [width * 0.28, height * 0.18], [width * 0.36, height * 0.38], [width * 0.25, height * 0.60], [width * 0.33, height * 0.85],
+    //     [width * 0.46, height * 0.82], [width * 0.54, height * 0.58], [width * 0.44, height * 0.36], [width * 0.52, height * 0.15],
+    //     [width * 0.66, height * 0.18], [width * 0.74, height * 0.42], [width * 0.64, height * 0.65], [width * 0.72, height * 0.88],
+    //     [width * 0.84, height * 0.82], [width * 0.93, height * 0.60], [width * 0.83, height * 0.35], [width * 0.91, height * 0.14]
+    //   ];
+    // } else if (currentRound === 2) {
+    //   points = [
+    //     [width * 0.12, height * 0.82], [width * 0.06, height * 0.60], [width * 0.13, height * 0.38], [width * 0.08, height * 0.15],
+    //     [width * 0.24, height * 0.14], [width * 0.31, height * 0.35], [width * 0.22, height * 0.62], [width * 0.29, height * 0.88],
+    //     [width * 0.50, height * 0.85], [width * 0.42, height * 0.62], [width * 0.52, height * 0.40], [width * 0.45, height * 0.18],
+    //     [width * 0.68, height * 0.12], [width * 0.62, height * 0.36], [width * 0.71, height * 0.58], [width * 0.65, height * 0.82],
+    //     [width * 0.88, height * 0.86], [width * 0.82, height * 0.64], [width * 0.90, height * 0.38], [width * 0.85, height * 0.12]
+    //   ];
+    // }
+
+  function updateCalibrationPointLayout() {
+    points = [
+      [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
+      [width * 0.28, height * 0.18], [width * 0.36, height * 0.38], [width * 0.25, height * 0.60], [width * 0.33, height * 0.85],
+      [width * 0.46, height * 0.82], [width * 0.54, height * 0.58], [width * 0.44, height * 0.36], [width * 0.52, height * 0.15],
+      [width * 0.66, height * 0.18], [width * 0.74, height * 0.42], [width * 0.64, height * 0.65], [width * 0.72, height * 0.88],
+      [width * 0.84, height * 0.82], [width * 0.93, height * 0.60], [width * 0.83, height * 0.35], [width * 0.91, height * 0.14]
+    ];
+  }
+
+  updateCalibrationPointLayout();
+  computeVoronoiDiagram();
+
+  function updateExperimentPointLayout() {
+    const cx = width * 0.5; // horiz center
+    const cy = height * 0.5; // vert center
+    const amplitude = height * 0.22;
+    const xSpread = width * 0.48;
+    const nPoints = 20;
+    const phase = currentRound === 1 ? 0 : Math.PI;
+
+    const sinePoints = [];
+
     if (currentRound === 1) {
-      points = [
-        [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
-        [width * 0.28, height * 0.18], [width * 0.36, height * 0.38], [width * 0.25, height * 0.60], [width * 0.33, height * 0.85],
-        [width * 0.46, height * 0.82], [width * 0.54, height * 0.58], [width * 0.44, height * 0.36], [width * 0.52, height * 0.15],
-        [width * 0.66, height * 0.18], [width * 0.74, height * 0.42], [width * 0.64, height * 0.65], [width * 0.72, height * 0.88],
-        [width * 0.84, height * 0.82], [width * 0.93, height * 0.60], [width * 0.83, height * 0.35], [width * 0.91, height * 0.14]
-      ];
-    } else if (currentRound === 2) {
-      points = [
-        [width * 0.12, height * 0.82], [width * 0.06, height * 0.60], [width * 0.13, height * 0.38], [width * 0.08, height * 0.15],
-        [width * 0.24, height * 0.14], [width * 0.31, height * 0.35], [width * 0.22, height * 0.62], [width * 0.29, height * 0.88],
-        [width * 0.50, height * 0.85], [width * 0.42, height * 0.62], [width * 0.52, height * 0.40], [width * 0.45, height * 0.18],
-        [width * 0.68, height * 0.12], [width * 0.62, height * 0.36], [width * 0.71, height * 0.58], [width * 0.65, height * 0.82],
-        [width * 0.88, height * 0.86], [width * 0.82, height * 0.64], [width * 0.90, height * 0.38], [width * 0.85, height * 0.12]
-      ];
+      for (let i = 0; i < nPoints; i++) {
+        const t = i / (nPoints - 1);
+        const x = cx - xSpread + t * xSpread * 2;
+        const y = cy + Math.sin(t * Math.PI * 2.5) * amplitude; // two full sin periods
+        sinePoints.push([x, y]);
+      }
+    }
+    else if (currentRound === 2) { // curve is transformed slightly and inverted
+      for (let i = 0; i < nPoints; i++) {
+        const t = i / (nPoints - 1);
+        const x = cx - xSpread + t * xSpread * 2;
+        const y = cy + Math.sin(t * Math.PI * 2.5 + Math.PI) * amplitude; //inverted sine
+        sinePoints.push([x, y]);
+      }
+    }
+
+    points = sinePoints;
+    const anchors = [];
+    const normalDist = height * 0.2;
+
+    for (let i = 0; i < nPoints; i++) {
+      const t = i / (nPoints - 1);
+      const x = cx - xSpread + t * xSpread * 2;
+
+      const dydx = Math.cos(t * Math.PI * 2.5 + phase) * amplitude * (Math.PI * 2.5) / (xSpread * 2);
+      const tangentLen = Math.sqrt(1 + dydx * dydx);
+
+      const nx = -dydx / tangentLen;
+      const ny = 1 / tangentLen;
+
+      const baseY = cy + Math.sin(t * Math.PI * 2.5 + phase) * amplitude;
+
+      anchors.push([x + nx * normalDist, baseY + ny * normalDist]);
+      anchors.push([x - nx * normalDist, baseY - ny * normalDist]);
+    }
+
+    anchors.push([0, 0], [width, 0], [0, height], [width, height]);
+    anchors.push([width * 0.25, 0], [width * 0.5, 0], [width * 0.75, 0]);
+    anchors.push([width * 0.25, height], [width * 0.5, height], [width * 0.75, height]);
+    anchors.push([0, height * 0.25], [0, height * 0.5], [0, height * 0.75]);
+
+    for (let i = nPoints - 4; i < nPoints; i++) {
+      const t = i / (nPoints - 1);
+      const x = cx - xSpread + t * xSpread * 2;
+      const baseY = cy + Math.sin(t * Math.PI * 2.5 + phase) * amplitude;
+      const dydx = Math.cos(t * Math.PI * 2.5 + phase) * amplitude * (Math.PI * 2.5) / (xSpread * 2);
+      const tangentLen = Math.sqrt(1 + dydx * dydx);
+      const nx = -dydx / tangentLen;
+      const ny = 1 / tangentLen;
+
+      // Extra anchors further out along the normal for the last four points
+      anchors.push([x + nx * normalDist * 2, baseY + ny * normalDist * 2]);
+      anchors.push([x - nx * normalDist * 2, baseY - ny * normalDist * 2]);
+      anchors.push([Math.min(width, x + nx * normalDist * 3), baseY + ny * normalDist * 3]);
+      anchors.push([Math.min(width, x - nx * normalDist * 3), baseY - ny * normalDist * 3]);
+    }
+    const allPoints = [...sinePoints, ...anchors];
+    try {
+      delaunay = d3.Delaunay.from(allPoints);
+      voronoi = delaunay.voronoi([0, 0, width, height]);
+      window.delaunay = delaunay;
+    } catch (err) {
+      console.error("Voronoi Computation Failed: ", err);
     }
   }
-  updatePointLayoutScale();
+  // updatePointLayoutScale();
 
   let delaunay, voronoi;
   function computeVoronoiDiagram() { 
@@ -466,8 +555,8 @@
     roundErrors = 0;
     erroredCellsMap = {};
 
-    updatePointLayoutScale();
-    computeVoronoiDiagram();
+    // updatePointLayoutScale();
+    // computeVoronoiDiagram();
     updateHUD();
     checkDwellState();
     draw();
@@ -644,7 +733,7 @@
         fillStyle = "rgba(255, 100, 100, 0.5)";
       }
 
-      ctx.arc(points[i][0], points[i][1], radius, 0, Math.PI * 2);
+      ctx.arc(points[i][0], points[i][1], radius, 0, Math.PI * 2.5);
       ctx.fillStyle = fillStyle;
       ctx.fill();
     }
@@ -778,12 +867,36 @@
     }
   });
 
+  function findNearestSinePoint(x, y) {
+    let nearest = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const dx = points[i][0] - x;
+      const dy = points[i][1] - y;
+      const dist = dx * dx + dy * dy;
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = i;
+      }
+    }
+    return nearest;
+  }
+
+  window.findNearestSinePoint = findNearestSinePoint;
+
   canvas.addEventListener("mousemove", (event) => {
     if (!isStarted || !delaunay) return;
     const rect = canvas.getBoundingClientRect();
     const cursorX = event.clientX - rect.left;
     const cursorY = event.clientY - rect.top;
-    activeIndex = delaunay.find(cursorX, cursorY);
+    // activeIndex = delaunay.find(cursorX, cursorY);
+    const nearest = delaunay.find(cursorX, cursorY);
+    activeIndex = nearest < points.length ? nearest : delaunay.find(
+      cursorX, cursorY, 
+      // find closest among first 20 only
+      ...Array.from({length: points.length}, (_, i) => i)
+    );
+    activeIndex = findNearestSinePoint(cursorX, cursorY);
     window.activeIndex = activeIndex;
     
     checkDwellState();
@@ -804,8 +917,10 @@
     height = window.innerHeight;
     canvas.width = width;
     canvas.height = height;
-    updatePointLayoutScale();
-    computeVoronoiDiagram();
+    if (currentScreen === "game") {
+      updateExperimentPointLayout();
+      computeVoronoiDiagram();
+    }
     clearDwellTimer();
     draw();
   });
@@ -818,7 +933,7 @@
       const y = ((pitch / maxPitch) + 0.5) * height;
 
       if (delaunay) {
-        activeIndex = delaunay.find(x, y);
+        activeIndex = findNearestSinePoint(x, y);
         window.activeIndex = activeIndex;
         checkDwellState();
         draw();
@@ -826,6 +941,8 @@
   }
 
   function showTaskDirections() {
+    updateCalibrationPointLayout();
+    computeVoronoiDiagram();
     taskDirectionsScreen.classList.remove('hidden');
     currentScreen = "task-directions";
   }
@@ -840,9 +957,10 @@
     taskDirectionsScreen.classList.add('hidden');
     breakScreen.classList.add('hidden');
 
-    document.getElementById('game-container')?.classList.remove('hidden');
-    hud.classList.remove('hidden');
+    updateExperimentPointLayout();
 
+    // document.getElementById('game-container')?.classList.remove('hidden');
+    hud.classList.remove('hidden');
     isStarted = true;
     window.isStarted = true;
     currentScreen = "game";

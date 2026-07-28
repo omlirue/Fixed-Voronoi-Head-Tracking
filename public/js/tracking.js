@@ -193,7 +193,10 @@ function updateCursorPosition(x, y) {
   //   cursorWithClipping.style.transform = "translate(-50%, -50%)";
   //   document.body.appendChild(cursorWithClipping);
   if (window.delaunay) {
-    window.activeIndex = window.delaunay.find(x, y);
+    // window.activeIndex = window.delaunay.find(x, y);
+    window.activeIndex = window.findNearestSinePoint 
+      ? window.findNearestSinePoint(x, y) 
+      : window.delaunay.find(x, y);
     if (typeof window.checkDwellState === "function") {
       window.checkDwellState();
     }
