@@ -46,7 +46,7 @@ function exportCalibrationData() {
     };
     const metadataLine = `#${JSON.stringify(metadata)}`;
 
-    // Calculate predictions for both 3-point and 6-point configurations
+    // Calculate predictions for 3-point
     const validData = state.dataCollection.calibrationData.map((frame) => {
   // Rotation-only prediction: rebuild [1, yaw, pitch, roll] and multiply
   // against the trained rotationOnly matrix.
@@ -147,9 +147,9 @@ window.exportCalibrationData = exportCalibrationData;
 const TASK_LOG_HEADERS = [
   "rowType", "timestamp", "participant", "condition", "round", "trialIndex",
   "selectedCell", "targetCell", "correct", "timeSincePreviousMs",
-  "reentries", "graceSaves", "dwellDurationMs",
+  "reentries", "graceSaves", "dwellDurationMs", "timeOutsideRegionSec",
   "totalTimeMs", "totalErrors", "totalCells", "meanTimePerCellMs",
-  "errorRate", "avgReentries", "avgGraceSaves",
+  "errorRate", "avgReentries", "avgGraceSaves", "avgTimeOutsideRegionSec",
   "dwellTimeThresholdMs", "wrongRegionDwellTimeMs", "gracePeriodMs", "timerContinueMs"
 ];
 
@@ -206,6 +206,9 @@ function logCellSelection({ round, trialIndex, selectedCell, targetCell, correct
     reentries: dwellStats.reentries,
     graceSaves: dwellStats.graceSaves,
     dwellDurationMs: dwellDurationMs !== undefined ? Math.round(dwellDurationMs) : "",
+    timeOutsideRegionSec: dwellStats.timeOutsideRegionMs !== undefined
+      ? Number((dwellStats.timeOutsideRegionMs / 1000).toFixed(3))
+      : "",
     dwellTimeThresholdMs: cfg.dwellTimeMs ?? "",
     wrongRegionDwellTimeMs: cfg.wrongRegionDwellTimeMs ?? "",
     gracePeriodMs: cfg.gracePeriodMs ?? "",
@@ -229,6 +232,7 @@ function finishTaskRun({ round, totalErrors, totalCells }) {
   const rowCount = roundRows.length || 1;
   const reentrySum = roundRows.reduce((sum, r) => sum + (r.reentries || 0), 0);
   const graceSaveSum = roundRows.reduce((sum, r) => sum + (r.graceSaves || 0), 0);
+  const timeOutsideRegionSum = roundRows.reduce((sum, r) => sum + (r.timeOutsideRegionSec || 0), 0);
 
   state.dataCollection.taskLog.push({
     rowType: "summary",
@@ -243,6 +247,7 @@ function finishTaskRun({ round, totalErrors, totalCells }) {
     errorRate: Number((totalErrors / totalCells).toFixed(4)),
     avgReentries: Number((reentrySum / rowCount).toFixed(3)),
     avgGraceSaves: Number((graceSaveSum / rowCount).toFixed(3)),
+    avgTimeOutsideRegionSec: Number((timeOutsideRegionSum / rowCount).toFixed(3)),
     dwellTimeThresholdMs: cfg.dwellTimeMs ?? "",
     wrongRegionDwellTimeMs: cfg.wrongRegionDwellTimeMs ?? "",
     gracePeriodMs: cfg.gracePeriodMs ?? "",
