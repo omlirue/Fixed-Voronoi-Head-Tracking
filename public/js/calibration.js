@@ -153,11 +153,6 @@ function recordCalibrationPoint(point) {
   }
 
   try {
-
-
-    // // Define landmark indices
-    // const threePointIndices = [1, 33, 263]; // nose tip, left eye, right eye
-    
     // Calculate head pose if rotation is enabled
     let headPose = null;
     if (window.estimateHeadPose) {
@@ -233,19 +228,6 @@ function recordCalibrationPoint(point) {
       progress: 1.0,
     };
 
-    // // Add 3-point landmark data - always include Z
-    // threePointIndices.forEach((index, i) => {
-    //   const landmark = state.lastLandmarks[index];
-    //   if (!landmark) {
-    //     throw new Error(`Missing landmark ${index} for 3-point configuration`);
-    //   }
-
-    //   frameData[`landmark3_${i}_x`] = landmark.x * window.innerWidth;
-    //   frameData[`landmark3_${i}_y`] = landmark.y * window.innerHeight;
-    //   frameData[`landmark3_${i}_z`] = landmark.z * 1000;
-    // });
-
-    
     // Add rotation data if rotation is enabled
     if (headPose && headPose.angles) {
       frameData.yaw = Math.round(headPose.angles.yaw * 1000) / 1000;
@@ -276,17 +258,11 @@ function getCSVHeaders() {
     "targetY",
     "targetXRel",  // Relative position (0-1) for cross-screen compatibility
     "targetYRel"   // Relative position (0-1) for cross-screen compatibility
-    // "isTransition" - removed as requested
   ];
 
-//Because we use are only using rotation only no need to include the 3-point landmark headers in the CSV
   headers.push("yaw");
   headers.push("pitch");
   headers.push("roll");
-
-  // Removed these configuration headers
-  // headers.push("coordinateSystem");
-  // headers.push("filterType");
 
   return headers;
 }
@@ -385,14 +361,6 @@ function finishCalibration() {
 
     // Update application state
     state.isCalibrating = false;
-
-    // Update status display
-    // const statusMessage = residualAnalysis
-    //   ? `Calibration complete - select an option (RMSE: ${residualAnalysis.rmse.toFixed(
-    //       2
-    //     )} px)`
-    //   : "Calibration complete - select an option";
-    // document.getElementById("status").textContent = statusMessage;
 
     console.log("Calibration completed successfully");
     
@@ -867,13 +835,7 @@ function startTracking() {
   } else {
     console.error("❌ window.updateCursor not available!");
   }
-  
-  // Update status with metrics if available
-  // const statusText = metrics ? 
-  //   `Tracking active (RMSE: ${metrics.rmse.toFixed(2)} px)` : 
-  //   "Tracking active";
-  // document.getElementById("status").textContent = statusText;
-  
+
   // Also display residuals in the corner
   displayTrackingResiduals(true);
 }
@@ -1055,23 +1017,6 @@ function displayTrackingResiduals(forceUpdate = false) {
         residualDisplay.style.zIndex = "1001";
         document.body.appendChild(residualDisplay);
       }
-      
-      // Format the residual information
-      // const activeConfig = state.config.landmarkPoints === "3" ? "3-point" : "6-point";
-      // const html = `
-      //   <div style="font-weight: bold; margin-bottom: 5px;">Calibration Quality (${activeConfig}):</div>
-      //   <div>RMSE: ${residualAnalysis.rmse.toFixed(2)} px</div>
-      //   <div>Mean Error: ${residualAnalysis.meanError.toFixed(2)} px</div>
-      //   <div>Max Error: ${residualAnalysis.maxError.toFixed(2)} px</div>
-      // `;
-      
-      // residualDisplay.innerHTML = html;
-      
-      // Also update the status message
-      // const statusElem = document.getElementById("status");
-      // if (statusElem) {
-      //   statusElem.textContent = `Tracking active using ${state.config.coordinateSystem.toUpperCase()} mode with ${state.config.landmarkPoints}-point tracking (RMSE: ${residualAnalysis.rmse.toFixed(2)} px)`;
-      // }
     }
     
     return residualAnalysis;
@@ -1120,13 +1065,7 @@ function updateTrackingControlsResiduals() {
         maxErrorElement.textContent = `Max Error: ${residualAnalysis.maxError.toFixed(2)} px`;
       }
     }
-    
-    // Also update the status message
-    // const statusElem = document.getElementById("status");
-    // if (statusElem) {
-    //   statusElem.textContent = `Tracking active using ${state.config.coordinateSystem.toUpperCase()} mode with ${state.config.landmarkPoints}-point tracking (RMSE: ${residualAnalysis.rmse.toFixed(2)} px)`;
-    // }
-    
+
     return residualAnalysis;
   } catch (error) {
     console.error("Error updating tracking controls residuals:", error);
@@ -1380,154 +1319,10 @@ function drawPredictionVisualization(container) {
   
   // Get actual calibration points
   const actualPoints = state.calibrationData.cursorPositions.map(pos => ({
-    x: pos[0][0], 
+    x: pos[0][0],
     y: pos[1][0]
   }));
-  
-  // Log available matrices at start
-  console.log("Available transformation matrices:", {
-    threePoint2d: !!state.transformationMatrices.threePoint2d,
-    sixPoint2d: !!state.transformationMatrices.sixPoint2d,
-    threePoint3d: !!state.transformationMatrices.threePoint3d,
-    sixPoint3d: !!state.transformationMatrices.sixPoint3d,
-    rotationOnly: !!state.transformationMatrices.rotationOnly
-  });
 
-  // Function to predict positions using different configurations
-  const getPredictedPositions = (point, landmarks, dimensions) => {
-    // Store original config
-    const originalConfig = { ...state.config };
-    
-    try {
-      // Set configuration temporarily
-      state.config.landmarkPoints = landmarks;
-      state.config.coordinateSystem = dimensions;
-      
-      // Get appropriate landmarks for this point
-      const pointIndex = actualPoints.findIndex(p => p.x === point.x && p.y === point.y);
-      if (pointIndex === -1) {
-        console.warn(`Point not found for ${dimensions} ${landmarks}-point prediction`);
-        return null;
-      }
-      
-      // Get landmark vector based on configuration
-      let landmarkData;
-      if (dimensions === "2d") {
-        // For 2D, extract only X, Y components from our 3D data
-        const sourceData = landmarks === "3" ? 
-          state.calibrationData.landmarkPoints3[pointIndex] : 
-          state.calibrationData.landmarkPoints6[pointIndex];
-        
-        if (!sourceData || !sourceData.length) {
-          console.warn(`No source data for ${dimensions} ${landmarks}-point at index ${pointIndex}`);
-          return null;
-        }
-        
-        const numLandmarks = landmarks === "3" ? 3 : 6;
-        landmarkData = [];
-        
-        // CRITICAL: Add bias term first (matrices were trained with bias)
-        landmarkData.push([1.0]);
-        
-        for (let i = 0; i < numLandmarks; i++) {
-          // For each landmark, extract only X, Y and their quadratic terms
-          const baseIndex = i * 6;
-          if (baseIndex + 4 >= sourceData.length) {
-            console.warn(`Source data too short for ${dimensions} ${landmarks}-point: need index ${baseIndex + 4}, have ${sourceData.length}`);
-            return null;
-          }
-          landmarkData.push([sourceData[baseIndex][0]]);     // x
-          landmarkData.push([sourceData[baseIndex + 1][0]]); // y
-          landmarkData.push([sourceData[baseIndex + 3][0]]); // x²
-          landmarkData.push([sourceData[baseIndex + 4][0]]); // y²
-        }
-        
-        // DO NOT add rotation terms for 2D predictions - they're not in the 2D matrix
-        // The 2D matrices were calculated without rotation terms
-      } else {
-        // For 3D, get landmark data (strip rotation terms if present)
-        const sourceData3D = landmarks === "3" ? 
-          state.calibrationData.landmarkPoints3[pointIndex] : 
-          state.calibrationData.landmarkPoints6[pointIndex];
-          
-        if (!sourceData3D || !sourceData3D.length) {
-          console.warn(`No landmark data for ${dimensions} ${landmarks}-point at index ${pointIndex}`);
-          return null;
-        }
-        
-        // Strip rotation terms - 3D matrices use only landmark terms (x, y, z, x², y², z² per landmark)
-        const numLandmarks3D = landmarks === "3" ? 3 : 6;
-        const expectedLandmarkTerms = numLandmarks3D * 6;
-        
-        // CRITICAL: Add bias term first (matrices were trained with bias)
-        landmarkData = [[1.0]];
-        
-        // Add landmark data (without rotation terms)
-        const landmarkOnly = sourceData3D.length > expectedLandmarkTerms 
-          ? sourceData3D.slice(0, expectedLandmarkTerms)
-          : sourceData3D;
-        
-        landmarkData = landmarkData.concat(landmarkOnly);
-      }
-      
-      // Get appropriate matrix
-      let matrix;
-      let matrixName;
-      if (dimensions === "2d") {
-        if (landmarks === "3") {
-          matrix = state.transformationMatrices.threePoint2d;
-          matrixName = "threePoint2d";
-        } else {
-          matrix = state.transformationMatrices.sixPoint2d;
-          matrixName = "sixPoint2d";
-        }
-      } else {
-        if (landmarks === "3") {
-          matrix = state.transformationMatrices.threePoint3d;
-          matrixName = "threePoint3d";
-        } else {
-          matrix = state.transformationMatrices.sixPoint3d;
-          matrixName = "sixPoint3d";
-        }
-      }
-      
-      if (!matrix) {
-        if (pointIndex === 0) {
-          console.warn(`Matrix ${matrixName} not available for ${dimensions} ${landmarks}-point prediction`);
-        }
-        return null;
-      }
-      
-      // Verify dimensions match
-      const matrixCols = matrix[0] ? matrix[0].length : 0;
-      const vectorRows = landmarkData.length;
-      
-      if (matrixCols !== vectorRows) {
-        if (pointIndex === 0) {
-          console.warn(`Dimension mismatch for ${dimensions} ${landmarks}-point: matrix expects ${matrixCols} cols, vector has ${vectorRows} rows`);
-        }
-        return null;
-      }
-      
-      // Calculate predicted position
-      const P = math.matrix(landmarkData);
-      const B = math.matrix(matrix);
-      const Q = math.multiply(B, P);
-      const position = Q.toArray();
-      
-      return {
-        x: position[0][0],
-        y: position[1][0]
-      };
-    } catch (error) {
-      console.error(`Error calculating prediction for ${dimensions} ${landmarks}-point:`, error);
-      return null;
-    } finally {
-      // Restore original config
-      state.config = { ...originalConfig };
-    }
-  };
-  
   // Function to predict positions using rotation-only mode
   const getRotationOnlyPrediction = (pointIndex) => {
     try {
@@ -1582,58 +1377,7 @@ function drawPredictionVisualization(container) {
     actualPoint.appendChild(pointLabel);
     
     container.appendChild(actualPoint);
-    
-    // Get and draw predicted positions for standard configurations
-    const configurations = [
-      { landmarks: "3", dimensions: "2d", color: "red", cssClass: "prediction-2d-3" },
-      { landmarks: "6", dimensions: "2d", color: "green", cssClass: "prediction-2d-6" },
-      { landmarks: "3", dimensions: "3d", color: "blue", cssClass: "prediction-3d-3" },
-      { landmarks: "6", dimensions: "3d", color: "purple", cssClass: "prediction-3d-6" }
-    ];
-    
-    configurations.forEach(config => {
-      const prediction = getPredictedPositions(point, config.landmarks, config.dimensions);
-      
-      if (prediction) {
-        const predictionPoint = document.createElement("div");
-        predictionPoint.className = config.cssClass;
-        predictionPoint.style.position = "absolute";
-        predictionPoint.style.left = `${prediction.x}px`;
-        predictionPoint.style.top = `${prediction.y}px`;
-        predictionPoint.style.width = `${predictionSize}px`;
-        predictionPoint.style.height = `${predictionSize}px`;
-        predictionPoint.style.backgroundColor = config.color;
-        predictionPoint.style.borderRadius = "50%";
-        predictionPoint.style.transform = "translate(-50%, -50%)";
-        predictionPoint.style.zIndex = "1001";
-        
-        container.appendChild(predictionPoint);
-        
-        // Draw line connecting actual point to prediction
-        const line = document.createElement("div");
-        line.className = config.cssClass;
-        line.style.position = "absolute";
-        line.style.zIndex = "1000";
-        
-        // Line geometry calculations
-        const dx = prediction.x - point.x;
-        const dy = prediction.y - point.y;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        line.style.width = `${length}px`;
-        line.style.height = "1px";
-        line.style.backgroundColor = config.color;
-        line.style.opacity = "0.4";
-        line.style.left = `${point.x}px`;
-        line.style.top = `${point.y}px`;
-        line.style.transformOrigin = "left center";
-        line.style.transform = `rotate(${angle}deg)`;
-        
-        container.appendChild(line);
-      }
-    });
-    
+
     // Draw rotation-only prediction
     const rotationPrediction = getRotationOnlyPrediction(index);
     if (rotationPrediction) {

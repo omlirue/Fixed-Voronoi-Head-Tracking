@@ -49,24 +49,18 @@ if (typeof window !== 'undefined' && !window.state) {
           coordinateSystem: "2d",
           landmarkPoints: "3",
           animationStyle: "without-line",
-        //   filterType: "exponential",
           useRotation: true,
           rotationOnlyMode: true
       },
 
-      // Calibration data for both 3 and 6 point systems
       calibrationData: {
-          landmarkPoints3: [],
-        //   landmarkPoints6: [],
           cursorPositions: [],
           calibrationWidth: null,    // Store calibration window width
           calibrationHeight: null    // Store calibration window height
       },
 
-      // Transformation matrices for both configurations
       transformationMatrices: {
-          threePoint: null,
-        //   sixPoint: null
+          rotationOnly: null
       },
 
       // Cursor tracking state

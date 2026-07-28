@@ -469,6 +469,7 @@
     updatePointLayoutScale();
     computeVoronoiDiagram();
     updateHUD();
+    if (window.resetErrorGate) window.resetErrorGate();
     checkDwellState();
     draw();
     if (window.startTaskRun) window.startTaskRun();
@@ -846,6 +847,7 @@
     isStarted = true;
     window.isStarted = true;
     currentScreen = "game";
+    if (window.resetErrorGate) window.resetErrorGate();
     updateHUD();
     draw();
     if (window.startTaskRun) window.startTaskRun();
