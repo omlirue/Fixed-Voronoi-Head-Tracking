@@ -30,11 +30,7 @@ let outsideRegionLastFrameTime = null;
 // otherwise.
 let trackingLostSince = null;
 
-// Gates wrong-region error selections until the participant has actually
-// reached the intended target region once. Without this, whatever cell the
-// participant's head/cursor happens to be over the instant a round starts
-// (before they've even located the highlighted target) can dwell-select as
-// an error a few hundred ms in.
+// Without this, whatever cell the participant's head happens to be over the instant a round startsb again
 let hasEnteredTargetRegion = false;
 
 function resetErrorGate() {
@@ -49,11 +45,10 @@ window.DWELL_CONFIG = {
   timerContinueMs: TIMER_CONTINUE_MS
 };
 
-// Rolling history of raw region hits, used to resolve border flicker: so when it is in a border
+//  history of raw region hits, used to resolve border flicker: so when it is in a border
 //it checks its previous regions for unwanted clicks 
 let regionHistory = []; // { index, time }, oldest first
-let wasOnBorder = false; // gates the border-flicker log to its rising edge only
-
+let wasOnBorder = false; // gates the border-flicker log 
 function resetDwellProgress() {
   dwellTargetIndex = null;
   dwellAccumulatedMs = 0;
@@ -81,13 +76,7 @@ function recordRegionSample(rawIndex, now) {
   }
 }
 
-// How long the raw signal has to hold steady at its current index before
-// resolveBorderRegion trusts it outright. Real border flicker flips back and
-// forth within a frame or two; a run this long means the participant has
-// actually settled somewhere, and shouldn't be overridden by older history
-// (that was masking genuine target arrivals/departures for up to
-// GRACE_PERIOD_MS, sometimes flipping the dwell candidate to a stale cell
-// well after the participant had already moved on).
+//helps with flickering 
 const CURRENT_RUN_TRUST_MS = 120;
 
 // Resolves which region the current tick should count toward.
@@ -99,8 +88,7 @@ function resolveBorderRegion(rawIndex, now) {
   if (isStable) return rawIndex;
 
   // regionHistory's last entry is always this frame's rawIndex (recorded
-  // just before this call) — walk back while the run continues, and trust
-  // it immediately once it's held long enough to not be mere jitter.
+  // just before this call)
   let runStartIdx = regionHistory.length - 1;
   while (runStartIdx > 0 && regionHistory[runStartIdx - 1].index === rawIndex) {
     runStartIdx--;
@@ -142,9 +130,8 @@ function dwellTimeThresholdFor(index) {
 // helps the glowing process actually happen
 function getDwellProgress() {
   if (dwellTargetIndex === null) return { targetIndex: null, progress: 0 };
-  // Freeze the visible progress at the instant tracking was lost, rather
-  // than letting it silently keep climbing (or snapping back later) while
-  // there's no real signal underneath it.
+  // Freeze the progress at the instant tracking was lost, rather
+  // than letting it silently keep climbing
   const now = trackingLostSince !== null ? trackingLostSince : performance.now();
   const running = segmentStartTime !== null ? (now - segmentStartTime) : 0;
   const total = dwellAccumulatedMs + running;
@@ -177,9 +164,7 @@ function checkDwellState() {
     hasEnteredTargetRegion = true;
   }
 
-  // A new trial starts as soon as the designated target changes — reset the
-  // outside-region clock for it. Uses the raw, unsmoothed signal so it's a
-  // ground-truth measurement, unaffected by the dwell-selection smoothing.
+  // A new trial starts as soon as the designated target changes .
   if (targetIndex !== outsideRegionTargetIndex) {
     outsideRegionTargetIndex = targetIndex;
     outsideRegionMs = 0;
@@ -193,14 +178,6 @@ function checkDwellState() {
   }
   outsideRegionLastFrameTime = now;
 
-  // A tracking dropout (no valid region at all) must never cost — or grant —
-  // dwell progress. While it lasts, freeze the candidate state machine
-  // completely (nothing below this point runs). Once a valid reading
-  // returns, retroactively erase the gap by shifting the affected clocks
-  // forward by its length, so the rest of this frame runs exactly as if no
-  // time had passed during the dropout. Without this, a dropout could
-  // either force an unfair reset, or — if simply ignored — hand out free
-  // completion credit for however long tracking was lost.
   if (!hasValidTrueRegion) {
     if (trackingLostSince === null) trackingLostSince = now;
     return;
@@ -212,12 +189,7 @@ function checkDwellState() {
     trackingLostSince = null;
   }
 
-  // Only valid cells feed the border-flicker history/smoothing — it exists to
-  // resolve jitter between adjacent valid cells, not to decide whether the
-  // participant is looking at the screen at all. Letting -1 (no region, i.e.
-  // a genuine look-away) pass through it let stale on-target history mask
-  // real departures/returns for hundreds of ms, which made the grace-save
-  // window (500-700ms away) practically unreachable.
+ 
   recordRegionSample(trueRawIndex, now);
   const rawIndex = isWrongRegion ? trueRawIndex : resolveBorderRegion(trueRawIndex, now);
   const onBorder = rawIndex !== trueRawIndex;
@@ -298,11 +270,7 @@ function checkDwellState() {
   }
 
   if (awayElapsed >= GRACE_PERIOD_MS) {
-    // By now the participant has been unambiguously away for a full
-    // GRACE_PERIOD_MS — the border-flicker smoothing's trailing-window
-    // history is stale at this point (it can still be dominated by wherever
-    // they were before this departure) and arming the new candidate from it
-    // could pick the wrong cell entirely. Trust the raw, current signal.
+   
     if (hasValidTrueRegion) {
       console.log(`[dwell] RESET (grace expired, away ${awayElapsed.toFixed(0)}ms) — lost ${dwellAccumulatedMs.toFixed(0)}ms that was banked on ${dwellTargetIndex}, new candidate ${trueRawIndex}`);
       startNewCandidate(trueRawIndex, now);
