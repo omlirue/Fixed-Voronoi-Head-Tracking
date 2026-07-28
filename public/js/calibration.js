@@ -1,9 +1,7 @@
 function startCalibration() {
   console.log("Starting calibration with config:", state.config);
 
-  // Hide the system/mouse cursor for the rest of the session. Participants
-  // use head tracking, not a mouse — the arrow pointer just sits on screen
-  // doing nothing and is distracting.
+
   document.body.classList.add('hide-cursor');
 
   state.isCalibrating = true;
@@ -14,7 +12,7 @@ function startCalibration() {
   state.calibrationData = {
     cursorPositions: [],
     frames: [],
-    calibrationWidth: window.innerWidth,   // Store current window dimensions
+    calibrationWidth: window.innerWidth,   // Stores current window dimensions
     calibrationHeight: window.innerHeight,
     rotationOnlyPoints: []  // Initialize rotation-only array
   };
@@ -32,8 +30,8 @@ function startCalibration() {
   state.currentPosition = null;
   state.isLineAnimating = false;
 
-  // CRITICAL FIX: Reset rotation state for clean calibration
-  state.smoothedAngles = null;  // Legacy (no longer used, but kept for compatibility)
+
+  state.smoothedAngles = null;  // Legacy kept for compatibility
   state.lastRawAngles = null;    // Current fallback angles
   window._lastAngles = null;     // Reset angle unwrapping state
   window.estimatedFocalLength = null; // Reset focal length for new calibration
@@ -75,8 +73,6 @@ function showNextCalibrationPoint() {
 
   const calibrationUI = document.getElementById("calibration-ui");
 
-  // Remove any leftover "Move here" hint from the previous target before
-  // we render the new one.
   const existingHint = calibrationUI.querySelector('.calibration-hint');
   if (existingHint) existingHint.remove();
 
