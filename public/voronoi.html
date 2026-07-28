@@ -832,30 +832,23 @@
   window.showTaskDirections = showTaskDirections;
 
   function revealGame() {
-  hud.classList.remove('hidden');
-  isStarted = true;
-  window.isStarted = true;
-  currentScreen = "game";
-  updateHUD();
-  draw();
-  if (window.startTaskRun) window.startTaskRun();
-}
-window.revealGame = revealGame;
     if (currentScreen === "calibrating") {
       showTaskDirections();
       return;
     }
+
     taskDirectionsScreen.classList.add('hidden');
     breakScreen.classList.add('hidden');
 
     document.getElementById('game-container')?.classList.remove('hidden');
     hud.classList.remove('hidden');
-    
+
     isStarted = true;
     window.isStarted = true;
     currentScreen = "game";
     updateHUD();
     draw();
+    if (window.startTaskRun) window.startTaskRun();
   }
   window.revealGame = revealGame;
 
