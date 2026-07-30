@@ -318,17 +318,17 @@
           </div>
       </div>
 
-      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are two rounds with a short break in between.</p>
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are two rounds with a short break in between, followed by a repeat of both rounds with no grace period for look-aways.</p>
       <button id="task-directions-button" class="start-button">Start Round 1 →</button>
       <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
   </div> 
 
   <div id="break-screen" class="overlay-screen hidden">
-    <h1 style="margin-bottom: 6px;">Round 1 Complete</h1>
+    <h1 id="break-title" style="margin-bottom: 6px;">Round 1 Complete</h1>
     <p style="color: #888; font-size: 15px; margin-bottom: 32px;">Take a moment to rest before continuing.</p>
 
     <div style="max-width: 420px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 24px 32px; margin-bottom: 32px;">
-        <p style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.</p>
+        <p id="break-body" style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.</p>
     </div>
 
     <button id="break-button" class="start-button">Continue to Round 2 →</button>
@@ -391,13 +391,16 @@
   let erroredCellsMap = {}; // Maps cell indices to error state boolean
   let checkTargetIndex = null;
   
-  // Both rounds execute sequential 0 -> 19 vertical snake paths
+  // All rounds execute sequential 0 -> 19 vertical snake paths. Rounds 3/4
+  // repeat rounds 1/2's trials verbatim (same sequence, same point layout)
+  // with the dwell grace period dropped to 0 — see getActiveSequence() and
+  // updateExperimentPointLayout(), both keyed off currentRound % 2.
   const sequenceRound1 = Array.from({ length: 20 }, (_, i) => i);
   const sequenceRound2 = Array.from({ length: 20 }, (_, i) => i);
 
-//Gets the seqence of the two trials
+//Gets the seqence of the current trial (round 3 reuses round 1's sequence, round 4 reuses round 2's)
   function getActiveSequence() {
-    return currentRound === 1 ? sequenceRound1 : sequenceRound2;
+    return currentRound % 2 === 1 ? sequenceRound1 : sequenceRound2;
   }
 
   // Lets dwell++.js tell the correct region apart from a wrong one, so it
@@ -447,11 +450,12 @@
     const amplitude = height * 0.22;
     const xSpread = width * 0.48;
     const nPoints = 20;
-    const phase = currentRound === 1 ? 0 : Math.PI;
+    const isOddRound = currentRound % 2 === 1;
+    const phase = isOddRound ? 0 : Math.PI;
 
     const sinePoints = [];
 
-    if (currentRound === 1) {
+    if (isOddRound) {
       for (let i = 0; i < nPoints; i++) {
         const t = i / (nPoints - 1);
         const x = cx - xSpread + t * xSpread * 2;
@@ -459,7 +463,7 @@
         sinePoints.push([x, y]);
       }
     }
-    else if (currentRound === 2) { // curve is transformed slightly and inverted
+    else { // curve is transformed slightly and inverted
       for (let i = 0; i < nPoints; i++) {
         const t = i / (nPoints - 1);
         const x = cx - xSpread + t * xSpread * 2;
@@ -543,20 +547,52 @@
     hudRoundLabel.innerText = `Round ${currentRound} Progress`;
   }
 
-  function loadSecondVoronoiMap() {
+  const breakTitleEl = document.getElementById('break-title');
+  const breakBodyEl = document.getElementById('break-body');
+
+  // Rounds 3/4 repeat rounds 1/2's trials with the dwell grace period
+  // dropped to 0 (see dwell++.js setGracePeriodMs) — otherwise identical.
+  const BREAK_SCREEN_TEXT = {
+    2: {
+      title: 'Round 1 Complete',
+      body: "Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.",
+      button: 'Continue to Round 2 →'
+    },
+    3: {
+      title: 'Round 2 Complete',
+      body: "Rounds 3 and 4 repeat the same two trials you just did, but this time there will be no grace period. When you're ready, press Continue.",
+      button: 'Continue to Round 3 →'
+    },
+    4: {
+      title: 'Round 3 Complete',
+      body: "Round 4 follows the same format as Round 3. When you're ready, press Continue.",
+      button: 'Continue to Round 4 →'
+    }
+  };
+
+  function loadNextRound(nextRound) {
     hud.classList.add('hidden');
     isStarted = false;
     window.isStarted = false;
     breakScreen.classList.remove('hidden');
     currentScreen = "break";
 
-    currentRound = 2;
+    const text = BREAK_SCREEN_TEXT[nextRound];
+    if (text) {
+      breakTitleEl.textContent = text.title;
+      breakBodyEl.textContent = text.body;
+      breakBtn.textContent = text.button;
+    }
+
+    currentRound = nextRound;
     currentTrialIndex = 0;
     roundErrors = 0;
     erroredCellsMap = {};
 
-    // updatePointLayoutScale();
-    // computeVoronoiDiagram();
+    if (nextRound === 3 && window.setGracePeriodMs) {
+      window.setGracePeriodMs(0);
+    }
+
     updateHUD();
     if (window.resetErrorGate) window.resetErrorGate();
     checkDwellState();
@@ -753,7 +789,15 @@
     const activeSequencePosition = sequence.indexOf(activeIndex);
 
     if (activeIndex === currentTargetIndex) {
-      // Correct cell selected
+      // Correct cell selected, but too much back-and-forth before confirming
+      // still counts against them.
+      const excessiveReentries = (dwellStats.reentries || 0) > 3;
+      if (excessiveReentries && !erroredCellsMap[activeIndex]) {
+        erroredCellsMap[activeIndex] = true;
+        totalErrors++;
+        roundErrors++;
+      }
+
       if (window.logCellSelection) {
         window.logCellSelection({
           round: currentRound,
@@ -761,6 +805,8 @@
           selectedCell: activeIndex,
           targetCell: currentTargetIndex,
           correct: true,
+          excessiveReentries,
+          reentries: dwellStats.reentries,
           dwellDurationMs: dwellStats.dwellDurationMs
         });
       }
@@ -771,17 +817,15 @@
         checkDwellState();
         draw();
       } else {
-        // Finished Round 1
-        if (currentRound === 1) {
-          if (window.finishTaskRun) {
-            window.finishTaskRun({ round: 1, totalErrors: roundErrors, totalCells: sequence.length });
-          }
-          loadSecondVoronoiMap();
+        // Finished this round
+        if (window.finishTaskRun) {
+          window.finishTaskRun({ round: currentRound, totalErrors: roundErrors, totalCells: sequence.length });
+        }
+
+        if (currentRound < 4) {
+          loadNextRound(currentRound + 1);
         } else {
-          // Finished Round 2
-          if (window.finishTaskRun) {
-            window.finishTaskRun({ round: 2, totalErrors: roundErrors, totalCells: sequence.length });
-          }
+          // Finished Round 4 (the zero-grace-period repeat of Round 2)
           if (window.exportTaskData) window.exportTaskData();
 
           isStarted = false;
@@ -844,7 +888,6 @@
     } 
     else if (currentScreen === "break") {
       breakScreen.classList.add('hidden');
-      loadSecondVoronoiMap();
       revealGame();
     }
   }

@@ -1,6 +1,6 @@
 const DWELL_TIME_MS = 1000;
 const WRONG_REGION_DWELL_TIME_MS = 300; // flat, non-smoothed dwell time for a region that isn't the current target
-const GRACE_PERIOD_MS = 700;   // how long the target stays "live" (and glowing) after gaze leaves it
+let GRACE_PERIOD_MS = 700;   // how long the target stays "live" (and glowing) after gaze leaves it — mutable so trials 3/4 can drop it to 0
 const TIMER_CONTINUE_MS = 500; // look-aways shorter than this don't even pause the dwell timer
 
 let dwellTargetIndex = null;
@@ -8,26 +8,17 @@ let dwellAccumulatedMs = 0;
 let segmentStartTime = null;
 let awayStartTime = null;
 
-// Per-candidacy jitter counters, surfaced in window.lastDwellStats when a
-// selection fires so dataCollection.js can log them alongside that row.
+// so dataCollection.js can log them alongside that row.
 let candidateReentries = 0;
 let candidateGraceSaves = 0;
 
 let lastConfirmedIndex = null;
 
-// Per-trial "time spent outside the designated target region," in ms.
-// Independent of the dwell-candidate machinery above and the border-flicker
-// smoothing below (reads the raw, unsmoothed signal) — resets only when the
-// actual target index changes (a new trial begins), so repeated wrong-cell
-// attempts within the same trial keep accumulating instead of resetting.
 let outsideRegionMs = 0;
 let outsideRegionTargetIndex = null;
 let outsideRegionLastFrameTime = null;
 
-// When tracking drops out entirely (no valid region), the dwell-candidate
-// clocks freeze rather than run — see the freeze/shift logic in
-// checkDwellState(). Set for the duration of the current dropout, null
-// otherwise.
+//To not let tracking stop dwell
 let trackingLostSince = null;
 
 // Without this, whatever cell the participant's head happens to be over the instant a round startsb again
@@ -37,6 +28,12 @@ function resetErrorGate() {
   hasEnteredTargetRegion = false;
 }
 window.resetErrorGate = resetErrorGate;
+
+function setGracePeriodMs(ms) {
+  GRACE_PERIOD_MS = ms;
+  window.DWELL_CONFIG.gracePeriodMs = ms;
+}
+window.setGracePeriodMs = setGracePeriodMs;
 
 window.DWELL_CONFIG = {
   dwellTimeMs: DWELL_TIME_MS,
