@@ -1,9 +1,7 @@
 function startCalibration() {
   console.log("Starting calibration with config:", state.config);
 
-  // Hide the system/mouse cursor for the rest of the session. Participants
-  // use head tracking, not a mouse — the arrow pointer just sits on screen
-  // doing nothing and is distracting.
+
   document.body.classList.add('hide-cursor');
 
   state.isCalibrating = true;
@@ -14,12 +12,12 @@ function startCalibration() {
   state.calibrationData = {
     cursorPositions: [],
     frames: [],
-    calibrationWidth: window.innerWidth,   // Store current window dimensions
+    calibrationWidth: window.innerWidth,   // Stores current window dimensions
     calibrationHeight: window.innerHeight,
     rotationOnlyPoints: []  // Initialize rotation-only array
   };
   state.transformationMatrices = {
-    rotationOnlyPoints: null,
+    rotationOnly: null,
   };
   
     console.log("🔬 ROTATION-ONLY MODE ENABLED - Will collect rotation data");
@@ -32,8 +30,8 @@ function startCalibration() {
   state.currentPosition = null;
   state.isLineAnimating = false;
 
-  // CRITICAL FIX: Reset rotation state for clean calibration
-  state.smoothedAngles = null;  // Legacy (no longer used, but kept for compatibility)
+
+  state.smoothedAngles = null;  // Legacy kept for compatibility
   state.lastRawAngles = null;    // Current fallback angles
   window._lastAngles = null;     // Reset angle unwrapping state
   window.estimatedFocalLength = null; // Reset focal length for new calibration
@@ -41,6 +39,9 @@ function startCalibration() {
 
   // Generate grid points before showing the first point
   generateGridPoints();
+
+  const artboard = document.getElementById("artboard");
+  if (artboard) artboard.classList.add("hidden");
 
   // Show calibration UI elements
   const calibrationUI = document.getElementById("calibration-ui");
@@ -63,159 +64,6 @@ function startCalibration() {
   console.log("Calibration started successfully");
 }
 
-// function recordFrame(startPoint, endPoint, progress, frameIndex) {
-//   if (!state.lastLandmarks) {
-//     console.warn("No landmarks available for recording");
-//     return;
-//   }
-
-//   const currentTime = performance.now();
-//   const targetX = startPoint.x + (endPoint.x - startPoint.x) * progress;
-//   const targetY = startPoint.y + (endPoint.y - startPoint.y) * progress;
-
-//   // Calculate head pose (yaw, pitch, roll) if rotation is enabled
-//   let headPose = null;
-//   if (state.config.useRotation && window.estimateHeadPose) {
-//     // IMPORTANT: Use stored calibration dimensions for consistency
-//     const calibrationWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-//     const calibrationHeight = state.calibrationData.calibrationHeight || window.innerHeight;
-//     headPose = estimateHeadPose(state.lastLandmarks, calibrationWidth, calibrationHeight);
-    
-//     // Estimate focal length from first frame of calibration
-//     if (frameIndex === 0 && !window.estimatedFocalLength && window.estimateFocalLengthFromFaceSize) {
-//       const estimatedFx = estimateFocalLengthFromFaceSize(state.lastLandmarks, calibrationWidth);
-//       if (estimatedFx && estimatedFx > 0) {
-//         window.estimatedFocalLength = estimatedFx;
-//         console.log(`🎯 Auto-detected focal length: ${estimatedFx.toFixed(0)} pixels (${(estimatedFx/calibrationWidth).toFixed(2)}x screen width)`);
-//       }
-//     }
-//   }
-
-//   // Create base frame data
-//   // Get calibration dimensions for relative coordinates
-//   const calWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-//   const calHeight = state.calibrationData.calibrationHeight || window.innerHeight;
-  
-//   const frameData = {
-//     videoNumber: state.dataCollection.videoNumber,
-//     calibrationPointNumber: state.currentCalibrationPoint + 1,
-//     timestamp: currentTime,
-//     frameIndex: frameIndex,
-//     targetX: targetX,
-//     targetY: targetY,
-//     targetXRel: targetX / calWidth,   // Relative position (0-1) for cross-screen compatibility
-//     targetYRel: targetY / calHeight,  // Relative position (0-1) for cross-screen compatibility
-//   };
-  
-//   // Add rotation angles if rotation is enabled
-//   if (state.config.useRotation) {
-//     if (headPose && headPose.angles) {
-//       frameData.yaw = Math.round(headPose.angles.yaw * 1000) / 1000;  // degrees
-//       frameData.pitch = Math.round(headPose.angles.pitch * 1000) / 1000;
-//       frameData.roll = Math.round(headPose.angles.roll * 1000) / 1000;
-//     } else {
-//       // Default to 0 if rotation estimation failed
-//       frameData.yaw = 0;
-//       frameData.pitch = 0;
-//       frameData.roll = 0;
-//     }
-//   }
-
-//   frameData.progress = progress;
-
-//   // Add to data collection for CSV
-//   state.dataCollection.calibrationData.push(frameData);
-
-//   // ROTATION-ONLY MODE: Create vectors with ONLY rotation components
-//   if (state.config.rotationOnlyMode) {
-//     // Create rotation-only vectors (Bias, yaw, pitch, roll) - 4 features
-//     let rotationOnlyVector = [];
-    
-//     if (headPose && headPose.angles) {
-//       const DEG2RAD = Math.PI / 180;
-//       const ANGLE_SCALE = 1000;
-      
-//       // Rotation gain based on screen width (larger screens need more amplification)
-//       const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-//       const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5)); // 1.0x for laptops, 2.0x for 2560px, 3.0x for 3840px
-      
-//       const yaw = headPose.angles.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-//       const pitch = headPose.angles.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-//       const roll = headPose.angles.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-      
-//       rotationOnlyVector.push([1.0]); // Bias term
-//       rotationOnlyVector.push([yaw]);
-//       rotationOnlyVector.push([pitch]);
-//       rotationOnlyVector.push([roll]);
-      
-//       if (frameIndex === 0) {
-//         console.log("🔬 Rotation-only data collected (4 features):", {
-//           yaw: headPose.angles.yaw.toFixed(2),
-//           pitch: headPose.angles.pitch.toFixed(2),
-//           roll: headPose.angles.roll.toFixed(2),
-//           rotationGain: ROTATION_GAIN.toFixed(2) + 'x',
-//           vectorLength: rotationOnlyVector.length
-//         });
-//       }
-//       } else {
-//         // Use last known good angles for rotation-only calibration
-//         const lastAngles = state.smoothedAngles || { yaw: 0, pitch: 0, roll: 0 };
-//         const DEG2RAD = Math.PI / 180;
-//         const ANGLE_SCALE = 1000;
-        
-//         const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-//         const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
-        
-//         rotationOnlyVector.push([1.0]); // Bias
-//         rotationOnlyVector.push([lastAngles.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]);
-//         rotationOnlyVector.push([lastAngles.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]);
-//         rotationOnlyVector.push([lastAngles.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]);
-      
-//       console.warn("⚠️ No head pose data for rotation-only mode! Using last good angles.");
-//     }
-    
-//     // Store rotation-only data
-//     if (!state.calibrationData.rotationOnlyPoints) {
-//       state.calibrationData.rotationOnlyPoints = [];
-//     }
-//     state.calibrationData.rotationOnlyPoints.push(rotationOnlyVector);
-    
-//     if (frameIndex === 0) {
-//       console.log(`🔬 Rotation-only points collected so far: ${state.calibrationData.rotationOnlyPoints.length}`);
-//     }
-//   }
-
-//   state.calibrationData.cursorPositions.push([[targetX], [targetY]]);
-  
-//   // Mark end points (when progress = 1)
-//   if (progress === 1) {
-//     // Create the arrays if they don't exist yet
-//     if (!state.calibrationData.endPointIndices) {
-//       state.calibrationData.endPointIndices = [];
-//     }
-//     // Store the index of this end point
-//     state.calibrationData.endPointIndices.push(state.calibrationData.cursorPositions.length - 1);
-//   }
-
-//   if (state.lastLandmarks) {
-//     const landmarks = state.lastLandmarks;
-//     // Get calibration dimensions for relative coordinates
-//     const calWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-//     const calHeight = state.calibrationData.calibrationHeight || window.innerHeight;
-    
-//     const frame = {
-//       timestamp: Date.now(),
-//       frameIndex: frameIndex,
-//       targetX: targetX,
-//       targetY: targetY,
-//       targetXRel: targetX / calWidth,   // Relative position (0-1) for cross-screen compatibility
-//       targetYRel: targetY / calHeight   // Relative position (0-1) for cross-screen compatibility
-//     };
-
-//     state.calibrationData.frames.push(frame);
-//   }
-//}
-
 function showNextCalibrationPoint() {
   const point = getNextGridPosition();
   if (!point) {
@@ -225,8 +73,6 @@ function showNextCalibrationPoint() {
 
   const calibrationUI = document.getElementById("calibration-ui");
 
-  // Remove any leftover "Move here" hint from the previous target before
-  // we render the new one.
   const existingHint = calibrationUI.querySelector('.calibration-hint');
   if (existingHint) existingHint.remove();
 
@@ -303,11 +149,6 @@ function recordCalibrationPoint(point) {
   }
 
   try {
-
-
-    // // Define landmark indices
-    // const threePointIndices = [1, 33, 263]; // nose tip, left eye, right eye
-    
     // Calculate head pose if rotation is enabled
     let headPose = null;
     if (window.estimateHeadPose) {
@@ -334,51 +175,27 @@ function recordCalibrationPoint(point) {
     
     // ROTATION-ONLY MODE: Create vectors with ONLY rotation components
     if (state.config.rotationOnlyMode) {
-      // Create rotation-only vectors (Bias, yaw, pitch, roll) - 4 features
-      let rotationOnlyVector = [];
-      
-      if (headPose && headPose.angles) {
-        const DEG2RAD = Math.PI / 180;
-        const ANGLE_SCALE = 1000;
-        
-        // Rotation gain based on screen width (larger screens need more amplification)
-        const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-        const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
-        
-        const yaw = headPose.angles.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-        const pitch = headPose.angles.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-        const roll = headPose.angles.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN;
-        
-        rotationOnlyVector.push([1.0]); // Bias
-        rotationOnlyVector.push([yaw]);
-        rotationOnlyVector.push([pitch]);
-        rotationOnlyVector.push([roll]);
-        
-        console.log("🔬 Rotation-only data collected (4 features):", {
-          pointNumber: state.gridConfig.currentIndex + 1,
-          yaw: headPose.angles.yaw.toFixed(2),
-          pitch: headPose.angles.pitch.toFixed(2),
-          roll: headPose.angles.roll.toFixed(2),
-          rotationGain: ROTATION_GAIN.toFixed(2) + 'x',
-          vectorLength: rotationOnlyVector.length
-        });
-      } else {
-        // Use last known good angles for rotation-only calibration
-        const lastAngles = state.smoothedAngles || { yaw: 0, pitch: 0, roll: 0 };
-        const DEG2RAD = Math.PI / 180;
-        const ANGLE_SCALE = 1000;
-        
-        const screenWidth = state.calibrationData.calibrationWidth || window.innerWidth;
-        const ROTATION_GAIN = Math.min(4.0, Math.max(1.0, (screenWidth / 1920) * 1.5));
-        
-        rotationOnlyVector.push([1.0]); // Bias
-        rotationOnlyVector.push([lastAngles.yaw * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]);
-        rotationOnlyVector.push([lastAngles.pitch * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]);
-        rotationOnlyVector.push([lastAngles.roll * DEG2RAD * ANGLE_SCALE * ROTATION_GAIN]);
-        
+      // Build the [bias, yaw, pitch, roll] vector via the shared builder in
+      // head-pose.js. CRITICAL: calibration must use the exact same transform
+      // (including the asymmetric pitch gain) as live tracking, or the trained
+      // matrix won't match the cursor at run time.
+      const anglesForVector = (headPose && headPose.angles)
+        ? headPose.angles
+        : (state.smoothedAngles || { yaw: 0, pitch: 0, roll: 0 });
+      if (!(headPose && headPose.angles)) {
         console.warn("⚠️ No head pose data for rotation-only mode point! Using last good angles.");
       }
-      
+
+      const rotationOnlyVector = window.buildRotationVector(anglesForVector);
+
+      console.log("🔬 Rotation-only data collected (4 features):", {
+        pointNumber: state.gridConfig.currentIndex + 1,
+        yaw: anglesForVector.yaw.toFixed(2),
+        pitch: anglesForVector.pitch.toFixed(2),
+        roll: anglesForVector.roll.toFixed(2),
+        vectorLength: rotationOnlyVector.length
+      });
+
       // Store rotation-only data
       if (!state.calibrationData.rotationOnlyPoints) {
         state.calibrationData.rotationOnlyPoints = [];
@@ -407,19 +224,6 @@ function recordCalibrationPoint(point) {
       progress: 1.0,
     };
 
-    // // Add 3-point landmark data - always include Z
-    // threePointIndices.forEach((index, i) => {
-    //   const landmark = state.lastLandmarks[index];
-    //   if (!landmark) {
-    //     throw new Error(`Missing landmark ${index} for 3-point configuration`);
-    //   }
-
-    //   frameData[`landmark3_${i}_x`] = landmark.x * window.innerWidth;
-    //   frameData[`landmark3_${i}_y`] = landmark.y * window.innerHeight;
-    //   frameData[`landmark3_${i}_z`] = landmark.z * 1000;
-    // });
-
-    
     // Add rotation data if rotation is enabled
     if (headPose && headPose.angles) {
       frameData.yaw = Math.round(headPose.angles.yaw * 1000) / 1000;
@@ -450,17 +254,11 @@ function getCSVHeaders() {
     "targetY",
     "targetXRel",  // Relative position (0-1) for cross-screen compatibility
     "targetYRel"   // Relative position (0-1) for cross-screen compatibility
-    // "isTransition" - removed as requested
   ];
 
-//Because we use are only using rotation only no need to include the 3-point landmark headers in the CSV
   headers.push("yaw");
   headers.push("pitch");
   headers.push("roll");
-
-  // Removed these configuration headers
-  // headers.push("coordinateSystem");
-  // headers.push("filterType");
 
   return headers;
 }
@@ -533,6 +331,9 @@ function finishCalibration() {
       calibrationUI.classList.add("hidden");
     }
 
+    const artboardDone = document.getElementById("artboard");
+    if (artboardDone) artboardDone.classList.remove("hidden");
+
     // Show options instead of starting tracking directly
     showPostCalibrationOptions();
 
@@ -557,14 +358,6 @@ function finishCalibration() {
     // Update application state
     state.isCalibrating = false;
 
-    // Update status display
-    // const statusMessage = residualAnalysis
-    //   ? `Calibration complete - select an option (RMSE: ${residualAnalysis.rmse.toFixed(
-    //       2
-    //     )} px)`
-    //   : "Calibration complete - select an option";
-    // document.getElementById("status").textContent = statusMessage;
-
     console.log("Calibration completed successfully");
     
     // Dispatch calibrationComplete event for any listeners
@@ -587,6 +380,10 @@ function finishCalibration() {
     state.transformationMatrices = {
       rotationOnly: null,
     };
+
+    // Restore the canvas even on failure so the page isn't left blank.
+    const artboardErr = document.getElementById("artboard");
+    if (artboardErr) artboardErr.classList.remove("hidden");
 
     clearCalibrationData();
 
@@ -649,8 +446,7 @@ function calculateAllTransformationMatrices() {
           // Calculate rotation-only matrix (maps 3 angles to 2D cursor position)
           const rotationOnlyMatrix = calculateTransformationMatrixForConfig(
             rotationOnlyData,
-            state.calibrationData.cursorPositions,
-            "rotation" // Special identifier for rotation-only
+            state.calibrationData.cursorPositions
           );
           
           if (rotationOnlyMatrix) {
@@ -686,72 +482,63 @@ function calculateAllTransformationMatrices() {
 }
 
 function showPostCalibrationOptions() {
-  // In user mode, start tracking, then run the edge-check to validate
-  // calibration BEFORE proceeding to parameter optimization.
-  if (typeof isUserMode === 'function' && isUserMode()) {
-    startTracking();
-    runPostCalibrationEdgeCheck().then(passed => {
-      if (passed) {
-        showUserModeReadyForParameterOptimization();
-      }
-      // If not passed, the user chose to recalibrate (page reloads).
-    });
-    return;
-  }
+  startTracking();
+  const checkFn = window.runRegionReachabilityCheck || runPostCalibrationEdgeCheck;
+  checkFn().then(passed => {
+    if (passed) showReadyToBeginScreen();
+  });
+}
 
-  // Test mode: show options
-  const optionsContainer = document.createElement("div");
-  optionsContainer.id = "post-calibration-options";
-  optionsContainer.style.position = "fixed";
-  optionsContainer.style.top = "50%";
-  optionsContainer.style.left = "50%";
-  optionsContainer.style.transform = "translate(-50%, -50%)";
-  optionsContainer.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-  optionsContainer.style.padding = "20px";
-  optionsContainer.style.borderRadius = "10px";
-  optionsContainer.style.zIndex = "1000";
-  optionsContainer.style.display = "flex";
-  optionsContainer.style.flexDirection = "column";
-  optionsContainer.style.gap = "15px";
-  optionsContainer.style.minWidth = "300px";
-  optionsContainer.style.textAlign = "center";
-  
-  const description = document.createElement("p");
-  description.textContent = "Choose an option:";
-  description.style.color = "white";
-  optionsContainer.appendChild(description);
-  
-  const showPredictionsButton = document.createElement("button");
-  showPredictionsButton.textContent = "Show Predicted Positions";
-  showPredictionsButton.style.padding = "10px";
-  showPredictionsButton.style.backgroundColor = "#4CAF50";
-  showPredictionsButton.style.border = "none";
-  showPredictionsButton.style.borderRadius = "5px";
-  showPredictionsButton.style.color = "white";
-  showPredictionsButton.style.cursor = "pointer";
-  showPredictionsButton.style.fontWeight = "bold";
-  showPredictionsButton.onclick = () => {
-    document.body.removeChild(optionsContainer);
-    showPredictedPositions();
+// New, discrete-system-appropriate replacement for the old
+// "parameter optimization" screen. Matches voronoi.html's existing
+// .overlay-screen visual style.
+function showReadyToBeginScreen() {
+  if (document.getElementById('ready-to-begin-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'ready-to-begin-overlay';
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.92); z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+  `;
+  overlay.innerHTML = `
+    <div style="text-align: center; padding: 50px 60px; background: rgba(30,30,40,0.98);
+      border: 2px solid #64c8ff; border-radius: 16px; max-width: 560px;
+      font-family: system-ui, -apple-system, sans-serif; color: #eee;">
+      <h1 style="color: #64c8ff; font-size: 30px; margin: 0 0 14px;">Calibration Complete</h1>
+      <p style="color: #ccc; font-size: 19px; margin: 0 0 22px;">
+        Move your head toward each highlighted region until it fills in.
+        Holding still on a region selects it.
+      </p>
+      <div id="ready-to-begin-btn" style="
+        padding: 16px 44px; font-size: 20px; font-weight: bold;
+        background: #64c8ff; color: #111; border: none; border-radius: 10px;
+        display: inline-block; cursor: pointer;
+      ">Press SPACE to Begin</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const begin = () => {
+  overlay.remove();
+  document.removeEventListener('keydown', spaceHandler, true);
+  if (window.revealGame) window.revealGame();
+};
+
+  document.getElementById('ready-to-begin-btn').onclick = begin;
+
+  // Capture-phase + stopImmediatePropagation, matching the pattern already
+  // used elsewhere in this file — keeps this Space press from also reaching
+  // voronoi.html's own keydown listener.
+  const spaceHandler = (e) => {
+    if (e.code !== 'Space') return;
+    if (!document.getElementById('ready-to-begin-overlay')) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    begin();
   };
-  optionsContainer.appendChild(showPredictionsButton);
-  
-  const startTrackingButton = document.createElement("button");
-  startTrackingButton.textContent = "Start Tracking";
-  startTrackingButton.style.padding = "10px";
-  startTrackingButton.style.backgroundColor = "#2196F3";
-  startTrackingButton.style.border = "none";
-  startTrackingButton.style.borderRadius = "5px";
-  startTrackingButton.style.color = "white";
-  startTrackingButton.style.cursor = "pointer";
-  startTrackingButton.style.fontWeight = "bold";
-  startTrackingButton.onclick = () => {
-    document.body.removeChild(optionsContainer);
-    startTracking();
-  };
-  optionsContainer.appendChild(startTrackingButton);
-  
-  document.body.appendChild(optionsContainer);
+  document.addEventListener('keydown', spaceHandler, true);
 }
 
 // Standalone edge-check that runs immediately after calibration completes
@@ -949,74 +736,6 @@ function _restoreCursorZIndex() {
   if (cursor) cursor.style.zIndex = '1000';
 }
 
-// Shown to participants (user mode) right after calibration completes and
-// tracking starts, so they have a clear "Press SPACE to begin" prompt
-// instead of a blank screen with a hidden tracking controls panel.
-function showUserModeReadyForParameterOptimization() {
-  if (document.getElementById('user-ready-for-pareto-overlay')) return;
-
-  const overlay = document.createElement('div');
-  overlay.id = 'user-ready-for-pareto-overlay';
-  overlay.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.92); z-index: 100000;
-    display: flex; align-items: center; justify-content: center;
-  `;
-  overlay.innerHTML = `
-    <div style="text-align: center; padding: 50px 60px; background: rgba(30,30,40,0.98);
-      border: 2px solid #64c8ff; border-radius: 16px; max-width: 620px;
-      font-family: system-ui, -apple-system, sans-serif; color: #eee;">
-      <h1 style="color: #64c8ff; font-size: 30px; margin: 0 0 14px;">Calibration Complete</h1>
-      <p style="color: #ccc; font-size: 19px; margin: 0 0 22px;">
-        Ready to start the parameter optimization?
-      </p>
-      <div style="text-align: left; max-width: 480px; margin: 0 auto 26px;
-        color: #bbb; font-size: 15px; line-height: 1.7;">
-        What happens next:
-        <ul style="margin: 8px 0 0 0; padding-left: 22px;">
-          <li>A red circle will appear on screen.</li>
-          <li>Move your head to point at it, then press <kbd style="background:#222;border:1px solid #444;border-radius:4px;padding:1px 7px;">Space</kbd> and hold still while it records.</li>
-          <li>A green circle will then appear — move your head to it.</li>
-          <li>Repeat for several positions. The system tunes itself for you.</li>
-        </ul>
-      </div>
-      <div id="user-ready-pareto-btn" style="
-        padding: 16px 44px; font-size: 20px; font-weight: bold;
-        background: #64c8ff; color: #111; border: none; border-radius: 10px;
-        display: inline-block; cursor: pointer;
-      ">Press SPACE to Start</div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  const launchPareto = () => {
-    overlay.remove();
-    document.removeEventListener('keydown', spaceHandler, true);
-    if (typeof window.startParameterOptimization === 'function') {
-      try {
-        window.startParameterOptimization();
-      } catch (err) {
-        console.error('Failed to start parameter optimization:', err);
-      }
-    } else {
-      console.warn('window.startParameterOptimization not ready yet');
-    }
-  };
-
-  document.getElementById('user-ready-pareto-btn').onclick = launchPareto;
-
-  // Use capture-phase so this same Space press doesn't reach the
-  // calibration spacebar handler (state.isCalibrating should already be
-  // false here, but we guard anyway).
-  const spaceHandler = (e) => {
-    if (e.code !== 'Space') return;
-    if (!document.getElementById('user-ready-for-pareto-overlay')) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    launchPareto();
-  };
-  document.addEventListener('keydown', spaceHandler, true);
-}
 
 function startTracking() {
   console.log("🚀 startTracking() called");
@@ -1061,6 +780,7 @@ function startTracking() {
   console.log("Pre-calculated metrics for tracking controls:", metrics);
 
   // Mount tracking controls
+  if (window.React && window.ReactDOM && window.TrackingControls) {
   try {
     let controlsContainer = document.getElementById(
       "tracking-controls-container"
@@ -1089,6 +809,9 @@ function startTracking() {
   } catch (controlsError) {
     console.error("Error mounting tracking controls:", controlsError);
   }
+} else {
+  console.log("Skipping tracking-controls mount (React not loaded on this page)");
+}
 
   // Hide the config screen (important for file upload flow)
   const configScreen = document.getElementById("config-screen");
@@ -1108,13 +831,7 @@ function startTracking() {
   } else {
     console.error("❌ window.updateCursor not available!");
   }
-  
-  // Update status with metrics if available
-  // const statusText = metrics ? 
-  //   `Tracking active (RMSE: ${metrics.rmse.toFixed(2)} px)` : 
-  //   "Tracking active";
-  // document.getElementById("status").textContent = statusText;
-  
+
   // Also display residuals in the corner
   displayTrackingResiduals(true);
 }
@@ -1194,25 +911,6 @@ function calculateRotationOnlyResiduals() {
 // Make the function globally available
 window.calculateRotationOnlyResiduals = calculateRotationOnlyResiduals;
 
-// Helper function to calculate position from transformation matrix
-function calculatePositionFromMatrix(landmarkVector, matrix) {
-  if (!landmarkVector || !matrix) return null;
-  
-  try {
-    const P = math.matrix(landmarkVector);
-    const B = math.matrix(matrix);
-    const Q = math.multiply(B, P);
-    const position = Q.toArray();
-    
-    return {
-      x: position[0][0],
-      y: position[1][0]
-    };
-  } catch (error) {
-    console.error("Error calculating position from matrix:", error);
-    return null;
-  }
-}
 
 // Update the robustCalculateResiduals function to respect the current configuration
 function robustCalculateResiduals() {
@@ -1315,23 +1013,6 @@ function displayTrackingResiduals(forceUpdate = false) {
         residualDisplay.style.zIndex = "1001";
         document.body.appendChild(residualDisplay);
       }
-      
-      // Format the residual information
-      // const activeConfig = state.config.landmarkPoints === "3" ? "3-point" : "6-point";
-      // const html = `
-      //   <div style="font-weight: bold; margin-bottom: 5px;">Calibration Quality (${activeConfig}):</div>
-      //   <div>RMSE: ${residualAnalysis.rmse.toFixed(2)} px</div>
-      //   <div>Mean Error: ${residualAnalysis.meanError.toFixed(2)} px</div>
-      //   <div>Max Error: ${residualAnalysis.maxError.toFixed(2)} px</div>
-      // `;
-      
-      // residualDisplay.innerHTML = html;
-      
-      // Also update the status message
-      // const statusElem = document.getElementById("status");
-      // if (statusElem) {
-      //   statusElem.textContent = `Tracking active using ${state.config.coordinateSystem.toUpperCase()} mode with ${state.config.landmarkPoints}-point tracking (RMSE: ${residualAnalysis.rmse.toFixed(2)} px)`;
-      // }
     }
     
     return residualAnalysis;
@@ -1340,123 +1021,6 @@ function displayTrackingResiduals(forceUpdate = false) {
   }
 }
 
-// Add a function to update residuals when configuration changes
-function updateResidualsOnConfigChange() {
-  // Add direct event listeners to the landmark buttons in the tracking controls
-  const landmarkButtons = document.querySelectorAll('#tracking-controls-container button');
-  
-  landmarkButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      // Short timeout to allow state to update
-      setTimeout(() => {
-        // Update both displays
-        displayTrackingResiduals(true);
-        updateTrackingControlsResiduals();
-      }, 100);
-    });
-  });
-  
-  // Also add a MutationObserver to watch for changes to the DOM
-  const observer = new MutationObserver((mutations) => {
-    // Check if any mutations affect the landmark buttons
-    const shouldUpdate = mutations.some(mutation => {
-      return mutation.target.id === 'tracking-controls-container' || 
-             mutation.target.closest('#tracking-controls-container');
-    });
-    
-    if (shouldUpdate) {
-      setTimeout(() => {
-        updateTrackingControlsResiduals();
-      }, 100);
-    }
-  });
-  
-  // Observe the tracking controls container
-  const controlsContainer = document.getElementById('tracking-controls-container');
-  if (controlsContainer) {
-    observer.observe(controlsContainer, { 
-      childList: true, 
-      subtree: true, 
-      attributes: true,
-      attributeFilter: ['class']
-    });
-  }
-  
-  return observer;
-}
-
-// Update setupTracking to call the new function
-function setupTracking(residualAnalysis) {
-  try {
-    // Update application state
-    state.isCalibrating = false;
-    state.isTracking = true;
-
-    // Clean up calibration UI if it exists
-    const calibrationUI = document.getElementById("calibration-ui");
-    if (calibrationUI) {
-      calibrationUI.classList.add("hidden");
-    }
-
-    // Initialize tracking cursors
-    initializeCursors();
-
-    // Mount tracking controls
-    try {
-      let controlsContainer = document.getElementById(
-        "tracking-controls-container"
-      );
-      if (!controlsContainer) {
-        controlsContainer = document.createElement("div");
-        controlsContainer.id = "tracking-controls-container";
-        document.body.appendChild(controlsContainer);
-      }
-      controlsContainer.innerHTML = "";
-      const root = ReactDOM.createRoot(controlsContainer);
-      root.render(React.createElement(window.TrackingControls));
-      console.log("Tracking controls mounted successfully");
-    } catch (controlsError) {
-      console.error("Error mounting tracking controls:", controlsError);
-    }
-
-    // Start cursor tracking
-    if (window.updateCursor && typeof window.updateCursor === 'function') {
-      window.updateCursor();
-      console.log("✅ Started cursor tracking via window.updateCursor()");
-    } else {
-      console.error("❌ window.updateCursor not available!");
-    }
-    
-    // Display residuals
-    if (window.displayTrackingResiduals) {
-      window.displayTrackingResiduals();
-      
-      // Set up observer for config changes after a short delay
-      // to ensure the UI is fully rendered
-      setTimeout(() => {
-        if (window.updateResidualsOnConfigChange) {
-          window.updateResidualsOnConfigChange();
-        }
-        
-        // Also update the tracking controls residuals
-        if (window.updateTrackingControlsResiduals) {
-          window.updateTrackingControlsResiduals();
-        }
-      }, 500);
-    }
-
-    // Update status display
-    // const statusMessage = residualAnalysis
-    //   ? `Tracking active using ${state.config.coordinateSystem.toUpperCase()} mode with ${state.config.landmarkPoints}-point tracking (RMSE: ${residualAnalysis.rmse.toFixed(2)} px)`
-    //   : `Tracking active using ${state.config.coordinateSystem.toUpperCase()} mode with ${state.config.landmarkPoints}-point tracking`;
-    // document.getElementById("status").textContent = statusMessage;
-
-    return true;
-  } catch (error) {
-    console.error("Error setting up tracking:", error);
-    return false;
-  }
-}
 
 // Make the function globally available
 window.setupTracking = setupTracking;
@@ -1497,13 +1061,7 @@ function updateTrackingControlsResiduals() {
         maxErrorElement.textContent = `Max Error: ${residualAnalysis.maxError.toFixed(2)} px`;
       }
     }
-    
-    // Also update the status message
-    // const statusElem = document.getElementById("status");
-    // if (statusElem) {
-    //   statusElem.textContent = `Tracking active using ${state.config.coordinateSystem.toUpperCase()} mode with ${state.config.landmarkPoints}-point tracking (RMSE: ${residualAnalysis.rmse.toFixed(2)} px)`;
-    // }
-    
+
     return residualAnalysis;
   } catch (error) {
     console.error("Error updating tracking controls residuals:", error);
@@ -1677,37 +1235,270 @@ function updateTrackingControlsElements(metrics) {
   console.log("Updated tracking controls DOM elements with metrics");
 }
 
-// Robust function to force calculation and display of metrics
-function forceCalculateAndDisplayMetrics() {
-  try {
-    console.log("Forcing calculation and display of metrics...");
-    
-    // Use window.robustCalculateResiduals which may be patched by database.js for uploaded files
-    const residualAnalysis = window.robustCalculateResiduals ? window.robustCalculateResiduals() : robustCalculateResiduals();
-    
-    console.log("Calculated metrics:", residualAnalysis);
-    
-    // Update DOM elements directly
-    updateTrackingControlsElements(residualAnalysis);
-    
-    // Also try React update
-    if (window.updateTrackingControlsMetrics) {
-      window.updateTrackingControlsMetrics();
-    }
-    
-    // Store for future use
-    window.preCalculatedMetrics = residualAnalysis;
-    
-    return residualAnalysis;
-  } catch (error) {
-    console.error("Error forcing metrics calculation:", error);
-    return null;
-  }
-}
-
 // Make these functions globally available
 window.updateTrackingControlsElements = updateTrackingControlsElements;
 window.forceCalculateAndDisplayMetrics = forceCalculateAndDisplayMetrics;
+
+function showPredictedPositions() {
+  // Create visualization container
+  const visualizationContainer = document.createElement("div");
+  visualizationContainer.id = "prediction-visualization";
+  visualizationContainer.style.position = "fixed";
+  visualizationContainer.style.top = "0";
+  visualizationContainer.style.left = "0";
+  visualizationContainer.style.width = "100%";
+  visualizationContainer.style.height = "100%";
+  visualizationContainer.style.backgroundColor = "rgba(0, 0, 0, 0.9)";
+  visualizationContainer.style.zIndex = "1000";
+  visualizationContainer.style.overflow = "auto";
+
+  // Simple header — no toggle buttons needed, only one config exists
+  const header = document.createElement("div");
+  header.style.position = "fixed";
+  header.style.top = "10px";
+  header.style.left = "0";
+  header.style.width = "100%";
+  header.style.padding = "10px";
+  header.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+  header.style.zIndex = "1001";
+  header.style.textAlign = "center";
+  header.style.color = "white";
+  header.style.fontSize = "13px";
+  header.textContent = "White dots = Actual Points • Orange dots/lines = Rotation-Only Predictions";
+
+  visualizationContainer.appendChild(header);
+
+  // Close button (fixed at bottom)
+  const closeButton = document.createElement("button");
+  closeButton.textContent = "Close & Start Tracking";
+  closeButton.style.padding = "10px 15px";
+  closeButton.style.backgroundColor = "rgba(33, 150, 243, 0.7)";
+  closeButton.style.border = "none";
+  closeButton.style.borderRadius = "5px";
+  closeButton.style.color = "white";
+  closeButton.style.cursor = "pointer";
+  closeButton.style.fontWeight = "bold";
+  closeButton.style.position = "fixed";
+  closeButton.style.bottom = "20px";
+  closeButton.style.left = "50%";
+  closeButton.style.transform = "translateX(-50%)";
+  closeButton.style.zIndex = "1003";
+  closeButton.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+  closeButton.onclick = () => {
+    document.body.removeChild(visualizationContainer);
+    startTracking();
+  };
+
+  visualizationContainer.appendChild(closeButton);
+
+  // Draw actual calibration points and rotation-only predictions
+  drawPredictionVisualization(visualizationContainer);
+
+  document.body.appendChild(visualizationContainer);
+}
+
+function drawPredictionVisualization(container) {
+  // Configuration parameters
+  const pointSize = 8;
+  const predictionSize = 4;
+  
+  // Make sure we have calibration data
+  if (!state.calibrationData || !state.calibrationData.cursorPositions) {
+    const errorMsg = document.createElement("div");
+    errorMsg.textContent = "No calibration data available";
+    errorMsg.style.color = "white";
+    errorMsg.style.textAlign = "center";
+    errorMsg.style.marginTop = "100px";
+    container.appendChild(errorMsg);
+    return;
+  }
+  
+  // Get actual calibration points
+  const actualPoints = state.calibrationData.cursorPositions.map(pos => ({
+    x: pos[0][0],
+    y: pos[1][0]
+  }));
+
+  // Function to predict positions using rotation-only mode
+  const getRotationOnlyPrediction = (pointIndex) => {
+    try {
+      // Check if rotation-only matrix and data are available
+      if (!state.transformationMatrices.rotationOnly || 
+          !state.calibrationData.rotationOnlyPoints ||
+          !state.calibrationData.rotationOnlyPoints[pointIndex]) {
+        return null;
+      }
+      
+      const rotationData = state.calibrationData.rotationOnlyPoints[pointIndex];
+      const matrix = state.transformationMatrices.rotationOnly;
+      
+      // Calculate predicted position
+      const P = math.matrix(rotationData);
+      const B = math.matrix(matrix);
+      const Q = math.multiply(B, P);
+      const position = Q.toArray();
+      
+      return {
+        x: position[0][0],
+        y: position[1][0]
+      };
+    } catch (error) {
+      console.error(`Error calculating rotation-only prediction for point ${pointIndex}:`, error);
+      return null;
+    }
+  };
+  
+  // Draw actual points and their predictions
+  actualPoints.forEach((point, index) => {
+    // Draw actual point
+    const actualPoint = document.createElement("div");
+    actualPoint.style.position = "absolute";
+    actualPoint.style.left = `${point.x}px`;
+    actualPoint.style.top = `${point.y}px`;
+    actualPoint.style.width = `${pointSize}px`;
+    actualPoint.style.height = `${pointSize}px`;
+    actualPoint.style.backgroundColor = "white";
+    actualPoint.style.borderRadius = "50%";
+    actualPoint.style.transform = "translate(-50%, -50%)";
+    actualPoint.style.zIndex = "1002";
+    
+    // Add point number
+    const pointLabel = document.createElement("div");
+    pointLabel.textContent = (index + 1).toString();
+    pointLabel.style.position = "absolute";
+    pointLabel.style.color = "white";
+    pointLabel.style.fontSize = "10px";
+    pointLabel.style.top = "10px";
+    pointLabel.style.left = "10px";
+    actualPoint.appendChild(pointLabel);
+    
+    container.appendChild(actualPoint);
+
+    // Draw rotation-only prediction
+    const rotationPrediction = getRotationOnlyPrediction(index);
+    if (rotationPrediction) {
+      const predictionPoint = document.createElement("div");
+      predictionPoint.className = "prediction-rotation";
+      predictionPoint.style.position = "absolute";
+      predictionPoint.style.left = `${rotationPrediction.x}px`;
+      predictionPoint.style.top = `${rotationPrediction.y}px`;
+      predictionPoint.style.width = `${predictionSize}px`;
+      predictionPoint.style.height = `${predictionSize}px`;
+      predictionPoint.style.backgroundColor = "orange";
+      predictionPoint.style.borderRadius = "50%";
+      predictionPoint.style.transform = "translate(-50%, -50%)";
+      predictionPoint.style.zIndex = "1001";
+      
+      container.appendChild(predictionPoint);
+      
+      // Draw line connecting actual point to rotation prediction
+      const line = document.createElement("div");
+      line.className = "prediction-rotation";
+      line.style.position = "absolute";
+      line.style.zIndex = "1000";
+      
+      const dx = rotationPrediction.x - point.x;
+      const dy = rotationPrediction.y - point.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      line.style.width = `${length}px`;
+      line.style.height = "1px";
+      line.style.backgroundColor = "orange";
+      line.style.opacity = "0.4";
+      line.style.left = `${point.x}px`;
+      line.style.top = `${point.y}px`;
+      line.style.transformOrigin = "left center";
+      line.style.transform = `rotate(${angle}deg)`;
+      
+      container.appendChild(line);
+    }
+  });
+  
+  // Add error statistics table
+  createErrorStatisticsTable(container);
+}
+
+function createErrorStatisticsTable(container) {
+  // Create table container
+  const tableContainer = document.createElement("div");
+  tableContainer.style.position = "fixed";
+  tableContainer.style.bottom = "70px";
+  tableContainer.style.right = "20px";
+  tableContainer.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+  tableContainer.style.padding = "15px";
+  tableContainer.style.borderRadius = "5px";
+  tableContainer.style.zIndex = "1002";
+  tableContainer.style.maxHeight = "300px";
+  tableContainer.style.overflowY = "auto";
+
+  // Create table
+  const table = document.createElement("table");
+  table.style.color = "white";
+  table.style.borderCollapse = "collapse";
+
+  // Create header row
+  const headerRow = document.createElement("tr");
+  ["Configuration", "RMSE (px)", "Mean Error (px)"].forEach(text => {
+    const th = document.createElement("th");
+    th.textContent = text;
+    th.style.padding = "5px 10px";
+    th.style.textAlign = "left";
+    th.style.borderBottom = "1px solid #444";
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  // Rotation-only row — the only real config in this design
+  if (state.transformationMatrices.rotationOnly &&
+      state.calibrationData.rotationOnlyPoints &&
+      state.calibrationData.rotationOnlyPoints.length > 0) {
+
+    try {
+      const rotationResiduals = calculateRotationOnlyResiduals();
+
+      if (rotationResiduals) {
+        const dataRow = document.createElement("tr");
+
+        const configCell = document.createElement("td");
+        configCell.style.padding = "5px 10px";
+        configCell.style.borderBottom = "1px solid #444";
+
+        const colorBox = document.createElement("span");
+        colorBox.style.display = "inline-block";
+        colorBox.style.width = "10px";
+        colorBox.style.height = "10px";
+        colorBox.style.backgroundColor = "orange";
+        colorBox.style.marginRight = "8px";
+        colorBox.style.borderRadius = "50%";
+
+        configCell.appendChild(colorBox);
+        configCell.appendChild(document.createTextNode("Rotation Only"));
+        dataRow.appendChild(configCell);
+
+        const rmseCell = document.createElement("td");
+        rmseCell.textContent = rotationResiduals.rmse.toFixed(2);
+        rmseCell.style.padding = "5px 10px";
+        rmseCell.style.borderBottom = "1px solid #444";
+        dataRow.appendChild(rmseCell);
+
+        const meanCell = document.createElement("td");
+        meanCell.textContent = rotationResiduals.meanError.toFixed(2);
+        meanCell.style.padding = "5px 10px";
+        meanCell.style.borderBottom = "1px solid #444";
+        dataRow.appendChild(meanCell);
+
+        table.appendChild(dataRow);
+      }
+    } catch (error) {
+      console.error("Error calculating rotation-only residuals:", error);
+    }
+  }
+
+  tableContainer.appendChild(table);
+  container.appendChild(tableContainer);
+}
+
 
 // Add a more aggressive approach to catch file uploads
 function setupFileUploadHandlers() {
@@ -1746,10 +1537,3 @@ function setupFileUploadHandlers() {
 
 // Call this function when the document is ready
 document.addEventListener('DOMContentLoaded', setupFileUploadHandlers);
-
-// Check if you have environment-specific code like this
-if (window.location.hostname === 'localhost') {
-  // Local-specific code
-} else {
-  // Production-specific code
-}

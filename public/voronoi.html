@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Full Screen Voronoi Experiment</title>  
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/mode.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script type="module" src="js/face-landmarker-init.js"></script>
+
+  <script src="js/state.js"></script>
+  <script src="js/database.js"></script>
+  <script src="js/math.js"></script>
+  <script src="js/head-pose.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/initialization.js"></script>
+  <script src="js/dataCollection.js"></script>
+  <script src="js/calibration.js"></script>
+  <script src="js/dwell++.js"></script>
+  <script src="js/tracking.js"></script>
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #1e1e24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      user-select: none;
+    }
+    
+    .game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      background-color: #111;
+      cursor: crosshair;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* HUD Dashboard (Top Right) */
+    .hud-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(20, 20, 30, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 16px;
+      border-radius: 8px;
+      color: #fff;
+      z-index: 1000;
+      min-width: 220px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #64ff64;
+      transition: width 0.2s ease;
+    }
+
+    .hud-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .stat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #aaa;
+      font-weight: normal;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    .stat-value.errors {
+      color: #ff5555;
+    }
+
+    .stat-value.completed {
+      color: #64c8ff;
+    }
+
+    .overlay-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1a2e;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      z-index: 99999;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .overlay-screen h1 {
+      margin: 0 0 10px 0;
+      font-size: 32px;
+      color: #64c8ff;
+    }
+
+    .overlay-screen p {
+      color: #ccc;
+      font-size: 18px;
+      margin: 0 0 25px 0;
+    }
+
+    .directions-list {
+      text-align: left;
+      max-width: 650px;
+      margin: 0 auto 25px auto;
+      color: #ddd;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .directions-list li {
+      margin-bottom: 12px;
+    }
+
+    .start-button {
+      background: #64ff64;
+      color: #111;
+      border: none;
+      padding: 16px 48px;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      z-index: 100000;
+    }
+
+    kbd {
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: monospace;
+      color: #64c8ff;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    #calibration-target { 
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,0,0,0.5); transform: translate(-50%, -50%); 
+    }
+    #calibration-ui {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5000;
+    }
+
+    .calibration-hint {
+      position: absolute;
+      color: #fff;
+      font-size: 14px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <video id="video-input" playsinline style="display:none;"></video>
+
+  <div id="calibration-ui" class="hidden">
+    <div id="calibration-target"></div>
+    <div id="calibration-line"></div>
+    <div id="calibration-instructions">
+      <div id="progress"><span id="current-point-text">1</span>/20</div>
+    </div>
+  </div>
+
+  <div id="hud" class="hud-container hidden">
+    <div class="hud-title" id="hud-round-label">Round 1 Progress</div>
+    <div class="progress-bar-container">
+      <div id="progress-fill" class="progress-bar-fill"></div>
+    </div>
+    <div class="hud-stats">
+      <div class="stat-box">
+        <span class="stat-label">Completed</span>
+        <span id="completed-count" class="stat-value completed">0 / 20</span>
+      </div>
+      <div class="stat-box" style="text-align: right;">
+        <span class="stat-label">Errors</span>
+        <span id="error-count" class="stat-value errors">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="config-screen" class="overlay-screen">
+    <h1 style="font-size: 42px; margin-bottom: 6px;">DiscretePoint</h1>
+    <p style="color: #888; font-size: 16px; margin-bottom: 32px;">A Head-Pointing Research Study</p>
+    
+    <div style="max-width: 560px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 24px 32px; margin-bottom: 32px; text-align: left;">
+        <div style="margin-bottom: 18px;">
+            <span style="color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">What you'll do</span>
+            <p style="margin: 8px 0 0 0; color: #ccc; font-size: 15px; line-height: 1.6;">Complete a short calibration, then navigate through two rounds of a head-pointing task. No mouse or keyboard is required.</p>
+        </div>
+        <div style="margin-bottom: 18px;">
+            <span style="color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">How it works</span>
+            <p style="margin: 8px 0 0 0; color: #ccc; font-size: 15px; line-height: 1.6;">Your webcam tracks your head orientation. Point your head toward a region on screen to activate it.</p>
+        </div>
+        <div>
+            <span style="color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Duration</span>
+            <p style="margin: 8px 0 0 0; color: #ccc; font-size: 15px;">Approximately 5–10 minutes.</p>
+        </div>
+    </div>
+
+    <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">** Make sure your face is fully visible in the webcam before continuing.</p>
+    <button id="config-button" class="start-button">Begin →</button>
+    <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
+  </div>
+
+  <div id="directions-screen" class="overlay-screen hidden">
+    <h1 style="margin-bottom: 6px;">Stage 1: Calibration</h1>
+    <div style="max-width: 540px; text-align: left; margin-bottom: 32px;">
+        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+            <div style="background: #64c8ff; color: #111; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">1</div>
+            <div>
+                <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">A dot will appear at 20 different positions on the screen. Move your head to look directly at each dot.</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+            <div style="background: #64c8ff; color: #111; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">2</div>
+            <div>
+                <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">When your head is steady and centered on the dot, press <kbd>Space</kbd> to capture that position.</p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <div style="background: #64c8ff; color: #111; font-weight: bold; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">3</div>
+            <div>
+                <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">Once the 20 dots are completed, highlighted regions will appear on the screen. Look directly at each highlighted region within the given time.</p>
+            </div>
+        </div>
+    </div>
+
+    <button id="directions-button" class="start-button">Start Calibration →</button>
+    <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
+  </div>
+
+  <div id="task-directions-screen" class="overlay-screen hidden">
+      <h1 style="margin-bottom: 6px;">Stage 2: Head-Pointing Task</h1>
+      <div style="max-width: 540px; text-align: left; margin-bottom: 28px;">
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+              <div style="width: 14px; height: 14px; background: rgba(100,255,100,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #64ff64; font-weight: bold;">green region</span> is your current target. Point your head toward it to activate it.</p>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+              <div style="width: 14px; height: 14px; background: rgba(255,200,100,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #ffc864; font-weight: bold;">yellow region</span> shows where you're going next.</p>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+              <div style="width: 14px; height: 14px; background: rgba(100,200,255,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">Hold your head still in the green region for a moment to <span style="color: #64c8ff; font-weight: bold;">confirm your selection</span>.</p>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+              <div style="width: 14px; height: 14px; background: rgba(255,60,60,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">If you activate the <span style="color: #ff5555; font-weight: bold;">wrong region</span>, it will flash red. Keep going and try to reach the correct one.</p>
+          </div>
+      </div>
+
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are two rounds with a short break in between.</p>
+      <button id="task-directions-button" class="start-button">Start Round 1 →</button>
+      <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
+  </div> 
+
+  <div id="break-screen" class="overlay-screen hidden">
+    <h1 style="margin-bottom: 6px;">Round 1 Complete</h1>
+    <p style="color: #888; font-size: 15px; margin-bottom: 32px;">Take a moment to rest before continuing.</p>
+
+    <div style="max-width: 420px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 24px 32px; margin-bottom: 32px;">
+        <p style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.</p>
+    </div>
+
+    <button id="break-button" class="start-button">Continue to Round 2 →</button>
+    <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
+  </div>
+
+  <div id="end-screen" class="overlay-screen hidden">
+    <h1>Experiment Complete</h1>
+    <p id="final-stats-summary">Congrats! You have finished both Fitts' Law experiment trials successfully.</p>
+  </div>
+
+  <canvas id="artboard"></canvas>
+</div>
+
+<script>
+  const configScreen = document.getElementById('config-screen');
+  const directionsScreen = document.getElementById('directions-screen');
+  const taskDirectionsScreen = document.getElementById('task-directions-screen');
+  const breakScreen = document.getElementById('break-screen');
+  const endScreen = document.getElementById('end-screen');
+  const startBtn = document.getElementById('config-button');
+  const directionsBtn = document.getElementById('directions-button');
+  const taskDirectionsBtn = document.getElementById('task-directions-button');
+  const breakBtn = document.getElementById('break-button');
+  const hud = document.getElementById('hud');
+  const progressFill = document.getElementById('progress-fill');
+  const completedCountEl = document.getElementById('completed-count');
+  const errorCountEl = document.getElementById('error-count');
+  const hudRoundLabel = document.getElementById('hud-round-label');
+  const finalStatsSummary = document.getElementById('final-stats-summary');
+  const canvas = document.getElementById("artboard");
+  const ctx = canvas.getContext("2d");
+
+  let trackingReady = false;
+  document.addEventListener('DOMContentLoaded', () => {
+    initialize()
+      .then(() => { trackingReady = true; })
+      .catch(err => {
+        console.error('Failed to initialize head tracking:', err);
+        configScreen.querySelector('h1').textContent = 'Camera Error';
+        configScreen.querySelector('p').textContent =
+          'Could not access your camera: ' + err.message + '. Please allow camera access and reload.';
+    });
+});
+
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+
+  let currentScreen = "welcome"; 
+  let isStarted = false;
+  var activeIndex = -1;
+  let currentTrialIndex = 0; 
+  let currentRound = 1; 
+
+  // Error and Dwell state
+  let totalErrors = 0;
+  let roundErrors = 0; // resets each round, feeds the per-run summary row
+  let erroredCellsMap = {}; // Maps cell indices to error state boolean
+  let checkTargetIndex = null;
+  
+  // Both rounds execute sequential 0 -> 19 vertical snake paths
+  const sequenceRound1 = Array.from({ length: 12 }, (_, i) => i);
+  const sequenceRound2 = Array.from({ length: 12 }, (_, i) => i);
+
+//Gets the seqence of the two trials
+  function getActiveSequence() {
+    return currentRound === 1 ? sequenceRound1 : sequenceRound2;
+  }
+
+  // Lets dwell++.js tell the correct region apart from a wrong one, so it
+  // can skip its border-flicker smoothing and use a quicker plain dwell
+  // time when the participant is sitting on the wrong cell.
+  function getCurrentTargetIndex() {
+    return getActiveSequence()[currentTrialIndex];
+  }
+  window.getCurrentTargetIndex = getCurrentTargetIndex;
+
+  let points = [];
+  // function updatePointLayoutScale() { //hardcodes the 20point layout idk if that should be 
+    // if (currentRound === 1) {
+    //   points = [
+    //     [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
+    //     [width * 0.28, height * 0.18], [width * 0.36, height * 0.38], [width * 0.25, height * 0.60], [width * 0.33, height * 0.85],
+    //     [width * 0.46, height * 0.82], [width * 0.54, height * 0.58], [width * 0.44, height * 0.36], [width * 0.52, height * 0.15],
+    //     [width * 0.66, height * 0.18], [width * 0.74, height * 0.42], [width * 0.64, height * 0.65], [width * 0.72, height * 0.88],
+    //     [width * 0.84, height * 0.82], [width * 0.93, height * 0.60], [width * 0.83, height * 0.35], [width * 0.91, height * 0.14]
+    //   ];
+    // } else if (currentRound === 2) {
+    //   points = [
+    //     [width * 0.12, height * 0.82], [width * 0.06, height * 0.60], [width * 0.13, height * 0.38], [width * 0.08, height * 0.15],
+    //     [width * 0.24, height * 0.14], [width * 0.31, height * 0.35], [width * 0.22, height * 0.62], [width * 0.29, height * 0.88],
+    //     [width * 0.50, height * 0.85], [width * 0.42, height * 0.62], [width * 0.52, height * 0.40], [width * 0.45, height * 0.18],
+    //     [width * 0.68, height * 0.12], [width * 0.62, height * 0.36], [width * 0.71, height * 0.58], [width * 0.65, height * 0.82],
+    //     [width * 0.88, height * 0.86], [width * 0.82, height * 0.64], [width * 0.90, height * 0.38], [width * 0.85, height * 0.12]
+    //   ];
+    // }
+
+  function updateCalibrationPointLayout() {
+    points = [
+      [width * 0.08, height * 0.88], [width * 0.14, height * 0.65], [width * 0.07, height * 0.35], [width * 0.15, height * 0.12],
+      [width * 0.28, height * 0.18], [width * 0.36, height * 0.38], [width * 0.25, height * 0.60], [width * 0.33, height * 0.85],
+      [width * 0.46, height * 0.82], [width * 0.54, height * 0.58], [width * 0.44, height * 0.36], [width * 0.52, height * 0.15],
+      [width * 0.66, height * 0.18], [width * 0.74, height * 0.42], [width * 0.64, height * 0.65], [width * 0.72, height * 0.88],
+      [width * 0.84, height * 0.82], [width * 0.93, height * 0.60], [width * 0.83, height * 0.35], [width * 0.91, height * 0.14]
+    ];
+  }
+
+  updateCalibrationPointLayout();
+  computeVoronoiDiagram();
+
+  function updateExperimentPointLayout() {
+    const cx = width * 0.5; // horiz center
+    const cy = height * 0.5; // vert center
+    const amplitude = height * 0.30;
+    const xSpread = width * 0.45;
+    const nPoints = 12;
+    const phase = currentRound === 1 ? 0 : Math.PI;
+
+    const sinePoints = [];
+
+    if (currentRound === 1) {
+      for (let i = 0; i < nPoints; i++) {
+        const t = i / (nPoints - 1);
+        const x = cx - xSpread + t * xSpread * 2;
+        const y = cy + Math.sin(t * Math.PI * 2) * amplitude; // two full sin periods
+        sinePoints.push([x, y]);
+      }
+    }
+    else if (currentRound === 2) { // curve is transformed slightly and inverted
+      for (let i = 0; i < nPoints; i++) {
+        const t = i / (nPoints - 1);
+        const x = cx - xSpread + t * xSpread * 2;
+        const y = cy + Math.sin(t * Math.PI * 2 + Math.PI) * amplitude; //inverted sine
+        sinePoints.push([x, y]);
+      }
+    }
+
+    points = sinePoints;
+   
+    try {
+      delaunay = d3.Delaunay.from(points);
+      voronoi = delaunay.voronoi([0, 0, width, height]);
+      window.delaunay = delaunay;
+    } catch (err) {
+      console.error("Voronoi Computation Failed: ", err);
+    }
+  }
+
+  let delaunay, voronoi;
+  function computeVoronoiDiagram() { 
+    if (typeof d3 !== 'undefined') {
+      try {
+        delaunay = d3.Delaunay.from(points);
+        voronoi = delaunay.voronoi([0, 0, width, height]);
+        window.delaunay = delaunay;
+      } catch (err) {
+        console.error("D3 Layout Generation Failed", err);
+      }
+    }
+  }
+  computeVoronoiDiagram();
+
+  function updateHUD() {
+    const sequence = getActiveSequence();
+    const progressPct = (currentTrialIndex / sequence.length) * 100;
+    
+    progressFill.style.width = `${progressPct}%`;
+    completedCountEl.innerText = `${currentTrialIndex} / ${sequence.length}`;
+    errorCountEl.innerText = totalErrors;
+    hudRoundLabel.innerText = `Round ${currentRound} Progress`;
+  }
+
+  function loadSecondVoronoiMap() {
+    hud.classList.add('hidden');
+    isStarted = false;
+    window.isStarted = false;
+    breakScreen.classList.remove('hidden');
+    currentScreen = "break";
+
+    currentRound = 2;
+    currentTrialIndex = 0;
+    roundErrors = 0;
+    erroredCellsMap = {};
+
+    // updatePointLayoutScale();
+    // computeVoronoiDiagram();
+    updateHUD();
+    if (window.resetErrorGate) window.resetErrorGate();
+    checkDwellState();
+    draw();
+    if (window.startTaskRun) window.startTaskRun();
+  }
+
+  function drawSequenceArrows(sequence) {
+    const headLength = 10;
+    const startOffset = 14;
+    const endOffset = 14;
+
+    ctx.save();
+    for (let k = 0; k < sequence.length - 1; k++) {
+      const fromP = points[sequence[k]];
+      const toP = points[sequence[k + 1]];
+
+      const dx = toP[0] - fromP[0];
+      const dy = toP[1] - fromP[1];
+      const len = Math.hypot(dx, dy);
+
+      if (len <= startOffset + endOffset) continue;
+
+      const angle = Math.atan2(dy, dx);
+      const startX = fromP[0] + (dx / len) * startOffset;
+      const startY = fromP[1] + (dy / len) * startOffset;
+      const endX = toP[0] - (dx / len) * endOffset;
+      const endY = toP[1] - (dy / len) * endOffset;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = "rgba(200, 200, 200, 0.18)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(
+        endX - headLength * Math.cos(angle - Math.PI / 6),
+        endY - headLength * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        endX - headLength * Math.cos(angle + Math.PI / 6),
+        endY - headLength * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fillStyle = "rgba(200, 200, 200, 0.22)";
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    
+    if (typeof d3 === 'undefined' || !voronoi) {
+      ctx.fillStyle = "#ff5555";
+      ctx.font = "20px sans-serif";
+      ctx.fillText("Error: Connect to the internet to load the D3 library script.", 50, height / 2);
+      return;
+    }
+
+    if (checkTargetIndex !== null) {
+    for (let i = 0; i < points.length; i++) {
+      const polygon = voronoi.cellPolygon(i);
+      if (!polygon) continue;
+      ctx.beginPath();
+      ctx.moveTo(polygon[0][0], polygon[0][1]);
+      for (let j = 1; j < polygon.length; j++) ctx.lineTo(polygon[j][0], polygon[j][1]);
+      ctx.closePath();
+      ctx.fillStyle = i === checkTargetIndex ? 'rgba(100,255,100,0.4)' : 'rgba(150,150,150,0.05)';
+      ctx.strokeStyle = i === checkTargetIndex ? 'rgba(100,255,100,1)' : 'rgba(150,150,150,0.15)';
+      ctx.lineWidth = i === checkTargetIndex ? 5 : 1;
+      ctx.fill();
+      ctx.stroke();
+    }
+    return;
+    }
+
+    const sequence = getActiveSequence();
+    // dwellState.targetIndex stays set through the dwell grace period, so a
+    // brief look-away from the intended cell keeps it glowing.
+    const dwellState = window.getDwellProgress ? window.getDwellProgress() : { targetIndex: null };
+
+    // 1. Draw cell polygons
+    ctx.shadowBlur = 0;
+    for (let i = 0; i < points.length; i++) {
+      const polygon = voronoi.cellPolygon(i);
+      if (!polygon) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(polygon[0][0], polygon[0][1]);
+      for (let j = 1; j < polygon.length; j++) {
+        ctx.lineTo(polygon[j][0], polygon[j][1]);
+      }
+      ctx.closePath();
+
+      const currentTargetIndex = sequence[currentTrialIndex];
+      const nextTargetIndex = sequence[currentTrialIndex + 1];
+      const sequencePosition = sequence.indexOf(i);
+
+      ctx.save();
+      // PRIORITY 1: Active current target ALWAYS takes precedence as green
+      if (isStarted && i === currentTargetIndex) {
+        ctx.fillStyle = 'rgba(100, 255, 100, 0.4)';
+        ctx.strokeStyle = 'rgba(100, 255, 100, 1)';
+        ctx.lineWidth = 5;
+        if (i === activeIndex || i === dwellState.targetIndex) {
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = 'rgba(100, 255, 100, 1)';
+        }
+      } 
+      // PRIORITY 2: Upcoming target ALWAYS takes precedence as yellow
+      else if (isStarted && i === nextTargetIndex) {
+        ctx.fillStyle = 'rgba(255, 200, 100, 0.2)';
+        ctx.strokeStyle = 'rgba(255, 200, 100, 0.6)';
+        ctx.lineWidth = 3;
+      } 
+      // PRIORITY 3: Errored cell (not active or upcoming)
+      else if (isStarted && erroredCellsMap[i]) {
+        ctx.fillStyle = 'rgba(255, 60, 60, 0.5)';
+        ctx.strokeStyle = 'rgba(255, 60, 60, 0.9)';
+        ctx.lineWidth = 3;
+      } 
+      // PRIORITY 4: Previously completed cell
+      else if (isStarted && sequencePosition !== -1 && sequencePosition < currentTrialIndex) {
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.15)';
+        ctx.strokeStyle = 'rgba(255, 100, 100, 0.4)';
+        ctx.lineWidth = 2;
+      } 
+      // DEFAULT: Unvisited cell
+      else {
+        ctx.fillStyle = 'rgba(150, 150, 150, 0.05)';
+        ctx.strokeStyle = 'rgba(150, 150, 150, 0.15)';
+        ctx.lineWidth = 1;
+      }
+
+      // Whatever cell the dwell timer is actually counting toward
+      if (isStarted && i === dwellState.targetIndex) {
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = ctx.strokeStyle;
+      }
+
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Draw directional path arrows
+    drawSequenceArrows(sequence);
+
+    // 3. Draw target point markers
+    const currentTargetIndex = sequence[currentTrialIndex];
+    const nextTargetIndex = sequence[currentTrialIndex + 1];
+
+    for (let i = 0; i < points.length; i++) {
+      ctx.beginPath();
+      let radius = 4;
+      let fillStyle = "rgba(150, 150, 150, 0.4)";
+
+      if (isStarted && i === currentTargetIndex) {
+        radius = i === activeIndex ? 10 : 7;
+        fillStyle = "#64ff64";
+      } else if (isStarted && i === nextTargetIndex) {
+        radius = 5;
+        fillStyle = "rgba(255, 200, 100, 0.8)";
+      } else if (isStarted && erroredCellsMap[i]) {
+        radius = 6;
+        fillStyle = "#ff5555";
+      } else if (isStarted && sequence.indexOf(i) < currentTrialIndex) {
+        radius = 4;
+        fillStyle = "rgba(255, 100, 100, 0.5)";
+      }
+
+      ctx.arc(points[i][0], points[i][1], radius, 0, Math.PI * 2.5);
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+  }
+
+
+  function attemptAcquisition() {
+    if (!isStarted || activeIndex === -1) return;
+
+    // Snapshot dwell stats before resetDwellProgress() zeroes them.
+    const dwellStats = window.lastDwellStats || {};
+    resetDwellProgress();
+
+    const sequence = getActiveSequence();
+    const currentTargetIndex = sequence[currentTrialIndex];
+    const activeSequencePosition = sequence.indexOf(activeIndex);
+
+    if (activeIndex === currentTargetIndex) {
+      // Correct cell selected
+      if (window.logCellSelection) {
+        window.logCellSelection({
+          round: currentRound,
+          trialIndex: currentTrialIndex,
+          selectedCell: activeIndex,
+          targetCell: currentTargetIndex,
+          correct: true,
+          dwellDurationMs: dwellStats.dwellDurationMs
+        });
+      }
+
+      if (currentTrialIndex < sequence.length - 1) {
+        currentTrialIndex++;
+        updateHUD();
+        checkDwellState();
+        draw();
+      } else {
+        // Finished Round 1
+        if (currentRound === 1) {
+          if (window.finishTaskRun) {
+            window.finishTaskRun({ round: 1, totalErrors: roundErrors, totalCells: sequence.length });
+          }
+          loadSecondVoronoiMap();
+        } else {
+          // Finished Round 2
+          if (window.finishTaskRun) {
+            window.finishTaskRun({ round: 2, totalErrors: roundErrors, totalCells: sequence.length });
+          }
+          if (window.exportTaskData) window.exportTaskData();
+
+          isStarted = false;
+          currentScreen = "end";
+          window.isStarted = isStarted;
+          hud.classList.add('hidden');
+          endScreen.classList.remove('hidden');
+          finalStatsSummary.innerText = `You finished all trials with a total of ${totalErrors} error(s).`;
+          ctx.clearRect(0, 0, width, height);
+        }
+      }
+    } else {
+      // Ignore errors if participant is hovering/dwelling on an ALREADY completed cell
+      const isAlreadyCompleted = activeSequencePosition !== -1 && activeSequencePosition < currentTrialIndex;
+
+      if (!isAlreadyCompleted) {
+        // Incorrect uncompleted cell dwelled: mark cell red and log error
+        if (!erroredCellsMap[activeIndex]) {
+          erroredCellsMap[activeIndex] = true;
+          totalErrors++;
+          roundErrors++;
+          if (window.logCellSelection) {
+            window.logCellSelection({
+              round: currentRound,
+              trialIndex: currentTrialIndex,
+              selectedCell: activeIndex,
+              targetCell: currentTargetIndex,
+              correct: false,
+              dwellDurationMs: dwellStats.dwellDurationMs
+            });
+          }
+          updateHUD();
+          draw();
+        }
+      }
+    }
+  }
+
+  function advanceFlow() {
+    if (currentScreen === "welcome") {
+      configScreen.classList.add('hidden');
+      directionsScreen.classList.remove('hidden');
+      currentScreen = "directions";
+    } 
+    else if (currentScreen === "directions") {
+      directionsScreen.classList.add('hidden');
+      currentScreen = "calibrating";
+      state.config = {
+        ...state.config,
+        coordinateSystem: "2d",
+        animationStyle: "without-line",
+        useRotation: true,
+        rotationOnlyMode: true
+      };
+      startCalibration();
+    }
+    else if (currentScreen === "task-directions") {
+      taskDirectionsScreen.classList.add('hidden');
+      revealGame();
+    } 
+    else if (currentScreen === "break") {
+      breakScreen.classList.add('hidden');
+      loadSecondVoronoiMap();
+      revealGame();
+    }
+  }
+
+  startBtn.onclick = function() { advanceFlow(); };
+  directionsBtn.onclick = function() { advanceFlow(); };
+  taskDirectionsBtn.onclick = function() { advanceFlow(); };
+  breakBtn.onclick = function() { advanceFlow(); };
+
+  window.addEventListener('keydown', function(e) {
+    if (e.repeat) return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (window.state?.isCalibrating && !window.state?.isLineAnimating) {
+        captureCalibrationPoint();
+      } else if (currentScreen === "welcome" || currentScreen === "directions" || currentScreen === "task-directions" || currentScreen === "break") {
+        advanceFlow();
+      } else if (currentScreen === "game") {
+        attemptAcquisition();
+      }
+    }
+  });
+
+  function findNearestSinePoint(x, y) {
+    let nearest = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const dx = points[i][0] - x;
+      const dy = points[i][1] - y;
+      const dist = dx * dx + dy * dy;
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = i;
+      }
+    }
+    return nearest;
+  }
+
+  window.findNearestSinePoint = findNearestSinePoint;
+
+  canvas.addEventListener("mousemove", (event) => {
+    if (!isStarted || !delaunay) return;
+    const rect = canvas.getBoundingClientRect();
+    const cursorX = event.clientX - rect.left;
+    const cursorY = event.clientY - rect.top;
+    // activeIndex = delaunay.find(cursorX, cursorY);
+    const nearest = delaunay.find(cursorX, cursorY);
+    activeIndex = nearest < points.length ? nearest : delaunay.find(
+      cursorX, cursorY, 
+      // find closest among first 20 only
+      ...Array.from({length: points.length}, (_, i) => i)
+    );
+    activeIndex = findNearestSinePoint(cursorX, cursorY);
+    window.activeIndex = activeIndex;
+    
+    checkDwellState();
+    draw();
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    activeIndex = -1;
+    window.activeIndex = activeIndex;
+    resetDwellProgress();
+    draw();
+  });
+
+  canvas.addEventListener("click", attemptAcquisition);
+
+  window.addEventListener("resize", () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    if (currentScreen === "game") {
+      updateExperimentPointLayout();
+      computeVoronoiDiagram();
+    }
+    clearDwellTimer();
+    draw();
+  });
+
+    function mockHeadPose(yaw, pitch) {
+      const maxYaw = 30;
+      const maxPitch = 20;
+
+      const x = ((yaw / maxYaw) + 0.5) * width;
+      const y = ((pitch / maxPitch) + 0.5) * height;
+
+      if (delaunay) {
+        activeIndex = findNearestSinePoint(x, y);
+        window.activeIndex = activeIndex;
+        checkDwellState();
+        draw();
+    }
+  }
+
+  function showTaskDirections() {
+    updateCalibrationPointLayout();
+    computeVoronoiDiagram();
+    taskDirectionsScreen.classList.remove('hidden');
+    currentScreen = "task-directions";
+  }
+  window.showTaskDirections = showTaskDirections;
+
+  function revealGame() {
+    if (currentScreen === "calibrating") {
+      showTaskDirections();
+      return;
+    }
+
+    taskDirectionsScreen.classList.add('hidden');
+    breakScreen.classList.add('hidden');
+
+    updateExperimentPointLayout();
+
+    // document.getElementById('game-container')?.classList.remove('hidden');
+    hud.classList.remove('hidden');
+    isStarted = true;
+    window.isStarted = true;
+    currentScreen = "game";
+    if (window.resetErrorGate) window.resetErrorGate();
+    updateHUD();
+    draw();
+    if (window.startTaskRun) window.startTaskRun();
+  }
+  window.revealGame = revealGame;
+
+  function runRegionReachabilityCheck() {
+  return new Promise(resolve => {
+    if (!points.length) { resolve(true); return; }
+
+    let topIdx = 0, bottomIdx = 0, leftIdx = 0, rightIdx = 0;
+    points.forEach((p, i) => {
+      if (p[1] < points[topIdx][1]) topIdx = i;
+      if (p[1] > points[bottomIdx][1]) bottomIdx = i;
+      if (p[0] < points[leftIdx][0]) leftIdx = i;
+      if (p[0] > points[rightIdx][0]) rightIdx = i;
+    });
+    const targets = [
+      { idx: topIdx, label: 'Top region' },
+      { idx: bottomIdx, label: 'Bottom region' },
+      { idx: leftIdx, label: 'Left region' },
+      { idx: rightIdx, label: 'Right region' }
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.id = 'region-check-overlay';
+    overlay.style.cssText = `position: fixed; top:0; left:0; width:100%; height:100%;
+      z-index: 100000; pointer-events: none;`;
+    document.body.appendChild(overlay);
+
+    const label = document.createElement('div');
+    label.style.cssText = `position: fixed; left:50%; top:16px; transform:translateX(-50%);
+      background: rgba(0,0,0,0.75); color:#fff; padding:10px 20px; border-radius:8px;
+      font-size:16px; z-index:100002; pointer-events:none;`;
+    overlay.appendChild(label);
+
+    const TIMEOUT_MS = 12000, DWELL_MS = 1000;
+    const failed = [];
+
+    function drawHighlight(targetIdx) {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < points.length; i++) {
+        const polygon = voronoi.cellPolygon(i);
+        if (!polygon) continue;
+        ctx.beginPath();
+        ctx.moveTo(polygon[0][0], polygon[0][1]);
+        for (let j = 1; j < polygon.length; j++) ctx.lineTo(polygon[j][0], polygon[j][1]);
+        ctx.closePath();
+        ctx.fillStyle = i === targetIdx ? 'rgba(100,255,100,0.4)' : 'rgba(150,150,150,0.05)';
+        ctx.strokeStyle = i === targetIdx ? 'rgba(100,255,100,1)' : 'rgba(150,150,150,0.15)';
+        ctx.lineWidth = i === targetIdx ? 5 : 1;
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    function checkOneTarget(target) {
+      return new Promise(res => {
+        label.innerHTML = `Move your head to the <strong style="color:#64ff64;">${target.label}</strong>
+          <span id="region-check-timer" style="color:#ffaa00; margin-left:12px;"></span>`;
+        checkTargetIndex = target.idx;   // real draw() now paints this every frame automatically
+
+        const startTime = performance.now();
+        let dwellStart = null, done = false;
+        const timerEl = document.getElementById('region-check-timer');
+
+        const tick = () => {
+          if (done) return;
+          const elapsed = performance.now() - startTime;
+          if (timerEl) timerEl.textContent = `(${Math.max(0,(TIMEOUT_MS-elapsed)/1000).toFixed(1)}s)`;
+
+          if (window.activeIndex === target.idx) {
+          if (dwellStart === null) dwellStart = performance.now();
+          if (performance.now() - dwellStart >= DWELL_MS) { done = true; res(true); return; }
+          } 
+          else {
+        dwellStart = null;
+        }
+        if (elapsed >= TIMEOUT_MS) { done = true; res(false); return; }
+        requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+    (async () => {
+      for (const target of targets) {
+        if (!(await checkOneTarget(target))) failed.push(target);
+      }
+      overlay.remove();
+      ctx.clearRect(0, 0, width, height);
+
+      checkTargetIndex = null;
+      draw();
+
+      if (failed.length === 0) { resolve(true); return; }
+
+      const failOverlay = document.createElement('div');
+      failOverlay.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.92); z-index:100000; display:flex; align-items:center; justify-content:center;`;
+      failOverlay.innerHTML = `
+        <div style="background: rgba(40,30,30,0.98); border:2px solid #ff6464; border-radius:12px;
+                    padding:36px; max-width:600px; text-align:center;">
+          <h2 style="color:#ff6464; margin:0 0 8px;">Calibration Issue Detected</h2>
+          <p style="color:#ccc; font-size:15px; margin:14px 0;">
+            We couldn't reach the following ${failed.length === 1 ? 'region' : 'regions'}:
+          </p>
+          <ul style="text-align:left; display:inline-block; color:#ffaa64; font-size:15px;">
+            ${failed.map(f => `<li>${f.label}</li>`).join('')}
+          </ul>
+          <div style="display:flex; gap:12px; justify-content:center; margin-top:14px;">
+            <button id="region-check-recalibrate" style="padding:12px 24px; font-weight:bold;
+              background:#ff6464; color:white; border:none; border-radius:8px; cursor:pointer;">Recalibrate</button>
+            <button id="region-check-continue" style="padding:12px 24px;
+              background:#444; color:#eee; border:none; border-radius:8px; cursor:pointer;">Continue Anyway</button>
+          </div>
+        </div>`;
+      document.body.appendChild(failOverlay);
+      document.getElementById('region-check-recalibrate').onclick = () => { window.location.reload(); resolve(false); };
+      document.getElementById('region-check-continue').onclick = () => { failOverlay.remove(); resolve(true); };
+    })();
+  });
+}
+
+window.runRegionReachabilityCheck = runRegionReachabilityCheck;
+
+  window.drawVoronoi = draw;
+  window.attemptAcquisition = attemptAcquisition;
+  window.mockHeadPose = mockHeadPose;
+
+  draw();
+  
+
+  window.drawVoronoi = draw;
+  window.attemptAcquisition = attemptAcquisition;
+  window.mockHeadPose = mockHeadPose;
+
+  draw();
+</script>
+</body>
+</html>

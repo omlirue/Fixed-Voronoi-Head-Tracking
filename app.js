@@ -120,12 +120,12 @@ app.get('/dashboard', (req, res) => {
 
 // Serve the main HTML file
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'voronoi.html'));
 });
 
 // Handle any other routes by serving index.html (for SPA)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'voronoi.html'));
 });
 
 app.listen(PORT, () => {
