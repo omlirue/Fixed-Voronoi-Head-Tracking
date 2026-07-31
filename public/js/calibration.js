@@ -91,10 +91,7 @@ function showNextCalibrationPoint() {
   }
   calibrationUI.appendChild(currentTarget);
 
-  // Render the "Move here / Press SPACE" hint right below the new red dot,
-  // similar to how the Pareto optimization screen labels each target.
-  // We measure the rendered hint and clamp/flip it so it always stays
-  // fully on screen — including at the corners.
+
   const hint = document.createElement("div");
   hint.className = "calibration-hint";
   hint.textContent = "Move here · Press SPACE";
@@ -175,10 +172,6 @@ function recordCalibrationPoint(point) {
     
     // ROTATION-ONLY MODE: Create vectors with ONLY rotation components
     if (state.config.rotationOnlyMode) {
-      // Build the [bias, yaw, pitch, roll] vector via the shared builder in
-      // head-pose.js. CRITICAL: calibration must use the exact same transform
-      // (including the asymmetric pitch gain) as live tracking, or the trained
-      // matrix won't match the cursor at run time.
       const anglesForVector = (headPose && headPose.angles)
         ? headPose.angles
         : (state.smoothedAngles || { yaw: 0, pitch: 0, roll: 0 });
@@ -485,67 +478,11 @@ function showPostCalibrationOptions() {
   startTracking();
   const checkFn = window.runRegionReachabilityCheck || runPostCalibrationEdgeCheck;
   checkFn().then(passed => {
-    if (passed) showReadyToBeginScreen();
+    if (passed && window.revealGame) window.revealGame();
   });
 }
 
-// New, discrete-system-appropriate replacement for the old
-// "parameter optimization" screen. Matches voronoi.html's existing
-// .overlay-screen visual style.
-function showReadyToBeginScreen() {
-  if (document.getElementById('ready-to-begin-overlay')) return;
-
-  const overlay = document.createElement('div');
-  overlay.id = 'ready-to-begin-overlay';
-  overlay.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.92); z-index: 100000;
-    display: flex; align-items: center; justify-content: center;
-  `;
-  overlay.innerHTML = `
-    <div style="text-align: center; padding: 50px 60px; background: rgba(30,30,40,0.98);
-      border: 2px solid #64c8ff; border-radius: 16px; max-width: 560px;
-      font-family: system-ui, -apple-system, sans-serif; color: #eee;">
-      <h1 style="color: #64c8ff; font-size: 30px; margin: 0 0 14px;">Calibration Complete</h1>
-      <p style="color: #ccc; font-size: 19px; margin: 0 0 22px;">
-        Move your head toward each highlighted region until it fills in.
-        Holding still on a region selects it.
-      </p>
-      <div id="ready-to-begin-btn" style="
-        padding: 16px 44px; font-size: 20px; font-weight: bold;
-        background: #64c8ff; color: #111; border: none; border-radius: 10px;
-        display: inline-block; cursor: pointer;
-      ">Press SPACE to Begin</div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  const begin = () => {
-  overlay.remove();
-  document.removeEventListener('keydown', spaceHandler, true);
-  if (window.revealGame) window.revealGame();
-};
-
-  document.getElementById('ready-to-begin-btn').onclick = begin;
-
-  // Capture-phase + stopImmediatePropagation, matching the pattern already
-  // used elsewhere in this file — keeps this Space press from also reaching
-  // voronoi.html's own keydown listener.
-  const spaceHandler = (e) => {
-    if (e.code !== 'Space') return;
-    if (!document.getElementById('ready-to-begin-overlay')) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    begin();
-  };
-  document.addEventListener('keydown', spaceHandler, true);
-}
-
-// Standalone edge-check that runs immediately after calibration completes
-// (before parameter optimization). Validates that the participant can reach
-// all 4 screen edges with their head movement.
-// Returns Promise<boolean>: true if passed (or user chose "Continue Anyway"),
-// false if user chose to recalibrate (page reloads).
+//  edge-check that runs after calibration completes
 async function runPostCalibrationEdgeCheck() {
   console.log("🎯 Starting post-calibration edge-check");
 
