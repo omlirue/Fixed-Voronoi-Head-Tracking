@@ -390,7 +390,8 @@
   // Error and Dwell state
   let totalErrors = 0;
   let roundErrors = 0; // resets each round, feeds the per-run summary row
-  let erroredCellsMap = {}; // Maps cell indices to error state boolean
+  let erroredCellsMap = {}; // Maps cell indices to error state boolean (gates error counting, permanent for the round)
+  let redFlashCellsMap = {}; // Maps cell indices to the temporary red highlight (clears after 2s, does not affect error count)
   let checkTargetIndex = null;
   
   // All four rounds execute sequential 0 -> 11 snake paths.
@@ -520,11 +521,7 @@
     currentTrialIndex = 0;
     roundErrors = 0;
     erroredCellsMap = {};
-
-    // Rounds 3/4 duplicate rounds 1/2's layout, but with no dwell grace period
-    if (currentRound === 3 && window.setGracePeriodMs) {
-      window.setGracePeriodMs(0);
-    }
+    redFlashCellsMap = {};
 
     breakTitle.innerText = `Round ${completedRound} Complete`;
     breakRoundDesc.innerText = `Round ${currentRound} follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.`;
@@ -652,7 +649,7 @@
         ctx.lineWidth = 3;
       } 
       // PRIORITY 3: Errored cell (not active or upcoming)
-      else if (isStarted && erroredCellsMap[i]) {
+      else if (isStarted && redFlashCellsMap[i]) {
         ctx.fillStyle = 'rgba(255, 60, 60, 0.5)';
         ctx.strokeStyle = 'rgba(255, 60, 60, 0.9)';
         ctx.lineWidth = 3;
@@ -699,7 +696,7 @@
       } else if (isStarted && i === nextTargetIndex) {
         radius = 5;
         fillStyle = "rgba(255, 200, 100, 0.8)";
-      } else if (isStarted && erroredCellsMap[i]) {
+      } else if (isStarted && redFlashCellsMap[i]) {
         radius = 6;
         fillStyle = "#ff5555";
       } else if (isStarted && sequence.indexOf(i) < currentTrialIndex) {
@@ -772,6 +769,7 @@
         // Incorrect uncompleted cell dwelled: mark cell red and log error
         if (!erroredCellsMap[activeIndex]) {
           erroredCellsMap[activeIndex] = true;
+          redFlashCellsMap[activeIndex] = true;
           totalErrors++;
           roundErrors++;
           if (window.logCellSelection) {
@@ -786,6 +784,12 @@
           }
           updateHUD();
           draw();
+
+          const erroredIndex = activeIndex;
+          setTimeout(() => {
+            redFlashCellsMap[erroredIndex] = false;
+            draw();
+          }, 2000);
         }
       }
     }
@@ -929,6 +933,11 @@
     breakScreen.classList.add('hidden');
 
     updateExperimentPointLayout();
+
+    // Rounds 1/2 have no dwell grace period; rounds 3/4 use the default grace period
+    if (window.setGracePeriodMs) {
+      window.setGracePeriodMs((currentRound === 1 || currentRound === 2) ? 0 : 700);
+    }
 
     // document.getElementById('game-container')?.classList.remove('hidden');
     hud.classList.remove('hidden');
