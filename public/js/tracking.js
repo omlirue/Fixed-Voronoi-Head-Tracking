@@ -85,9 +85,7 @@ function updateCursor() {
         const calibrationHeight = state.calibrationData.calibrationHeight || window.innerHeight;
         const headPose = estimateHeadPose(landmarks, calibrationWidth, calibrationHeight);
         
-        // ARCHITECTURE FIX: Use raw angles directly (no pre-smoothing)
-        // Smoothing is handled by One Euro/Exponential filter on cursor position
-        // This makes rotation-only consistent with position-based tracking
+      
         const angles = headPose ? headPose.angles : (state.lastRawAngles || { yaw: 0, pitch: 0, roll: 0 });
         
         // Store last good angles for fallback

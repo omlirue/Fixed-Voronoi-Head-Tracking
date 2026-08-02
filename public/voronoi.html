@@ -318,17 +318,17 @@
           </div>
       </div>
 
-      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are two rounds with a short break in between.</p>
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are four rounds with a short break in between each.</p>
       <button id="task-directions-button" class="start-button">Start Round 1 →</button>
       <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
   </div> 
 
   <div id="break-screen" class="overlay-screen hidden">
-    <h1 style="margin-bottom: 6px;">Round 1 Complete</h1>
+    <h1 id="break-title" style="margin-bottom: 6px;">Round 1 Complete</h1>
     <p style="color: #888; font-size: 15px; margin-bottom: 32px;">Take a moment to rest before continuing.</p>
 
     <div style="max-width: 420px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 24px 32px; margin-bottom: 32px;">
-        <p style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.</p>
+        <p id="break-round-desc" style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Round 2 follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.</p>
     </div>
 
     <button id="break-button" class="start-button">Continue to Round 2 →</button>
@@ -337,7 +337,7 @@
 
   <div id="end-screen" class="overlay-screen hidden">
     <h1>Experiment Complete</h1>
-    <p id="final-stats-summary">Congrats! You have finished both Fitts' Law experiment trials successfully.</p>
+    <p id="final-stats-summary">Congrats! You have finished all four Fitts' Law experiment trials successfully.</p>
   </div>
 
   <canvas id="artboard"></canvas>
@@ -353,6 +353,8 @@
   const directionsBtn = document.getElementById('directions-button');
   const taskDirectionsBtn = document.getElementById('task-directions-button');
   const breakBtn = document.getElementById('break-button');
+  const breakTitle = document.getElementById('break-title');
+  const breakRoundDesc = document.getElementById('break-round-desc');
   const hud = document.getElementById('hud');
   const progressFill = document.getElementById('progress-fill');
   const completedCountEl = document.getElementById('completed-count');
@@ -388,16 +390,19 @@
   // Error and Dwell state
   let totalErrors = 0;
   let roundErrors = 0; // resets each round, feeds the per-run summary row
-  let erroredCellsMap = {}; // Maps cell indices to error state boolean
+  let erroredCellsMap = {}; // Maps cell indices to error state boolean (gates error counting, permanent for the round)
+  let redFlashCellsMap = {}; // Maps cell indices to the temporary red highlight (clears after 2s, does not affect error count)
   let checkTargetIndex = null;
   
-  // Both rounds execute sequential 0 -> 19 vertical snake paths
+  // All four rounds execute sequential 0 -> 11 snake paths.
+  // Rounds 3 and 4 duplicate rounds 1 and 2's sequence/layout, just with
+  // GRACE_PERIOD_MS dropped to 0 (see loadNextRound).
   const sequenceRound1 = Array.from({ length: 12 }, (_, i) => i);
   const sequenceRound2 = Array.from({ length: 12 }, (_, i) => i);
 
-//Gets the seqence of the two trials
+//Gets the sequence for the current round; rounds 3/4 reuse rounds 1/2's sequence
   function getActiveSequence() {
-    return currentRound === 1 ? sequenceRound1 : sequenceRound2;
+    return (currentRound === 1 || currentRound === 3) ? sequenceRound1 : sequenceRound2;
   }
 
   // Lets dwell++.js tell the correct region apart from a wrong one, so it
@@ -447,11 +452,12 @@
     const amplitude = height * 0.30;
     const xSpread = width * 0.45;
     const nPoints = 12;
-    const phase = currentRound === 1 ? 0 : Math.PI;
+    // Rounds 3/4 duplicate rounds 1/2's layout exactly
+    const phase = (currentRound === 1 || currentRound === 3) ? 0 : Math.PI;
 
     const sinePoints = [];
 
-    if (currentRound === 1) {
+    if (currentRound === 1 || currentRound === 3) {
       for (let i = 0; i < nPoints; i++) {
         const t = i / (nPoints - 1);
         const x = cx - xSpread + t * xSpread * 2;
@@ -459,7 +465,7 @@
         sinePoints.push([x, y]);
       }
     }
-    else if (currentRound === 2) { // curve is transformed slightly and inverted
+    else if (currentRound === 2 || currentRound === 4) { // curve is transformed slightly and inverted
       for (let i = 0; i < nPoints; i++) {
         const t = i / (nPoints - 1);
         const x = cx - xSpread + t * xSpread * 2;
@@ -503,20 +509,24 @@
     hudRoundLabel.innerText = `Round ${currentRound} Progress`;
   }
 
-  function loadSecondVoronoiMap() {
+  function loadNextRound() {
     hud.classList.add('hidden');
     isStarted = false;
     window.isStarted = false;
     breakScreen.classList.remove('hidden');
     currentScreen = "break";
 
-    currentRound = 2;
+    const completedRound = currentRound;
+    currentRound++;
     currentTrialIndex = 0;
     roundErrors = 0;
     erroredCellsMap = {};
+    redFlashCellsMap = {};
 
-    // updatePointLayoutScale();
-    // computeVoronoiDiagram();
+    breakTitle.innerText = `Round ${completedRound} Complete`;
+    breakRoundDesc.innerText = `Round ${currentRound} follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.`;
+    breakBtn.innerText = `Continue to Round ${currentRound} →`;
+
     updateHUD();
     if (window.resetErrorGate) window.resetErrorGate();
     checkDwellState();
@@ -639,7 +649,7 @@
         ctx.lineWidth = 3;
       } 
       // PRIORITY 3: Errored cell (not active or upcoming)
-      else if (isStarted && erroredCellsMap[i]) {
+      else if (isStarted && redFlashCellsMap[i]) {
         ctx.fillStyle = 'rgba(255, 60, 60, 0.5)';
         ctx.strokeStyle = 'rgba(255, 60, 60, 0.9)';
         ctx.lineWidth = 3;
@@ -686,7 +696,7 @@
       } else if (isStarted && i === nextTargetIndex) {
         radius = 5;
         fillStyle = "rgba(255, 200, 100, 0.8)";
-      } else if (isStarted && erroredCellsMap[i]) {
+      } else if (isStarted && redFlashCellsMap[i]) {
         radius = 6;
         fillStyle = "#ff5555";
       } else if (isStarted && sequence.indexOf(i) < currentTrialIndex) {
@@ -731,17 +741,15 @@
         checkDwellState();
         draw();
       } else {
-        // Finished Round 1
-        if (currentRound === 1) {
-          if (window.finishTaskRun) {
-            window.finishTaskRun({ round: 1, totalErrors: roundErrors, totalCells: sequence.length });
-          }
-          loadSecondVoronoiMap();
+        // Finished this round
+        if (window.finishTaskRun) {
+          window.finishTaskRun({ round: currentRound, totalErrors: roundErrors, totalCells: sequence.length });
+        }
+
+        if (currentRound < 4) {
+          loadNextRound();
         } else {
-          // Finished Round 2
-          if (window.finishTaskRun) {
-            window.finishTaskRun({ round: 2, totalErrors: roundErrors, totalCells: sequence.length });
-          }
+          // Finished Round 4 — experiment complete
           if (window.exportTaskData) window.exportTaskData();
 
           isStarted = false;
@@ -761,6 +769,7 @@
         // Incorrect uncompleted cell dwelled: mark cell red and log error
         if (!erroredCellsMap[activeIndex]) {
           erroredCellsMap[activeIndex] = true;
+          redFlashCellsMap[activeIndex] = true;
           totalErrors++;
           roundErrors++;
           if (window.logCellSelection) {
@@ -775,6 +784,12 @@
           }
           updateHUD();
           draw();
+
+          const erroredIndex = activeIndex;
+          setTimeout(() => {
+            redFlashCellsMap[erroredIndex] = false;
+            draw();
+          }, 2000);
         }
       }
     }
@@ -804,7 +819,6 @@
     } 
     else if (currentScreen === "break") {
       breakScreen.classList.add('hidden');
-      loadSecondVoronoiMap();
       revealGame();
     }
   }
@@ -919,6 +933,15 @@
     breakScreen.classList.add('hidden');
 
     updateExperimentPointLayout();
+
+    // Rounds 1/2 have no dwell grace period or timer-continue leniency; rounds 3/4 use the defaults
+    const isStrictRound = currentRound === 1 || currentRound === 2;
+    if (window.setGracePeriodMs) {
+      window.setGracePeriodMs(isStrictRound ? 0 : 700);
+    }
+    if (window.setTimerContinueMs) {
+      window.setTimerContinueMs(isStrictRound ? 0 : 500);
+    }
 
     // document.getElementById('game-container')?.classList.remove('hidden');
     hud.classList.remove('hidden');
