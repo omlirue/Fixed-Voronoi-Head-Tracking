@@ -1,7 +1,7 @@
 const DWELL_TIME_MS = 1000;
 const WRONG_REGION_DWELL_TIME_MS = 300; // flat, non-smoothed dwell time for a region that isn't the current target
 let GRACE_PERIOD_MS = 700;   // how long the target stays "live" (and glowing) after gaze leaves it — mutable so trials 3/4 can drop it to 0
-const TIMER_CONTINUE_MS = 500; // look-aways shorter than this don't even pause the dwell timer
+let TIMER_CONTINUE_MS = 500; // look-aways shorter than this don't even pause the dwell timer — mutable so trials 1/2 can drop it to 0
 
 let dwellTargetIndex = null;
 let dwellAccumulatedMs = 0;
@@ -34,6 +34,12 @@ function setGracePeriodMs(ms) {
   window.DWELL_CONFIG.gracePeriodMs = ms;
 }
 window.setGracePeriodMs = setGracePeriodMs;
+
+function setTimerContinueMs(ms) {
+  TIMER_CONTINUE_MS = ms;
+  window.DWELL_CONFIG.timerContinueMs = ms;
+}
+window.setTimerContinueMs = setTimerContinueMs;
 
 window.DWELL_CONFIG = {
   dwellTimeMs: DWELL_TIME_MS,

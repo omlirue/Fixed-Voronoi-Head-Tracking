@@ -934,9 +934,13 @@
 
     updateExperimentPointLayout();
 
-    // Rounds 1/2 have no dwell grace period; rounds 3/4 use the default grace period
+    // Rounds 1/2 have no dwell grace period or timer-continue leniency; rounds 3/4 use the defaults
+    const isStrictRound = currentRound === 1 || currentRound === 2;
     if (window.setGracePeriodMs) {
-      window.setGracePeriodMs((currentRound === 1 || currentRound === 2) ? 0 : 700);
+      window.setGracePeriodMs(isStrictRound ? 0 : 700);
+    }
+    if (window.setTimerContinueMs) {
+      window.setTimerContinueMs(isStrictRound ? 0 : 500);
     }
 
     // document.getElementById('game-container')?.classList.remove('hidden');
