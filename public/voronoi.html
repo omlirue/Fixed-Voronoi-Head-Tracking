@@ -298,28 +298,39 @@
   </div>
 
   <div id="task-directions-screen" class="overlay-screen hidden">
-      <h1 style="margin-bottom: 6px;">Stage 2: Head-Pointing Task</h1>
-      <div style="max-width: 540px; text-align: left; margin-bottom: 28px;">
-          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+      <h1 style="margin-top: 6px; margin-bottom: 6px;">Stage 2: Head-Pointing Task</h1>
+      <p style="color: #ccc; font-size: 15px; margin-bottom: 22px;">You will complete four trials in two phases.</p>
+
+      <div style="max-width: 560px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px 28px; margin-bottom: 20px; text-align: left;">
+          <p style="margin: 0 0 6px 0; color: #64c8ff; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Phase 1 — Trials 1 & 2</p>
+          <p style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Navigate between regions as quickly and accurately as you can. The system switches regions as soon as your head enters a new one.</p>
+      </div>
+
+      <div style="max-width: 560px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px 28px; margin-bottom: 24px; text-align: left;">
+          <p style="margin: 0 0 6px 0; color: #ffc864; font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Phase 2 — Trials 3 & 4</p>
+          <p style="margin: 0; color: #ccc; font-size: 15px; line-height: 1.6;">Follow the same task, but with an optimized stability threshold. The system requires 300ms of sustained presence in a region before switching focus.</p>
+      </div>
+
+      <div style="max-width: 540px; text-align: left; margin-bottom: 24px;">
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px;">
               <div style="width: 14px; height: 14px; background: rgba(100,255,100,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
-              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #64ff64; font-weight: bold;">green region</span> is your current target. Point your head toward it to activate it.</p>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #64ff64; font-weight: bold;">green region</span> is your current target.</p>
           </div>
-          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px;">
               <div style="width: 14px; height: 14px; background: rgba(255,200,100,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
-              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #ffc864; font-weight: bold;">yellow region</span> shows where you're going next.</p>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">The <span style="color: #ffc864; font-weight: bold;">yellow region</span> shows the next target.</p>
           </div>
-          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px;">
+          <div style="display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px;">
               <div style="width: 14px; height: 14px; background: rgba(100,200,255,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
-              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">Hold your head still in the green region for a moment to <span style="color: #64c8ff; font-weight: bold;">confirm your selection</span>.</p>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">Point your head toward the green region and stay still to <span style="color: #64c8ff; font-weight: bold;">confirm your selection</span>.</p>
           </div>
           <div style="display: flex; gap: 16px; align-items: flex-start;">
               <div style="width: 14px; height: 14px; background: rgba(255,60,60,0.8); border-radius: 3px; flex-shrink: 0; margin-top: 4px;"></div>
-              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">If you activate the <span style="color: #ff5555; font-weight: bold;">wrong region</span>, it will flash red. Keep going and try to reach the correct one.</p>
+              <p style="margin: 0; color: #eee; font-size: 15px; line-height: 1.6;">If you activate the <span style="color: #ff5555; font-weight: bold;">wrong region</span>, it will flash red. Keep going toward the correct one.</p>
           </div>
       </div>
 
-      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Move as quickly and accurately as you can. There are four rounds with a short break in between each.</p>
-      <button id="task-directions-button" class="start-button">Start Round 1 →</button>
+      <button id="task-directions-button" class="start-button">Start Trial 1 →</button>
       <p style="margin-top: 14px; font-size: 13px; color: #666;">or press <kbd>Space</kbd></p>
   </div> 
 
@@ -506,7 +517,8 @@
     progressFill.style.width = `${progressPct}%`;
     completedCountEl.innerText = `${currentTrialIndex} / ${sequence.length}`;
     errorCountEl.innerText = totalErrors;
-    hudRoundLabel.innerText = `Round ${currentRound} Progress`;
+    const phase = (currentRound <= 2) ? "Phase 1" : "Phase 2";
+    hudRoundLabel.innerText = `Trial ${currentRound} of 4 — ${phase}`;
   }
 
   function loadNextRound() {
@@ -523,9 +535,19 @@
     erroredCellsMap = {};
     redFlashCellsMap = {};
 
-    breakTitle.innerText = `Round ${completedRound} Complete`;
-    breakRoundDesc.innerText = `Round ${currentRound} follows the same format. There will be a new set of regions in a different layout. When you're ready, press Continue.`;
-    breakBtn.innerText = `Continue to Round ${currentRound} →`;
+    if (currentRound == 2) {
+      breakTitle.innerText = 'Trial 1 Complete';
+      breakRoundDesc.innerText = 'Trial 2 uses a different region layout but the same immediate-switching behavior. When you\'re ready, press Continue.';
+      breakBtn.innerText = 'Continue to Trial 2 →';
+    } else if (currentRound == 3) {
+      breakTitle.innerText = 'Phase 1 Complete';
+      breakRoundDesc.innerText = 'Good work! You are now entering Phase 2, which introduces a 300ms stability threshold before switching regions. Trial 3 uses the same layout as Trial 1. When you\'re ready, press Continue.';
+      breakBtn.innerText = 'Continue to Trial 3 →';
+    } else if (currentRound == 4) {
+      breakTitle.innerText = 'Trial 3 Complete';
+      breakRoundDesc.innerText = 'Trial 4 is the final trial. It uses a different layout with the stability threshold still active. When you\'re ready, press Continue.';
+      breakBtn.innerText = 'Continue to Trial 4 →';
+    }
 
     updateHUD();
     if (window.resetErrorGate) window.resetErrorGate();
@@ -593,20 +615,41 @@
     }
 
     if (checkTargetIndex !== null) {
-    for (let i = 0; i < points.length; i++) {
-      const polygon = voronoi.cellPolygon(i);
-      if (!polygon) continue;
-      ctx.beginPath();
-      ctx.moveTo(polygon[0][0], polygon[0][1]);
-      for (let j = 1; j < polygon.length; j++) ctx.lineTo(polygon[j][0], polygon[j][1]);
-      ctx.closePath();
-      ctx.fillStyle = i === checkTargetIndex ? 'rgba(100,255,100,0.4)' : 'rgba(150,150,150,0.05)';
-      ctx.strokeStyle = i === checkTargetIndex ? 'rgba(100,255,100,1)' : 'rgba(150,150,150,0.15)';
-      ctx.lineWidth = i === checkTargetIndex ? 5 : 1;
-      ctx.fill();
-      ctx.stroke();
-    }
-    return;
+      for (let i = 0; i < points.length; i++) {
+        const polygon = voronoi.cellPolygon(i);
+        if (!polygon) continue;
+        ctx.beginPath();
+        ctx.moveTo(polygon[0][0], polygon[0][1]);
+        for (let j = 1; j < polygon.length; j++) ctx.lineTo(polygon[j][0], polygon[j][1]);
+        ctx.closePath();
+        ctx.save();
+        if (i === checkTargetIndex) {
+          const userIsHere = (window.activeIndex === i);
+          ctx.fillStyle = userIsHere ? 'rgba(100,255,100,0.6)' : 'rgba(100,255,100,0.25)';
+          ctx.strokeStyle = 'rgba(100,255,100,1)';
+          ctx.lineWidth = 5;
+          if (userIsHere) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = 'rgba(100,255,100,1)';
+          }
+        }
+        else if (window.activeIndex === i) {
+          ctx.fillStyle = 'rgba(100,200,255,0.15)';
+          ctx.strokeStyle = 'rgba(100,200,255,0.5)';
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = 'rgba(100,200,255,0.5)';
+        }
+        else {
+          ctx.fillStyle = 'rgba(150,150,150,0.05)';
+          ctx.strokeStyle = 'rgba(150,150,150,0.15)';
+          ctx.lineWidth = 1;
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+      return;
     }
 
     const sequence = getActiveSequence();
