@@ -5,3 +5,4 @@ This is a novel, discrete head-cursor system to help people with motor disabilit
 4. We evaluate our system with a modified version of Fitts Law optimized for this architecture.
 
 To use this, check out our Vercel page!
+https://discretepoint.vercel.app/
