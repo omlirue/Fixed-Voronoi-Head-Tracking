@@ -754,6 +754,49 @@
   }
 
 
+  // Called by dwell++.js when a highlighted/glowing candidate region is
+  // abandoned (participant looked away long enough for the grace period to
+  // expire before completing the dwell). Counts as an error distinct from a
+  // completed wrong-cell selection, so leaving and later returning to the
+  // same region is tracked as its own reentry-bearing attempt.
+  function onDwellAbandoned(abandonedIndex, stats) {
+    if (!isStarted || abandonedIndex === null || abandonedIndex === undefined) return;
+
+    const sequence = getActiveSequence();
+    const currentTargetIndex = sequence[currentTrialIndex];
+    const abandonedSequencePosition = sequence.indexOf(abandonedIndex);
+    const isAlreadyCompleted = abandonedSequencePosition !== -1 && abandonedSequencePosition < currentTrialIndex;
+    if (isAlreadyCompleted) return;
+
+    totalErrors++;
+    roundErrors++;
+    redFlashCellsMap[abandonedIndex] = true;
+
+    if (window.logCellSelection) {
+      window.lastDwellStats = {
+        reentries: stats.reentries,
+        graceSaves: stats.graceSaves,
+        timeOutsideRegionMs: stats.timeOutsideRegionMs
+      };
+      window.logCellSelection({
+        round: currentRound,
+        trialIndex: currentTrialIndex,
+        selectedCell: abandonedIndex,
+        targetCell: currentTargetIndex,
+        correct: false
+      });
+    }
+
+    updateHUD();
+    draw();
+
+    setTimeout(() => {
+      redFlashCellsMap[abandonedIndex] = false;
+      draw();
+    }, 2000);
+  }
+  window.onDwellAbandoned = onDwellAbandoned;
+
   function attemptAcquisition() {
     if (!isStarted || activeIndex === -1) return;
 

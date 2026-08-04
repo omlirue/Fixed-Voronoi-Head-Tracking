@@ -24,8 +24,15 @@ let trackingLostSince = null;
 // Without this, whatever cell the participant's head happens to be over the instant a round startsb again
 let hasEnteredTargetRegion = false;
 
+// Per-cell count of how many times a candidacy on that index has been
+// abandoned (grace period expired) this round. Lets a comeback to a
+// previously-abandoned region start its new candidacy already credited with
+// a re-entry, instead of looking like a brand-new first visit.
+let cellAbandonCounts = new Map();
+
 function resetErrorGate() {
   hasEnteredTargetRegion = false;
+  cellAbandonCounts = new Map();
 }
 window.resetErrorGate = resetErrorGate;
 
@@ -67,8 +74,13 @@ function startNewCandidate(rawIndex, now) {
   dwellAccumulatedMs = 0;
   segmentStartTime = now;
   awayStartTime = null;
-  candidateReentries = 0;
+  // A comeback to a region already abandoned this round starts life already
+  // credited with a re-entry, rather than looking like a fresh first visit.
+  candidateReentries = cellAbandonCounts.get(rawIndex) || 0;
   candidateGraceSaves = 0;
+  if (candidateReentries > 0) {
+    console.log(`[dwell] comeback to region ${rawIndex}, credited with ${candidateReentries} re-entry(ies) from prior abandon(s)`);
+  }
 }
 
 function recordRegionSample(rawIndex, now) {
@@ -219,10 +231,10 @@ function checkDwellState() {
   }
 
   if (hasValidRegion && rawIndex === dwellTargetIndex) {
-    // A re-entry is any return after having left; a grace-save is
-    // specifically a return after the look-away was long enough to have
-    // actually paused the timer (segmentStartTime cleared below) rather
-    // than just a sub-TIMER_CONTINUE_MS blip. - had AI write this comment lol
+    // A re-entry is any return after having left. A grace-save is any
+    // re-entry that lands before the grace period fully expires — the
+    // departure was tolerated as noise (whether or not it was long enough
+    // to actually pause the timer) rather than costing the candidacy.
     const wasAway = awayStartTime !== null;
     const wasPaused = segmentStartTime === null;
     if (wasPaused) {
@@ -231,7 +243,7 @@ function checkDwellState() {
     }
     if (wasAway) {
       candidateReentries++;
-      if (wasPaused) candidateGraceSaves++;
+      candidateGraceSaves++;
     }
     awayStartTime = null;
 
@@ -273,7 +285,21 @@ function checkDwellState() {
   }
 
   if (awayElapsed >= GRACE_PERIOD_MS) {
-   
+    // The candidate that was highlighted/glowing is being abandoned — this
+    // counts as an error (unless it's a false start: a wrong region visited
+    // before the participant has ever reached the target this round).
+    const isWrongRegionAbandon = targetKnown && dwellTargetIndex !== targetIndex;
+    if (!(isWrongRegionAbandon && !hasEnteredTargetRegion)) {
+      cellAbandonCounts.set(dwellTargetIndex, (cellAbandonCounts.get(dwellTargetIndex) || 0) + 1);
+      if (window.onDwellAbandoned) {
+        window.onDwellAbandoned(dwellTargetIndex, {
+          reentries: candidateReentries,
+          graceSaves: candidateGraceSaves,
+          timeOutsideRegionMs: outsideRegionMs
+        });
+      }
+    }
+
     if (hasValidTrueRegion) {
       console.log(`[dwell] RESET (grace expired, away ${awayElapsed.toFixed(0)}ms) — lost ${dwellAccumulatedMs.toFixed(0)}ms that was banked on ${dwellTargetIndex}, new candidate ${trueRawIndex}`);
       startNewCandidate(trueRawIndex, now);

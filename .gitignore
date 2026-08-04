@@ -1,6 +1,7 @@
 node_modules/
 **/fitts-cursor-paths-*.json
 participants.json
+analysis/data/*.csv
 .vercel
 .env
 .env.*.local
