@@ -285,13 +285,17 @@ function checkDwellState() {
   }
 
   if (awayElapsed >= GRACE_PERIOD_MS) {
-    // The candidate that was highlighted/glowing is being abandoned — this
-    // counts as an error (unless it's a false start: a wrong region visited
-    // before the participant has ever reached the target this round).
+    // The candidate that was highlighted/glowing is being abandoned. Only
+    // abandoning the actual TARGET region counts as an error — abandoning a
+    // wrong region isn't logged here (a wrong cell only errors if its dwell
+    // actually completes, handled elsewhere). A false start (wrong region
+    // visited before the participant has ever reached the target this round)
+    // isn't counted toward reentries either.
     const isWrongRegionAbandon = targetKnown && dwellTargetIndex !== targetIndex;
-    if (!(isWrongRegionAbandon && !hasEnteredTargetRegion)) {
+    const isFalseStart = isWrongRegionAbandon && !hasEnteredTargetRegion;
+    if (!isFalseStart) {
       cellAbandonCounts.set(dwellTargetIndex, (cellAbandonCounts.get(dwellTargetIndex) || 0) + 1);
-      if (window.onDwellAbandoned) {
+      if (!isWrongRegionAbandon && window.onDwellAbandoned) {
         window.onDwellAbandoned(dwellTargetIndex, {
           reentries: candidateReentries,
           graceSaves: candidateGraceSaves,

@@ -754,11 +754,13 @@
   }
 
 
-  // Called by dwell++.js when a highlighted/glowing candidate region is
+  // Called by dwell++.js when the TARGET region's dwell candidacy is
   // abandoned (participant looked away long enough for the grace period to
-  // expire before completing the dwell). Counts as an error distinct from a
-  // completed wrong-cell selection, so leaving and later returning to the
-  // same region is tracked as its own reentry-bearing attempt.
+  // expire before completing the dwell). Wrong-region abandonment is not
+  // routed here — only a completed wrong-cell dwell counts as an error.
+  // Counts as an error distinct from a completed wrong-cell selection, so
+  // leaving and later returning to the target is tracked as its own
+  // reentry-bearing attempt.
   function onDwellAbandoned(abandonedIndex, stats) {
     if (!isStarted || abandonedIndex === null || abandonedIndex === undefined) return;
 
